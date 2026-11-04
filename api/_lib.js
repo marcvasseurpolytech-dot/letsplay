@@ -106,7 +106,7 @@ function noteFailure(req) {
 function clearFailures(req) { fails.delete(ip(req)); }
 
 // ---- validation de la progression envoyée par le navigateur
-const CATS = ['c','v','w','f','p','l','s','x','t'];
+const CATS = ['c','v','w','f','p','l','s','x','t','e'];
 const DIRS = [[1,0],[-1,0],[0,1],[0,-1]];
 const int = (v, lo, hi, d) => { v = Math.floor(Number(v)); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
 function cleanBoard(b) {

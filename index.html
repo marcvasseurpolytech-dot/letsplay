@@ -85,6 +85,11 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
 .timer{height:5px;border-radius:3px;background:#ffffff1f;overflow:hidden;margin-bottom:6px}
 .timer b{display:block;height:100%;width:100%;background:var(--green);transition:width .25s linear}
 .timer b.low{background:var(--red)}
+.opts.letters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.seg{display:inline-block;border-bottom:2px dotted var(--gold);padding:0 3px;margin:2px 2px}
+.seg .sl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);margin-right:4px}
+.seg.good{border-bottom:2px solid var(--green);background:#3fae7622}
+.seg.bad{border-bottom:2px solid var(--red);background:#e0584f22}
 
 .bonus{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .bonus small{color:var(--muted);font-size:11px;flex:1;min-width:150px;line-height:1.35}
@@ -503,9 +508,9 @@ HARD = HARD.concat(
 var NORMAL = CONN.concat(VERBS, WORDS, FAM, PREP, COLL, SYN, PHR, TRAD);
 var CATS = [
  ['c','Logical connectors'],['v','Irregular verbs'],['w','Vocabulary (unscramble)'],['f','Word families'],
- ['p','Prepositions'],['l','Collocations'],['s','Synonyms in context'],['x','Phrasal verbs'],['t','French to English']
+ ['p','Prepositions'],['l','Collocations'],['s','Synonyms in context'],['x','Phrasal verbs'],['t','French to English'],['e','Spot the wrong segment']
 ];
-var MODE_LABEL={c:'Logical connector',v:'Irregular verb',w:'Vocabulary: unscramble the word',f:'Word family',p:'Preposition',l:'Collocation',s:'Synonym in context',x:'Phrasal verb',t:'Translation (French to English)'};
+var MODE_LABEL={c:'Logical connector',v:'Irregular verb',w:'Vocabulary: unscramble the word',f:'Word family',p:'Preposition',l:'Collocation',s:'Synonym in context',x:'Phrasal verb',t:'Translation (French to English)',e:'Spot the wrong segment (A, B, C or D)'};
 
 /* ---------- Banque supplementaire (v4) : meme format, o[0] = bonne reponse ---------- */
 (function(){
@@ -681,6 +686,56 @@ add('t',[
  ["Elle a refusé de signer. => She ___ to sign.",["refused","denied","rejected","avoided"],"Elle a refusé de signer."]
 ]);
 })();
+/* ---------- Spot the wrong segment (t:'e') : segs = 4 segments, k = index du segment fautif, fix = correction du segment ('' = supprimer) ---------- */
+(function(){
+[
+ [["The manager","have approved","the budget","for next year."],1,"has approved","Subject-verb agreement: 'The manager' is singular.","Le directeur a approuvé le budget pour l'année prochaine."],
+ [["We are looking forward","to meet","our new clients","next week."],1,"to meeting","'Look forward to' is followed by the -ing form.","Nous avons hâte de rencontrer nos nouveaux clients la semaine prochaine."],
+ [["Despite of","the heavy traffic,","she arrived","on time."],0,"Despite","'Despite' is never followed by 'of' (compare 'in spite of').","Malgré la circulation dense, elle est arrivée à l'heure."],
+ [["Each of","the employees","receive","a security badge."],2,"receives","'Each of' takes a singular verb.","Chacun des employés reçoit un badge de sécurité."],
+ [["The company has","less employees","than it had","five years ago."],1,"fewer employees","'Fewer' is used with countable nouns.","L'entreprise a moins d'employés qu'il y a cinq ans."],
+ [["If the shipment","will arrive","tomorrow,","we will start the installation."],1,"arrives","No 'will' in the if-clause: use the present simple.","Si la livraison arrive demain, nous commencerons l'installation."],
+ [["The report","which he wrote","it was","very detailed."],2,"was","Redundant pronoun: 'which' already refers to the report.","Le rapport qu'il a rédigé était très détaillé."],
+ [["She is","more efficient","that","the other managers."],2,"than","Comparative: 'more efficient than'.","Elle est plus efficace que les autres directeurs."],
+ [["Please send","me informations","about the","new pricing policy."],1,"me information","'Information' is uncountable: it has no plural.","Veuillez m'envoyer des informations sur la nouvelle politique tarifaire."],
+ [["Our office","is locate","near","the station."],1,"is located","Passive voice: be + past participle.","Notre bureau est situé près de la gare."],
+ [["Neither the director","or the assistant","was aware","of the problem."],1,"nor the assistant","The correlative pair is 'neither ... nor'.","Ni le directeur ni l'assistant n'étaient au courant du problème."],
+ [["The new software","is more easier","to use","than the old one."],1,"is easier","Short adjectives take -er: do not add 'more'.","Le nouveau logiciel est plus facile à utiliser que l'ancien."],
+ [["He suggested","to postpone","the meeting","until Monday."],1,"postponing","'Suggest' is followed by the -ing form, not by 'to'.","Il a suggéré de reporter la réunion à lundi."],
+ [["We have been working","on this project","since three","months."],2,"for three","'For' + a period of time; 'since' + a starting point.","Nous travaillons sur ce projet depuis trois mois."],
+ [["The number of","customers have","increased","significantly this year."],1,"customers has","'The number of' takes a singular verb.","Le nombre de clients a nettement augmenté cette année."],
+ [["Employees","is required","to wear","a badge at all times."],1,"are required","'Employees' is plural, so the verb must be plural.","Les employés doivent porter un badge en permanence."],
+ [["The conference","will be held","in Tuesday morning","at the Grand Hotel."],2,"on Tuesday morning","Use 'on' with days (and parts of a specific day).","La conférence aura lieu mardi matin au Grand Hôtel."],
+ [["She asked me","if I could","to help","her with the report."],2,"help","A modal verb ('could') is followed by the bare infinitive.","Elle m'a demandé si je pouvais l'aider avec le rapport."],
+ [["The employees","who works","in this department","are very experienced."],1,"who work","The verb agrees with 'employees' (plural).","Les employés qui travaillent dans ce service sont très expérimentés."],
+ [["Our flight","was delayed","during two hours","because of the storm."],2,"for two hours","'For' + a duration; 'during' + a noun naming a period.","Notre vol a été retardé de deux heures à cause de la tempête."],
+ [["He gave us","some useful","advices","about the contract."],2,"advice","'Advice' is uncountable: it has no plural.","Il nous a donné quelques conseils utiles sur le contrat."],
+ [["The company","plans","launching","a new product next month."],2,"to launch","'Plan' is followed by a to-infinitive.","L'entreprise prévoit de lancer un nouveau produit le mois prochain."],
+ [["I wish","I have","more time","to finish the report."],1,"I had","'Wish' + past simple for an unreal present situation.","J'aimerais avoir plus de temps pour terminer le rapport."],
+ [["If I","were you,","I will","accept the offer."],2,"I would","Second conditional: if + past, would + infinitive.","Si j'étais vous, j'accepterais l'offre."],
+ [["The documents","must be signed","by","the both parties."],3,"both parties.","No article is placed before 'both' ('both parties' or 'both the parties').","Les documents doivent être signés par les deux parties."],
+ [["The invoice","was sent","to customer","last week."],2,"to the customer","A singular countable noun needs a determiner.","La facture a été envoyée au client la semaine dernière."],
+ [["Nobody","didn't tell","me about","the change of plans."],1,"told","Double negative: 'nobody' already makes the sentence negative.","Personne ne m'a parlé du changement de programme."],
+ [["The CEO,","who is","very busy,","have no time today."],3,"has no time today.","The subject is 'The CEO' (singular), so the verb is 'has'.","Le PDG, qui est très occupé, n'a pas le temps aujourd'hui."],
+ [["We are","interesting in","your proposal","for a joint venture."],1,"interested in","Use the -ed adjective to say how a person feels.","Nous sommes intéressés par votre proposition de coentreprise."],
+ [["The meeting was","so boring","that everybody","felt asleep."],3,"fell asleep.","The verb is 'fall asleep' (fell), not 'feel'.","La réunion était si ennuyeuse que tout le monde s'est endormi."],
+ [["She has","worked here","since she","has graduated."],3,"graduated.","'Since' + past simple for the starting point.","Elle travaille ici depuis qu'elle a obtenu son diplôme."],
+ [["Please remember","to lock","the door","when you will leave."],3,"when you leave.","No 'will' after 'when' in a time clause: use the present simple.","N'oubliez pas de fermer la porte à clé quand vous partirez."],
+ [["The staff","are very","grateful of","your support."],2,"grateful for","'Grateful' is followed by 'for' (grateful for something).","Le personnel vous est très reconnaissant de votre soutien."],
+ [["Most of","the information","in the report","are correct."],3,"is correct.","'Information' is uncountable and takes a singular verb.","L'essentiel des informations du rapport est exact."],
+ [["He is","the person","which","manages our accounts."],2,"who","Use 'who' (or 'that') for people, not 'which'.","C'est la personne qui gère nos comptes."],
+ [["We need","to find","a alternative","solution as soon as possible."],2,"an alternative","Use 'an' before a vowel sound.","Nous devons trouver une autre solution dès que possible."],
+ [["Although","the product is expensive,","but","it sells very well."],2,"","'Although' and 'but' cannot be used together: delete 'but'.","Bien que le produit soit cher, il se vend très bien."],
+ [["The manager","asked us","finishing","the report by Friday."],2,"to finish","'Ask someone' is followed by a to-infinitive.","Le directeur nous a demandé de terminer le rapport pour vendredi."],
+ [["I am used","to work","long hours","every week."],1,"to working","'Be used to' is followed by the -ing form.","J'ai l'habitude de travailler de longues heures chaque semaine."],
+ [["The train","to Paris","leaves","at the 7:30."],3,"at 7:30.","No article before a clock time.","Le train pour Paris part à 7 h 30."],
+ [["They told us","that the project","would be finish","by the end of May."],2,"would be finished","Passive voice: be + past participle.","Ils nous ont dit que le projet serait terminé d'ici fin mai."],
+ [["The more","we wait,","the most","expensive it gets."],2,"the more","Double comparative: 'the more ..., the more ...'.","Plus nous attendons, plus cela devient cher."],
+ [["Sheila,","along with her colleagues,","are","attending the conference."],2,"is","The subject is 'Sheila'; 'along with ...' does not make it plural.","Sheila, ainsi que ses collègues, participe à la conférence."],
+ [["Would you mind","to open","the window,","please?"],1,"opening","'Would you mind' is followed by the -ing form.","Cela vous dérangerait-il d'ouvrir la fenêtre, s'il vous plaît ?"],
+ [["He apologised","for to be","late for","the meeting."],1,"for being","A preposition is followed by the -ing form.","Il s'est excusé d'être en retard à la réunion."]
+].forEach(function(a){NORMAL.push({t:'e',s:a[0].join(' '),segs:a[0],k:a[1],fix:a[2],why:a[3],fr:a[4],o:['A','B','C','D']})});
+})();
 
 /* ---------- OUTILS ---------- */
 var NS='http://www.w3.org/2000/svg';
@@ -813,6 +868,7 @@ function scramble(word){
 }
 function makeQ(item){
   if(item.t==='w')return {item:item,type:'w',tiles:scramble(item.w),built:[],answered:false};
+  if(item.t==='e')return {item:item,type:'mc',opts:item.o.map(function(t,i){return {t:t,ok:i===item.k}}),answered:false,fixedOrder:true};
   var opts=shuffle(item.o.map(function(t,i){return {t:t,ok:i===0}}));
   return {item:item,type:'mc',opts:opts,answered:false};
 }
@@ -920,6 +976,12 @@ function sentenceHTML(item,fill,cls){
   return s.replace('___','<span class="gap'+(cls?' '+cls:'')+'" id="gap">'+(fill?esc(fill):'&nbsp;')+'</span>');
 }
 function idle(msg){$('#panel').innerHTML='<div class="idle">'+msg+'</div>'}
+function segHTML(item){
+  return item.segs.map(function(sg,i){return '<span class="seg" data-i="'+i+'"><b class="sl">'+'ABCD'.charAt(i)+'</b>'+esc(sg)+'</span>'}).join(' ');
+}
+function fixedSentence(item){
+  return item.segs.map(function(sg,i){return i===item.k?item.fix:sg}).filter(function(x){return x!==''}).join(' ');
+}
 function tagText(){
   var base=MODE_LABEL[S.q.item.t];
   if(S.ctx.kind==='boom')return 'BOOM question (hard) | '+base;
@@ -930,7 +992,9 @@ function showQuestion(){
   var q=S.q,h=(S.ctx.kind==='arrow'?'<div class="timer"><b id="tbar"></b></div>':'')+'<div class="tag">'+tagText()+'</div>';
   if(!q.t0)q.t0=Date.now();
   if(q.type==='mc'){
-    h+='<div class="sentence">'+sentenceHTML(q.item)+'</div><div class="opts">';
+    if(q.item.t==='e'){
+      h+='<div class="sentence">Which part is <b>wrong</b>?<br>'+segHTML(q.item)+'</div><div class="opts letters">';
+    }else h+='<div class="sentence">'+sentenceHTML(q.item)+'</div><div class="opts">';
     q.opts.forEach(function(o,i){h+='<button class="opt" data-i="'+i+'">'+esc(o.t)+'</button>'});
     h+='</div>';
   }else{
@@ -971,6 +1035,7 @@ function drawWord(){
   $('#undo').disabled=q.answered||!q.built.length;
 }
 function fullSentence(item){
+  if(item.t==='e')return esc(fixedSentence(item));
   if(item.t==='w')return '<b>'+esc(item.w)+'</b> : '+esc(item.fr);
   if(item.s.indexOf('___')<0)return esc(item.s.replace(/\*/g,''))+' <b>'+esc(item.o[0])+'</b>';
   return esc(item.s.replace('___',item.o[0]).replace(/\s*\([a-z]+\)\s*$/,'').replace(/\*/g,''));
@@ -995,7 +1060,7 @@ function onTap(a){
 }
 /* ---------- CHRONO : une flèche revient si on est trop lent ---------- */
 var MAX_RESPAWN=5;
-function timeLimit(q){return q.type==='mc'?20000:40000}
+function timeLimit(q){return q.item.t==='e'?30000:q.type==='mc'?20000:40000}
 function respawn(){
   var best=null;
   S.arrows.forEach(function(a){if(a.removed&&(!best||(a.rm||0)>=(best.rm||0)))best=a});
@@ -1042,6 +1107,17 @@ function answerMC(i){
     else if(k===i)b.classList.add('bad');
   });
   var gap=$('#gap');if(gap){gap.textContent=q.item.o[0];gap.classList.add(ok?'ok':'ko')}
+  if(q.item.t==='e'){
+    var it=q.item;
+    Array.prototype.forEach.call(document.querySelectorAll('.seg'),function(sp){
+      var n=parseInt(sp.getAttribute('data-i'),10);
+      if(n===it.k)sp.classList.add('good');else if(n===i)sp.classList.add('bad');
+    });
+    var seg=it.segs[it.k];
+    $('#fb').innerHTML=(ok?'<span class="ok">Correct.</span> ':'<span class="ko">Wrong.</span> ')+'The error is in <b>('+'ABCD'.charAt(it.k)+')</b>: <s>'+esc(seg)+'</s> '+(it.fix?'&rarr; <b>'+esc(it.fix)+'</b>':'(delete it)')+
+      '<br><em>'+esc(it.why)+'</em><br><em>'+esc(fixedSentence(it))+'</em><br>'+esc(it.fr);
+    settle(ok);return;
+  }
   $('#fb').innerHTML=(ok?'<span class="ok">Correct.</span> ':'<span class="ko">Wrong.</span> ')+
     '<em>'+fullSentence(q.item)+'</em>'+(q.item.t==='t'?'':'<br>'+esc(q.item.fr));
   settle(ok);
