@@ -76,6 +76,7 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
 .recap em{color:var(--muted)}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .big{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:15px}
+.credit{font-family:'JetBrains Mono',monospace;font-size:11px;color:#7f8bab;letter-spacing:.5px;margin-top:6px}
 
 .bonus{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .bonus small{color:var(--muted);font-size:11px;flex:1;min-width:150px;line-height:1.35}
@@ -132,7 +133,7 @@ select.fld{appearance:auto}
   <div class="board" id="board"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
   <section class="panel" id="panel"></section>
   <div id="saveInfo" class="saveinfo"></div>
-  <footer>MARC VASSEUR | POLYTECH LILLE<br>marc.vasseur@polytech-lille.fr</footer>
+  <footer>A game by Marc VASSEUR / Polytech Lille<br>marc.vasseur@polytech-lille.fr</footer>
   <div class="screen on" id="screen"></div>
 </div>
 
@@ -1152,7 +1153,7 @@ function startScreen(){
     '<li>Clear every arrow to finish the level. Check which arrows have a clear path first!</li>'+
     '<li>Every 20 answers you earn a bonus question to win back a life. Every 10 correct answers you earn a BOOM: tap the BOOM button and 3 arrows blow up instantly (the ones blocking the most other arrows).</li></ol></details>'+
     '<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns+
-    '<p>Best score: <b class="big">'+S.best+'</b></p>');
+    '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
   Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(b){
     b.addEventListener('click',function(){
       var k=b.getAttribute('data-c'),on=Object.keys(S.cats).filter(function(x){return S.cats[x]});
