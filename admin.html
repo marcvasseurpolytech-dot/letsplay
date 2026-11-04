@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arrow Escape: teacher dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--navy:#0d1b3a;--navy2:#16294f;--navy3:#1f3868;--gold:#c9a227;--cream:#f5eedc;--red:#e0584f;--green:#3fae76;--muted:#a9b3c9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--navy);color:var(--cream);font-family:'Source Serif 4',Georgia,serif;padding:16px}
+h1{font-family:'Playfair Display',Georgia,serif;font-size:26px;margin:0 0 4px}
+h1 span{color:var(--gold)}
+.sub{color:var(--muted);font-size:14px;margin:0 0 14px}
+.box{background:var(--navy2);border:1px solid rgba(201,162,39,.4);border-radius:12px;padding:14px;max-width:420px}
+input{width:100%;font-family:inherit;font-size:16px;color:var(--cream);background:var(--navy);border:1px solid rgba(245,238,220,.3);border-radius:8px;padding:10px;margin:6px 0}
+.btn{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;background:transparent;color:var(--gold);border:1px solid var(--gold);border-radius:6px;padding:7px 11px;cursor:pointer}
+.btn.solid{background:var(--gold);color:var(--navy)}
+.btn.red{color:var(--red);border-color:var(--red)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.bar input{width:220px;margin:0}
+.msg{color:var(--red);min-height:18px;font-size:14px}
+.cards{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.card{background:var(--navy2);border:1px solid rgba(245,238,220,.14);border-radius:10px;padding:10px 14px;min-width:120px}
+.card b{display:block;font-family:'JetBrains Mono',monospace;font-size:22px;color:var(--gold)}
+.card span{font-size:12px;color:var(--muted)}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid rgba(245,238,220,.12);text-align:left;white-space:nowrap}
+th{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);cursor:pointer;position:sticky;top:0;background:var(--navy)}
+td.num,th.num{text-align:right}
+tr:hover td{background:rgba(255,255,255,.03)}
+.low{color:var(--red)} .ok{color:var(--green)}
+.weak{color:var(--muted);font-size:12px;white-space:normal;min-width:180px}
+footer{margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7f8bab}
+.hide{display:none}
+</style>
+</head>
+<body>
+<h1>ARROW ESCAPE <span>teacher dashboard</span></h1>
+<p class="sub">Progress of every student profile. Data is read from the private data repository.</p>
+
+<div class="box" id="login">
+  <input id="pw" type="password" placeholder="Admin password" autocomplete="current-password">
+  <p class="msg" id="lmsg"></p>
+  <button class="btn solid" id="lgo">Log in</button>
+</div>
+
+<div id="app" class="hide">
+  <div class="cards" id="cards"></div>
+  <div class="bar">
+    <input id="q" placeholder="Search a name...">
+    <button class="btn" id="refresh">Refresh</button>
+    <button class="btn solid" id="xlsx">Export Excel</button>
+    <button class="btn" id="logout">Log out</button>
+    <span class="msg" id="amsg"></span>
+  </div>
+  <div class="wrap"><table>
+    <thead><tr id="head"></tr></thead><tbody id="rows"></tbody>
+  </table></div>
+</div>
+<footer>MARC VASSEUR | POLYTECH LILLE<br>marc.vasseur@polytech-lille.fr</footer>
+
+<script>
+var CATS={c:'Connectors',v:'Irregular verbs',w:'Vocabulary',f:'Word families',p:'Prepositions',l:'Collocations',s:'Synonyms',x:'Phrasal verbs',t:'Translation'};
+var COLS=[['nom','Name'],['createdAt','Created'],['updatedAt','Last activity'],['level','Level','num'],['best','Best score','num'],['answered','Answered','num'],['pct','Correct %','num'],['levelsCleared','Levels cleared','num'],['weak','Work on']];
+var players=[],sortKey='updatedAt',sortDir=-1,token=null;
+function $(s){return document.querySelector(s)}
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function api(action,body){
+  var h={'Content-Type':'application/json'};if(token)h.Authorization='Bearer '+token;
+  return fetch('/api/admin',{method:'POST',headers:h,body:JSON.stringify(Object.assign({action:action},body||{}))})
+    .then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok,status:r.status,j:j}})})
+    .catch(function(){return {ok:false,status:0,j:{error:'No connection to the server.'}}});
+}
+function fmt(d){if(!d)return '';var x=new Date(d);return x.toLocaleDateString('en-GB')+' '+x.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
+function enrich(p){
+  p.pct=p.answered?Math.round(100*p.correct/p.answered):null;
+  var w=Object.keys(p.byCat||{}).map(function(k){var c=p.byCat[k];return {k:k,n:c.n,p:c.n?Math.round(100*c.ok/c.n):100}})
+    .filter(function(x){return x.n>=5&&x.p<80}).sort(function(a,b){return a.p-b.p}).slice(0,3);
+  p.weak=w.map(function(x){return (CATS[x.k]||x.k)+' '+x.p+'%'}).join(', ');
+  return p;
+}
+function render(){
+  var q=$('#q').value.trim().toLowerCase();
+  var list=players.filter(function(p){return !q||p.nom.toLowerCase().indexOf(q)>=0});
+  list.sort(function(a,b){var x=a[sortKey],y=b[sortKey];if(x==null)x='';if(y==null)y='';
+    return (typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y)))*sortDir});
+  var h='';COLS.forEach(function(c){h+='<th class="'+(c[2]||'')+'" data-k="'+c[0]+'">'+c[1]+(sortKey===c[0]?(sortDir>0?' ▲':' ▼'):'')+'</th>'});
+  $('#head').innerHTML=h+'<th></th>';
+  var r='';
+  list.forEach(function(p){
+    r+='<tr><td><b>'+esc(p.nom)+'</b></td><td>'+fmt(p.createdAt)+'</td><td>'+fmt(p.updatedAt)+'</td><td class="num">'+p.level+'</td><td class="num">'+p.best+'</td><td class="num">'+p.answered+'</td>'+
+      '<td class="num '+(p.pct==null?'':p.pct<60?'low':p.pct>=80?'ok':'')+'">'+(p.pct==null?'':p.pct+'%')+'</td><td class="num">'+p.levelsCleared+'</td><td class="weak">'+esc(p.weak)+'</td>'+
+      '<td><button class="btn" data-a="code" data-k="'+esc(p.key)+'">Reset code</button> <button class="btn red" data-a="del" data-k="'+esc(p.key)+'">Delete</button></td></tr>';
+  });
+  $('#rows').innerHTML=r||'<tr><td colspan="10">No profile yet.</td></tr>';
+  var tot=players.length,act=players.filter(function(p){return p.answered>0}).length,ans=players.reduce(function(s,p){return s+p.answered},0),cor=players.reduce(function(s,p){return s+p.correct},0);
+  $('#cards').innerHTML='<div class="card"><b>'+tot+'</b><span>profiles</span></div><div class="card"><b>'+act+'</b><span>have played</span></div><div class="card"><b>'+ans+'</b><span>answers</span></div><div class="card"><b>'+(ans?Math.round(100*cor/ans)+'%':'-')+'</b><span>correct overall</span></div>';
+}
+function load(){
+  $('#amsg').textContent='Loading...';
+  api('list').then(function(r){
+    if(r.status===401){token=null;try{sessionStorage.removeItem('arrowAdmin')}catch(e){}show(false);$('#lmsg').textContent=r.j.error||'';return}
+    if(!r.ok){$('#amsg').textContent=r.j.error||'Error';return}
+    players=r.j.players.map(enrich);$('#amsg').textContent='';render();
+  });
+}
+function show(on){$('#login').classList.toggle('hide',on);$('#app').classList.toggle('hide',!on)}
+$('#lgo').addEventListener('click',function(){
+  $('#lmsg').textContent='Please wait...';
+  api('login',{password:$('#pw').value}).then(function(r){
+    if(!r.ok){$('#lmsg').textContent=r.j.error||'Error';return}
+    token=r.j.token;try{sessionStorage.setItem('arrowAdmin',token)}catch(e){}
+    $('#pw').value='';$('#lmsg').textContent='';show(true);load();
+  });
+});
+$('#pw').addEventListener('keydown',function(e){if(e.key==='Enter')$('#lgo').click()});
+$('#refresh').addEventListener('click',load);
+$('#q').addEventListener('input',render);
+$('#logout').addEventListener('click',function(){token=null;try{sessionStorage.removeItem('arrowAdmin')}catch(e){}show(false)});
+$('#head').addEventListener('click',function(e){
+  var k=e.target.getAttribute&&e.target.getAttribute('data-k');if(!k)return;
+  if(sortKey===k)sortDir=-sortDir;else{sortKey=k;sortDir=(k==='nom'?1:-1)}render();
+});
+$('#rows').addEventListener('click',function(e){
+  var a=e.target.getAttribute('data-a'),k=e.target.getAttribute('data-k');if(!a)return;
+  var p=players.filter(function(x){return x.key===k})[0];if(!p)return;
+  if(a==='code'){
+    var c=window.prompt('New 4-digit code for '+p.nom+':');if(c===null)return;
+    if(!/^\d{4}$/.test(c.trim())){$('#amsg').textContent='The code must be exactly 4 digits.';return}
+    api('resetCode',{key:k,code:c.trim()}).then(function(r){$('#amsg').textContent=r.ok?'Code updated for '+p.nom+'.':(r.j.error||'Error')});
+  }else{
+    if(!window.confirm('Delete the profile of '+p.nom+' and all its progress? This cannot be undone.'))return;
+    api('delete',{key:k}).then(function(r){if(r.ok){players=players.filter(function(x){return x.key!==k});render();$('#amsg').textContent='Deleted.'}else $('#amsg').textContent=r.j.error||'Error'});
+  }
+});
+$('#xlsx').addEventListener('click',function(){
+  if(typeof XLSX==='undefined'){$('#amsg').textContent='Excel library not loaded. Check your connection.';return}
+  var head=['Name','Created','Last activity','Level','Best score','Answered','Correct','Correct %','Levels cleared'].concat(Object.keys(CATS).map(function(k){return CATS[k]+' %'}));
+  var rows=players.map(function(p){
+    return [p.nom,fmt(p.createdAt),fmt(p.updatedAt),p.level,p.best,p.answered,p.correct,p.pct==null?'':p.pct,p.levelsCleared]
+      .concat(Object.keys(CATS).map(function(k){var c=p.byCat&&p.byCat[k];return c&&c.n?Math.round(100*c.ok/c.n):''}));
+  });
+  var ws=XLSX.utils.aoa_to_sheet([head].concat(rows)),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Arrow Escape');XLSX.writeFile(wb,'arrow-escape-progress.xlsx');
+});
+try{var t=sessionStorage.getItem('arrowAdmin');if(t){token=t;show(true);load()}}catch(e){}
+</script>
+</body>
+</html>

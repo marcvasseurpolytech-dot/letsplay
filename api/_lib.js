@@ -47,6 +47,21 @@ async function ghPut(path, content, sha, token, message) {
   return { ok: r.ok, status: r.status };
 }
 
+async function ghList(dir, token) {
+  const r = await fetch(`${API}/repos/${REPO}/contents/${dir}`, { headers: headers(token) });
+  if (r.status === 404) return { items: [] };
+  if (!r.ok) return { error: r.status };
+  const d = await r.json();
+  return { items: Array.isArray(d) ? d.filter(x => x.type === 'file' && x.name.endsWith('.json')) : [] };
+}
+async function ghDelete(path, sha, token, message) {
+  const r = await fetch(`${API}/repos/${REPO}/contents/${path}`, {
+    method: 'DELETE', headers: { ...headers(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: message || `delete ${path}`, sha })
+  });
+  return { ok: r.ok, status: r.status };
+}
+
 // ---- jetons de session signés (le code à 4 chiffres n'est jamais conservé côté navigateur)
 function issueToken(key) {
   const exp = Date.now() + TOKEN_DAYS * 86400000;
@@ -60,6 +75,24 @@ function keyFromRequest(req) {
   const [key, exp, sig] = parts;
   if (!/^[A-Z0-9-]{1,40}$/.test(key) || !/^\d+$/.test(exp) || Number(exp) < Date.now()) return null;
   return safeEqual(sig, hmac('tok:' + key + ':' + exp)) ? key : null;
+}
+
+// ---- administrateur : même mot de passe que les autres outils (empreinte SHA-256), vérifié côté serveur.
+// ADMIN_HASH (variable Vercel) permet de le changer sans toucher au code.
+const DEFAULT_ADMIN_HASH = 'f7ff32b790557d7601029bc0b296115f82e18d799b6e27ba0c6202fdbd1f2a08';
+function checkAdminPassword(pw) {
+  return safeEqual(sha256hex(pw || ''), (process.env.ADMIN_HASH || DEFAULT_ADMIN_HASH).toLowerCase());
+}
+function issueAdminToken() {
+  const exp = Date.now() + 12 * 3600 * 1000;
+  return `adm.${exp}.${hmac('admin:' + exp)}`;
+}
+function isAdmin(req) {
+  const h = req.headers['authorization'] || '';
+  const tok = h.startsWith('Bearer ') ? h.slice(7) : '';
+  const [pre, exp, sig] = tok.split('.');
+  if (pre !== 'adm' || !/^\d+$/.test(exp || '') || Number(exp) < Date.now() || !sig) return false;
+  return safeEqual(sig, hmac('admin:' + exp));
 }
 
 // ---- limitation des essais de connexion (au mieux, par instance et par IP)
@@ -116,6 +149,6 @@ function cleanProgress(p) {
 }
 
 module.exports = {
-  ghGet, ghPut, pathOf, playerKey, codeHash, issueToken, keyFromRequest, safeEqual,
+  ghGet, ghPut, ghList, ghDelete, DIR, checkAdminPassword, issueAdminToken, isAdmin, pathOf, playerKey, codeHash, issueToken, keyFromRequest, safeEqual,
   throttled, noteFailure, clearFailures, cleanProgress
 };

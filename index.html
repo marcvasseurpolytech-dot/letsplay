@@ -738,12 +738,18 @@ function fullSentence(item){
 function onTap(a){
   if(S.busy||S.ended||a.removed)return;
   if(S.pickMode){togglePick(a);return}
-  if(S.ctx&&S.ctx.kind!=='arrow'&&S.q&&!S.q.answered)return;
+  if(S.ctx&&S.ctx.kind!=='arrow'&&S.q&&!S.q.answered){
+    var fb=$('#fb');
+    if(fb&&fb.getAttribute('data-warn')!=='1'){fb.setAttribute('data-warn','1');fb.innerHTML+='<br><span class="ko">Answer this bonus question first (or tap Cancel), then pick your arrows.</span>'}
+    return;
+  }
   clearSel();
   S.sel=a;a.g.classList.add('sel');
   if(a.unlocked){S.ctx={kind:'arrow',arrow:a};attempt(a);return}
   S.ctx={kind:'arrow',arrow:a};
-  S.q=makeQ(drawItem(false));showQuestion();
+  /* Une flèche = une question : elle garde la même question tant qu'on n'y a pas répondu. */
+  if(!a.q)a.q=makeQ(drawItem(false));
+  S.q=a.q;showQuestion();
 }
 function clearSel(){
   S.arrows.forEach(function(a){if(a.g)a.g.classList.remove('sel')});
@@ -790,6 +796,7 @@ function settle(ok){
       S.score+=10;
       a.unlocked=true;a.g.classList.add('open');hud();attempt(a);
     }else{
+      a.q=null;
       S.lives--;clearSel();hud();
       if(S.lives<=0)gameOver();
     }
@@ -800,7 +807,7 @@ function settle(ok){
     hud();
   }else{
     S.boom--;hud();
-    if(ok){setTimeout(startPick,900)}
+    if(ok){startPick(true)}
     else addFb('<br><span class="ko">Bonus lost.</span>');
   }
   scheduleSave();
@@ -847,13 +854,13 @@ function startBonus(kind){
   S.q=makeQ(drawItem(kind==='boom'));
   showQuestion();hud();
 }
-function pickText(){
-  return '<b class="boomtxt">BOOM!</b><br>Tap '+S.need+' arrows to blow up ('+S.pick.length+'/'+S.need+').<br><em>Blocked arrows can be chosen too.</em>';
+function pickText(first){
+  return (first?'<span class="ok">Correct!</span><br>':'')+'<b class="boomtxt">BOOM!</b><br>Tap '+S.need+' arrows to blow up ('+S.pick.length+'/'+S.need+').<br><em>Blocked arrows can be chosen too.</em>';
 }
-function startPick(){
+function startPick(first){
   if(S.ended)return;
   S.pickMode=true;S.pick=[];S.need=Math.min(3,remaining());
-  clearSel();idle(pickText());hud();
+  clearSel();idle(pickText(first));hud();
 }
 function togglePick(a){
   var i=S.pick.indexOf(a);
