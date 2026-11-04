@@ -507,6 +507,181 @@ var CATS = [
 ];
 var MODE_LABEL={c:'Logical connector',v:'Irregular verb',w:'Vocabulary: unscramble the word',f:'Word family',p:'Preposition',l:'Collocation',s:'Synonym in context',x:'Phrasal verb',t:'Translation (French to English)'};
 
+/* ---------- Banque supplementaire (v4) : meme format, o[0] = bonne reponse ---------- */
+(function(){
+function add(t,arr){arr.forEach(function(a){NORMAL.push({t:t,s:a[0],o:a[1],fr:a[2]})})}
+
+add('c',[
+ ["The conference was cancelled ___ a lack of registrations.",["because of","because","although","so that"],"La conférence a été annulée à cause d'un manque d'inscriptions."],
+ ["___ our best efforts, sales fell by ten percent.",["In spite of","Although","Even though","However"],"Malgré tous nos efforts, les ventes ont baissé de dix pour cent."],
+ ["You may use the meeting room ___ you book it in advance.",["as long as","even if","unless","in spite of"],"Vous pouvez utiliser la salle de réunion à condition de la réserver à l'avance."],
+ ["The software is easy to use; ___, it is quite affordable.",["moreover","however","otherwise","whereas"],"Le logiciel est facile à utiliser ; de plus, il est assez abordable."],
+ ["Please arrive early ___ you have time to register.",["so that","as though","even though","in case of"],"Veuillez arriver tôt afin d'avoir le temps de vous inscrire."],
+ ["___ the manager was away, the assistant handled the complaint.",["While","Despite","Due to","Besides"],"Pendant que le directeur était absent, l'assistant a traité la réclamation."],
+ ["We keep spare cables in the office ___ the system fails.",["in case","unless","whereas","so"],"Nous gardons des câbles de rechange au bureau au cas où le système tomberait en panne."],
+ ["He is not only a skilled engineer ___ an excellent manager.",["but also","nor","or else","than"],"Il n'est pas seulement un ingénieur compétent mais aussi un excellent manager."],
+ ["___ the tickets were expensive, the event sold out.",["Even though","Because of","In spite","As a result"],"Bien que les billets aient été chers, l'événement a affiché complet."],
+ ["Sales have risen steadily; ___, profits have remained flat.",["however","therefore","moreover","for example"],"Les ventes ont augmenté régulièrement ; cependant, les bénéfices sont restés stables."],
+ ["The new printer is faster, ___ the old one is more reliable.",["whereas","because","so that","unless"],"La nouvelle imprimante est plus rapide, alors que l'ancienne est plus fiable."],
+ ["___ you have any questions, please contact the help desk.",["Should","Unless","Although","Whereas"],"Si vous avez des questions, veuillez contacter l'assistance."],
+ ["We will start the meeting ___ everyone has arrived.",["as soon as","in spite of","as though","whereas"],"Nous commencerons la réunion dès que tout le monde sera arrivé."],
+ ["He worked late ___ he could finish the report.",["so that","because of","despite","unless"],"Il a travaillé tard afin de pouvoir terminer le rapport."],
+ ["Neither the manager ___ the assistant knew about the change.",["nor","or","and","but"],"Ni le directeur ni l'assistant n'étaient au courant du changement."],
+ ["Either you pay now ___ you pay a late fee later.",["or","nor","but","so"],"Soit vous payez maintenant, soit vous paierez des frais de retard plus tard."],
+ ["The project was completed on time ___ the lack of staff.",["despite","although","whereas","even if"],"Le projet a été terminé à temps malgré le manque de personnel."],
+ ["Prices are going up; ___, customers are buying less.",["as a result","for instance","in contrast to","provided that"],"Les prix augmentent ; par conséquent, les clients achètent moins."],
+ ["You will not receive a refund ___ you have the receipt.",["unless","provided","whereas","because"],"Vous ne serez pas remboursé à moins d'avoir le reçu."],
+ ["___ the high cost, the board rejected the proposal.",["Given","Although","Whereas","Unless"],"Étant donné le coût élevé, le conseil a rejeté la proposition."]
+]);
+
+add('v',[
+ ["She has ___ the report to the director. (bring)",["brought","bringed","broughten","braught"],"Elle a apporté le rapport au directeur."],
+ ["We ___ new equipment last month. (buy)",["bought","buyed","boughten","brought"],"Nous avons acheté du nouveau matériel le mois dernier."],
+ ["The security team has ___ the intruder. (catch)",["caught","catched","cought","catch"],"L'équipe de sécurité a attrapé l'intrus."],
+ ["He ___ the company for ten years before he retired. (run)",["ran","runned","run","runs"],"Il a dirigé l'entreprise pendant dix ans avant de prendre sa retraite."],
+ ["Have you ___ the news about the merger? (hear)",["heard","heared","hearn","hard"],"Avez-vous entendu la nouvelle de la fusion ?"],
+ ["I ___ to call you yesterday, but I was busy. (mean)",["meant","meaned","mean","meaning"],"Je voulais vous appeler hier, mais j'étais occupé."],
+ ["She ___ her application last week. (withdraw)",["withdrew","withdrawed","withdrawn","withdraw"],"Elle a retiré sa candidature la semaine dernière."],
+ ["The firm has ___ a major renovation. (undertake)",["undertaken","undertook","undertaked","undertaking"],"L'entreprise a entrepris une importante rénovation."],
+ ["The director has ___ to the press this morning. (speak)",["spoken","spoke","speaked","speaken"],"Le directeur a parlé à la presse ce matin."],
+ ["We have ___ a new target for next year. (set)",["set","setted","sat","seted"],"Nous avons fixé un nouvel objectif pour l'an prochain."],
+ ["The alarm ___ at six o'clock. (ring)",["rang","rung","ringed","ringing"],"L'alarme a sonné à six heures."],
+ ["Everyone ___ in the meeting room while the boss spoke. (sit)",["sat","sit","sitted","seat"],"Tout le monde était assis dans la salle de réunion pendant que le patron parlait."],
+ ["I have never ___ why the system crashes. (understand)",["understood","understanded","understand","understooden"],"Je n'ai jamais compris pourquoi le système plante."],
+ ["Our sales have ___ up since January. (go)",["gone","went","goed","going"],"Nos ventes ont augmenté depuis janvier."],
+ ["Someone has ___ the files. (hide)",["hidden","hid","hided","hiden"],"Quelqu'un a caché les dossiers."],
+ ["I have ___ him since 2015. (know)",["known","knew","knowed","knowen"],"Je le connais depuis 2015."],
+ ["He has ___ the same suit all week. (wear)",["worn","wore","weared","wearn"],"Il porte le même costume toute la semaine."],
+ ["The wind has ___ the sign off the building. (blow)",["blown","blew","blowed","blowing"],"Le vent a arraché l'enseigne de l'immeuble."],
+ ["After the meeting, everyone ___ relieved. (feel)",["felt","feeled","feel","feeling"],"Après la réunion, tout le monde s'est senti soulagé."],
+ ["I ___ the contract twice yesterday. (read)",["read","readed","red","reading"],"J'ai lu le contrat deux fois hier."]
+]);
+
+/* mots a reconstituer */
+[
+ ["revenue","chiffre d'affaires, revenu"],["expense","dépense, frais"],["purchase","achat, acheter"],["estimate","estimation, estimer"],
+ ["feedback","retour, commentaires"],["mandatory","obligatoire"],["merger","fusion"],["venue","lieu (d'un événement)"],
+ ["proposal","proposition"],["requirement","exigence, condition requise"],["subscription","abonnement"],["cancellation","annulation"],
+ ["reimburse","rembourser"],["workshop","atelier"],["warehouse","entrepôt"],["itinerary","itinéraire, programme de voyage"],
+ ["luggage","bagages"],["vacancy","poste à pourvoir, chambre libre"],["overtime","heures supplémentaires"],["stationery","papeterie, fournitures de bureau"],
+ ["complaint","réclamation, plainte"],["device","appareil, dispositif"],["trainee","stagiaire"],["upgrade","mise à niveau, améliorer"]
+].forEach(function(a){NORMAL.push({t:'w',w:a[0],fr:a[1]})});
+
+add('f',[
+ ["The ___ of the new office was delayed by bad weather.",["construction","construct","constructive","constructively"],"La construction du nouveau bureau a été retardée par le mauvais temps."],
+ ["Our team is highly ___ and meets every target.",["productive","product","production","productively"],"Notre équipe est très productive et atteint tous ses objectifs."],
+ ["He ___ refused to sign the agreement.",["firmly","firm","firmness","firmer"],"Il a fermement refusé de signer l'accord."],
+ ["The ___ of the hotel is excellent, close to the station.",["location","locate","located","locally"],"L'emplacement de l'hôtel est excellent, près de la gare."],
+ ["We were ___ by the speed of the delivery.",["impressed","impress","impressive","impression"],"Nous avons été impressionnés par la rapidité de la livraison."],
+ ["The company offers ___ training for new employees.",["extensive","extend","extension","extensively"],"L'entreprise propose une formation approfondie aux nouveaux employés."],
+ ["It is ___ to leave the building during a fire drill.",["necessary","necessity","necessarily","necessitate"],"Il est nécessaire de quitter le bâtiment pendant un exercice d'évacuation."],
+ ["Her ___ in the negotiation impressed the board.",["performance","perform","performed","performing"],"Sa performance lors de la négociation a impressionné le conseil."],
+ ["The new rules will be ___ applied from January.",["strictly","strict","strictness","stricter"],"Les nouvelles règles seront strictement appliquées à partir de janvier."],
+ ["We need a more ___ way to store the data.",["secure","security","securely","secured"],"Nous avons besoin d'un moyen plus sûr de stocker les données."],
+ ["The ___ between the two companies lasted three years.",["partnership","partner","partnered","partnering"],"Le partenariat entre les deux entreprises a duré trois ans."],
+ ["He gave a ___ explanation of the procedure.",["detailed","detail","detailing","details"],"Il a donné une explication détaillée de la procédure."],
+ ["Several ___ applied for the position.",["candidates","candidacy","candid","candidly"],"Plusieurs candidats ont postulé au poste."],
+ ["The sales manager is very ___ about the new product.",["enthusiastic","enthusiasm","enthusiastically","enthuse"],"Le directeur commercial est très enthousiaste à propos du nouveau produit."],
+ ["The ___ of the machine requires special training.",["operation","operate","operative","operationally"],"Le fonctionnement de la machine nécessite une formation spéciale."],
+ ["The results were ___ better than we expected.",["considerably","considerable","consider","consideration"],"Les résultats étaient nettement meilleurs que prévu."]
+]);
+
+add('p',[
+ ["The meeting is scheduled ___ Tuesday at 3 p.m.",["for","in","by","at"],"La réunion est prévue pour mardi à 15 h."],
+ ["She is in charge ___ the new project.",["of","for","at","to"],"Elle est responsable du nouveau projet."],
+ ["He is responsible ___ the marketing department.",["for","of","to","with"],"Il est responsable du service marketing."],
+ ["The price depends ___ the quantity ordered.",["on","of","from","with"],"Le prix dépend de la quantité commandée."],
+ ["She apologised ___ the delay.",["for","of","to","with"],"Elle s'est excusée pour le retard."],
+ ["We succeeded ___ finding a new supplier.",["in","at","on","for"],"Nous avons réussi à trouver un nouveau fournisseur."],
+ ["The agreement is subject ___ approval by the board.",["to","for","of","with"],"L'accord est soumis à l'approbation du conseil."],
+ ["He is interested ___ joining the training programme.",["in","on","at","for"],"Il est intéressé par le programme de formation."],
+ ["There was a sharp increase ___ prices last year.",["in","of","on","at"],"Il y a eu une forte hausse des prix l'année dernière."],
+ ["Our offices are located ___ the third floor.",["on","in","at","by"],"Nos bureaux sont situés au troisième étage."],
+ ["The conference will take place ___ June 12th.",["on","in","at","by"],"La conférence aura lieu le 12 juin."],
+ ["The report was written ___ the sales team.",["by","from","with","of"],"Le rapport a été rédigé par l'équipe commerciale."],
+ ["Please contact us ___ phone or by email.",["by","with","through","in"],"Veuillez nous contacter par téléphone ou par e-mail."],
+ ["She was promoted ___ senior manager last year.",["to","as","into","for"],"Elle a été promue directrice senior l'année dernière."],
+ ["We are very proud ___ our team's results.",["of","for","about","with"],"Nous sommes très fiers des résultats de notre équipe."],
+ ["The invoice must be paid ___ thirty days.",["within","during","since","until"],"La facture doit être réglée sous trente jours."]
+]);
+
+add('l',[
+ ["Everyone should ___ an effort to arrive on time.",["make","do","take","have"],"Chacun doit faire un effort pour arriver à l'heure."],
+ ["The company decided to ___ out a loan from the bank.",["take","make","put","hold"],"L'entreprise a décidé de contracter un prêt auprès de la banque."],
+ ["Could you ___ me a favour?",["do","make","take","give"],"Pourriez-vous me rendre un service ?"],
+ ["The company will ___ a profit this year.",["make","do","have","take"],"L'entreprise réalisera un bénéfice cette année."],
+ ["We have to ___ a risk if we want to grow.",["take","make","do","have"],"Nous devons prendre un risque si nous voulons croître."],
+ ["He was asked to ___ the minutes of the meeting.",["take","do","make","hold"],"On lui a demandé de rédiger le procès-verbal de la réunion."],
+ ["The firm will ___ a new branch in Lyon next year.",["open","do","make","hold"],"L'entreprise ouvrira une nouvelle agence à Lyon l'année prochaine."],
+ ["He was asked to ___ a speech at the ceremony.",["give","say","tell","speak"],"On lui a demandé de prononcer un discours lors de la cérémonie."],
+ ["Our competitors ___ a lot of pressure on prices.",["put","do","make","take"],"Nos concurrents exercent une forte pression sur les prix."],
+ ["The company has ___ its goals for the year.",["achieved","done","made","won"],"L'entreprise a atteint ses objectifs pour l'année."],
+ ["We should ___ the opportunity to expand abroad.",["seize","do","hit","hold"],"Nous devrions saisir l'occasion de nous développer à l'étranger."],
+ ["Heavy traffic ___ a delay of thirty minutes.",["caused","did","made","took"],"Les embouteillages ont causé un retard de trente minutes."],
+ ["The two companies ___ a deal after long talks.",["struck","did","took","held"],"Les deux entreprises ont conclu un accord après de longues discussions."],
+ ["She is going to ___ a complaint about the service.",["lodge","do","give","say"],"Elle va déposer une plainte au sujet du service."],
+ ["We ___ a lot of money on advertising last year.",["spent","did","made","took"],"Nous avons dépensé beaucoup d'argent en publicité l'an dernier."],
+ ["I would like to ___ an appointment with Dr Smith.",["make","do","take","put"],"J'aimerais prendre rendez-vous avec le Dr Smith."]
+]);
+
+add('s',[
+ ["The company aims to *reduce* its costs. Closest meaning:",["cut","raise","share","check"],"L'entreprise vise à réduire ses coûts."],
+ ["The manager *approved* the request. Closest meaning:",["accepted","refused","delayed","ignored"],"Le directeur a approuvé la demande."],
+ ["The training will *commence* on Monday. Closest meaning:",["start","end","pause","repeat"],"La formation commencera lundi."],
+ ["We need to *purchase* more supplies. Closest meaning:",["buy","sell","store","return"],"Nous devons acheter davantage de fournitures."],
+ ["The results were *significant*. Closest meaning:",["important","small","late","expected"],"Les résultats étaient significatifs."],
+ ["The company *requires* all staff to wear a badge. Closest meaning:",["demands","permits","suggests","avoids"],"L'entreprise exige que tout le personnel porte un badge."],
+ ["The hotel is *adjacent* to the station. Closest meaning:",["next to","far from","opposite","behind"],"L'hôtel est contigu à la gare."],
+ ["Please *submit* your expense report by Monday. Closest meaning:",["hand in","fill in","throw away","check out"],"Veuillez remettre votre note de frais d'ici lundi."],
+ ["The company will *relocate* to Lille. Closest meaning:",["move","expand","close","merge"],"L'entreprise va déménager à Lille."],
+ ["The speaker gave a *brief* summary. Closest meaning:",["short","detailed","boring","formal"],"L'intervenant a donné un bref résumé."],
+ ["Sales were *steady* throughout the year. Closest meaning:",["stable","low","rising","weak"],"Les ventes ont été stables tout au long de l'année."],
+ ["The firm *halted* production because of the strike. Closest meaning:",["stopped","increased","started","moved"],"L'entreprise a interrompu la production à cause de la grève."],
+ ["The contract is *void* if you do not sign it. Closest meaning:",["invalid","new","long","permanent"],"Le contrat est nul si vous ne le signez pas."],
+ ["We were *thrilled* with the results. Closest meaning:",["delighted","worried","bored","confused"],"Nous étions ravis des résultats."],
+ ["The *entire* team attended the training. Closest meaning:",["whole","small","new","best"],"Toute l'équipe a suivi la formation."],
+ ["He *commended* the staff for their hard work. Closest meaning:",["praised","blamed","paid","trained"],"Il a félicité le personnel pour son travail acharné."]
+]);
+
+add('x',[
+ ["The meeting was ___ until next week.",["put off","put on","put up","put down"],"La réunion a été reportée à la semaine prochaine."],
+ ["We ran ___ paper, so I ordered more.",["out of","off","away","down"],"Nous n'avions plus de papier, alors j'en ai commandé."],
+ ["The company is ___ a new product next month.",["bringing out","bringing up","bringing in","bringing about"],"L'entreprise sort un nouveau produit le mois prochain."],
+ ["Can you ___ the new employees around the factory?",["show","go","look","see"],"Pouvez-vous faire visiter l'usine aux nouveaux employés ?"],
+ ["The system broke ___ during the presentation.",["down","off","out of","up"],"Le système est tombé en panne pendant la présentation."],
+ ["Please ___ this form and return it to reception.",["fill in","fill up","fill out of","fill with"],"Veuillez remplir ce formulaire et le remettre à l'accueil."],
+ ["We need to ___ a solution before the deadline.",["come up with","come across","come off","come round"],"Nous devons trouver une solution avant la date limite."],
+ ["She ___ for her colleague while he was on holiday.",["filled in","filled up","filled out","filled with"],"Elle a remplacé son collègue pendant ses vacances."],
+ ["The company ___ two smaller firms last year.",["took over","took off","took up","took out"],"L'entreprise a racheté deux petites sociétés l'année dernière."],
+ ["Prices have ___ since the beginning of the year.",["gone up","gone off","gone out","gone over"],"Les prix ont augmenté depuis le début de l'année."],
+ ["I am ___ you to complete the survey by Friday.",["counting on","counting up","counting out","counting off"],"Je compte sur vous pour remplir l'enquête d'ici vendredi."],
+ ["He ___ his job to look after his children.",["gave up","gave in","gave out","gave off"],"Il a quitté son travail pour s'occuper de ses enfants."],
+ ["The printer has ___ of ink.",["run out","run over","run off","run up"],"L'imprimante n'a plus d'encre."],
+ ["The team ___ the problem and found the cause.",["sorted out","sorted in","sorted up","sorted off"],"L'équipe a réglé le problème et trouvé la cause."],
+ ["Could you ___ this word in the dictionary?",["look up","look after","look into","look out"],"Pourriez-vous chercher ce mot dans le dictionnaire ?"],
+ ["He ___ the meeting at 5 p.m.",["wrapped up","wrapped in","wrapped round","wrapped on"],"Il a conclu la réunion à 17 h."]
+]);
+
+add('t',[
+ ["Il a démissionné hier. => He ___ yesterday.",["resigned","retired","fired","resumed"],"Il a démissionné hier."],
+ ["Ce film est vraiment ennuyeux. => This film is really ___.",["boring","bored","bore","boredom"],"Ce film est vraiment ennuyeux."],
+ ["Il a perdu son emploi. => He ___ his job.",["lost","loosed","missed","left"],"Il a perdu son emploi."],
+ ["Je vous conseille de partir tôt. => I ___ you to leave early.",["advise","advice","advices","adviced"],"Je vous conseille de partir tôt."],
+ ["Il a fait des progrès. => He has made ___.",["progress","a progress","progresses","progressing"],"Il a fait des progrès."],
+ ["Elle m'a donné de bons conseils. => She gave me some good ___.",["advice","advices","advises","advise"],"Elle m'a donné de bons conseils."],
+ ["Les informations sont exactes. => The ___ is correct.",["information","informations","an information","informing"],"Les informations sont exactes."],
+ ["Il travaille ici depuis 2015. => He has worked here ___ 2015.",["since","for","from","ago"],"Il travaille ici depuis 2015."],
+ ["Elle est aussi grande que moi. => She is as tall ___ me.",["as","than","that","like"],"Elle est aussi grande que moi."],
+ ["Il est rentré chez lui. => He went ___.",["home","to home","at home","in home"],"Il est rentré chez lui."],
+ ["J'ai hâte de vous voir. => I look forward to ___ you.",["seeing","see","saw","seen"],"J'ai hâte de vous voir."],
+ ["Cela m'a pris deux heures. => It ___ me two hours.",["took","lasted","needed","spent"],"Cela m'a pris deux heures."],
+ ["Il m'a demandé de l'aider. => He asked me ___ him.",["to help","help","helping","for help"],"Il m'a demandé de l'aider."],
+ ["Il a insisté pour payer. => He insisted ___ paying.",["on","in","to","for"],"Il a insisté pour payer."],
+ ["Nous avons l'habitude de travailler tard. => We are used ___ late.",["to working","to work","for working","at work"],"Nous avons l'habitude de travailler tard."],
+ ["Elle a refusé de signer. => She ___ to sign.",["refused","denied","rejected","avoided"],"Elle a refusé de signer."]
+]);
+})();
+
 /* ---------- OUTILS ---------- */
 var NS='http://www.w3.org/2000/svg';
 function $(s){return document.querySelector(s)}
