@@ -77,6 +77,7 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .big{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:15px}
 .credit{font-family:'JetBrains Mono',monospace;font-size:11px;color:#7f8bab;letter-spacing:.5px;margin-top:6px}
+.banner{display:block;width:100%;max-width:340px;margin:8px auto;background:#0a1530;border:1px solid #c9a22755;border-radius:12px;padding:6px}
 
 .bonus{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .bonus small{color:var(--muted);font-size:11px;flex:1;min-width:150px;line-height:1.35}
@@ -1129,6 +1130,25 @@ function recapHTML(){
   S.missed.forEach(function(it){h+='<div>'+fullSentence(it)+(it.t==='w'||it.t==='t'?'':'<br><em>'+esc(it.fr)+'</em>')+'</div>'});
   return h+'</div>';
 }
+function bannerHTML(){
+  var W=11,H=6,ars=genFull(W,H,4,9),at={},out='';
+  ars.forEach(function(a){a.path.forEach(function(p){at[p[0]+','+p[1]]=a})});
+  ars.forEach(function(a,i){
+    var used={};
+    a.path.forEach(function(p){DIRS.forEach(function(d){var o=at[(p[0]+d[0])+','+(p[1]+d[1])];if(o&&o!==a&&o.col!==undefined)used[o.col]=1})});
+    var c=i%PALETTE.length,t=0;while(used[c]&&t<PALETTE.length){c=(c+1)%PALETTE.length;t++}
+    a.col=c;
+  });
+  ars.forEach(function(a){
+    var n=a.path.length,pts=a.path.map(function(p){return [p[0]+.5,p[1]+.5]}),h=pts[n-1],d=a.dir,pp=[-d[1],d[0]];
+    if(n>1){var q=pts[n-2];pts[n-1]=[h[0]-d[0]*.25,h[1]-d[1]*.25]}
+    var col=PALETTE[a.col];
+    out+='<polyline points="'+pts.map(function(p){return p[0].toFixed(2)+','+p[1].toFixed(2)}).join(' ')+'" fill="none" stroke="'+col+'" stroke-width=".4" stroke-linecap="round" stroke-linejoin="round"/>';
+    var tp=[h[0]+d[0]*.46,h[1]+d[1]*.46],b1=[h[0]-d[0]*.18+pp[0]*.36,h[1]-d[1]*.18+pp[1]*.36],b2=[h[0]-d[0]*.18-pp[0]*.36,h[1]-d[1]*.18-pp[1]*.36];
+    out+='<polygon points="'+[tp,b1,b2].map(function(p){return p[0].toFixed(2)+','+p[1].toFixed(2)}).join(' ')+'" fill="'+col+'" stroke="'+col+'" stroke-width=".08" stroke-linejoin="round"/>';
+  });
+  return '<svg class="banner" viewBox="0 0 '+W+' '+H+'" aria-hidden="true">'+out+'</svg>';
+}
 function startScreen(){
   S.ended=true;S.pickMode=false;S.busy=false;hud();
   if(!Object.keys(S.cats).length)CATS.forEach(function(c){S.cats[c[0]]=true});
@@ -1143,7 +1163,7 @@ function startScreen(){
     btns='<div class="row"><button class="btn solid" id="go">Start</button><button class="btn" id="allc">Select all</button></div>';
   }
   if(!P.user){chips='';btns=''}
-  screen('<h1>ARROW <span>ESCAPE</span></h1><p class="big">TOEIC EDITION</p>'+profileHTML()+
+  screen('<h1>ARROW <span>ESCAPE</span></h1><p class="big">TOEIC EDITION</p>'+bannerHTML()+profileHTML()+
     '<details class="rulebox"'+(P.user||rs?'':' open')+'><summary class="big">Directions</summary>'+
     '<ol class="rules"><li>Create a profile (your name and a 4-digit code) or log in to play.</li><li>Tap an arrow: a TOEIC question locks it.</li>'+
     '<li>Answer correctly and the arrow unlocks, then slides out in the direction of its point.</li>'+
