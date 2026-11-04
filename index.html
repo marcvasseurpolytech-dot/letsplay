@@ -33,12 +33,12 @@ header{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .board{position:relative;background:#0a1530;border:1px solid rgba(201,162,39,.45);border-radius:12px;overflow:hidden;display:flex;justify-content:center}
 #svg{display:block;width:100%;height:auto;max-height:56vh;touch-action:manipulation}
 .arrow{--c:#f5eedc}
-.arrow .body{fill:none;stroke:var(--c);stroke-width:.76;stroke-linecap:round;stroke-linejoin:round}
-.arrow .halo{fill:none;stroke:#fff;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;opacity:0;pointer-events:none}
+.arrow .body{fill:none;stroke:var(--c);stroke-width:.4;stroke-linecap:round;stroke-linejoin:round}
+.arrow .halo{fill:none;stroke:#fff;stroke-width:.62;stroke-linecap:round;stroke-linejoin:round;opacity:0;pointer-events:none}
 .arrow.open .halo{opacity:.95}
 .arrow .head{fill:var(--c);stroke:var(--c);stroke-width:.08;stroke-linejoin:round}
 .arrow.open .head{stroke:#fff;stroke-width:.1}
-.arrow .hit{fill:none;stroke:transparent;stroke-width:.9;stroke-linecap:round;stroke-linejoin:round;pointer-events:stroke;cursor:pointer}
+.arrow .hit{fill:none;stroke:transparent;stroke-width:.72;stroke-linecap:round;stroke-linejoin:round;pointer-events:stroke;cursor:pointer}
 .arrow.sel{filter:drop-shadow(0 0 5px rgba(255,255,255,.95))}
 .arrow.crash{--c:#e0584f}
 .arrow.hint{animation:pulse .5s ease-in-out 3}
@@ -517,7 +517,7 @@ var easeIO=function(u){return u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2};
    Construction de l'extérieur vers l'intérieur : chaque nouvelle flèche a une tête dont la ligne de sortie ne
    traverse que des cases déjà couvertes par des flèches posées avant elle (donc sorties avant elle).
    L'ordre de pose est donc toujours une solution : aucun cycle de blocage n'est possible. */
-var LEVELS=[[10,14,4,9],[11,16,4,10],[12,18,4,11],[12,20,4,12],[13,21,4,12],[14,23,4,13]];
+var LEVELS=[[14,20,6,16],[15,22,6,18],[16,24,6,20],[17,25,6,22],[17,27,6,24],[18,28,6,26]];
 var MAXL=5;
 var PALETTE=['#4cc36e','#4a7be8','#9a6df0','#e65aa8','#f2c230','#f0675a','#2fc4d8'];
 function params(l){return LEVELS[Math.min(l,LEVELS.length)-1]}
@@ -666,15 +666,15 @@ function pos(P,t){
   return [A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f];
 }
 function render(a,s){
-  var end=s+a.n-1,bend=a.n>1?end-.36:end,pts=[pos(a.P,s)];
+  var end=s+a.n-1,bend=a.n>1?end-.25:end,pts=[pos(a.P,s)];
   for(var i=Math.floor(s)+1;i<bend;i++)pts.push(a.P[i]);
   pts.push(pos(a.P,bend));
   var ps=pts.map(function(p){return p[0].toFixed(3)+','+p[1].toFixed(3)}).join(' ');
   a.body.setAttribute('points',ps);a.halo.setAttribute('points',ps);
   var f=pos(a.P,end),d=a.dir,pp=[-d[1],d[0]];
-  var tip=[f[0]+d[0]*.5,f[1]+d[1]*.5];
-  var b1=[f[0]-d[0]*.2+pp[0]*.5,f[1]-d[1]*.2+pp[1]*.5];
-  var b2=[f[0]-d[0]*.2-pp[0]*.5,f[1]-d[1]*.2-pp[1]*.5];
+  var tip=[f[0]+d[0]*.46,f[1]+d[1]*.46];
+  var b1=[f[0]-d[0]*.18+pp[0]*.36,f[1]-d[1]*.18+pp[1]*.36];
+  var b2=[f[0]-d[0]*.18-pp[0]*.36,f[1]-d[1]*.18-pp[1]*.36];
   a.head.setAttribute('points',[tip,b1,b2].map(function(p){return p[0].toFixed(3)+','+p[1].toFixed(3)}).join(' '));
 }
 function assignColors(){
