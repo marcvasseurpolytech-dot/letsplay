@@ -115,7 +115,7 @@ function cleanBoard(b) {
   if (!W || !H || !Array.isArray(b.arrows) || b.arrows.length < 1 || b.arrows.length > 150) return null;
   const arrows = [];
   for (const a of b.arrows) {
-    if (!a || !Array.isArray(a.path) || a.path.length < 2 || a.path.length > 12) return null;
+    if (!a || !Array.isArray(a.path) || a.path.length < 1 || a.path.length > 40) return null;
     const path = a.path.map(p => [int(p && p[0], 0, W - 1, -1), int(p && p[1], 0, H - 1, -1)]);
     if (path.some(p => p[0] < 0 || p[1] < 0)) return null;
     const dir = Array.isArray(a.dir) ? [int(a.dir[0], -1, 1, 0), int(a.dir[1], -1, 1, 0)] : null;
