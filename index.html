@@ -208,12 +208,13 @@ var easeIO=function(u){return u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2};
 /* ---------- GENERATION DES NIVEAUX ---------- */
 /* Chaque flèche est posée de sorte que son trajet de sortie soit libre de toutes les flèches déjà posées :
    l'ordre inverse de pose est donc toujours une solution (aucun cycle de blocage possible). */
-var LEVELS=[[6,6,5,3],[6,7,7,3],[6,8,9,4],[7,8,11,4],[7,9,13,4],[7,10,15,5]];
+var LEVELS=[[10,12,16,4],[10,13,22,5],[11,14,30,5],[11,15,38,6],[12,16,42,6],[12,17,48,6]];
+var MAXL=5;
 function params(l){return LEVELS[Math.min(l,LEVELS.length)-1]}
 
 function genOnce(W,H,target,maxLen){
   var occ={},arrows=[],tries=0;
-  while(arrows.length<target&&tries<800){
+  while(arrows.length<target&&tries<4000){
     tries++;
     var len=2+rnd(maxLen-1);
     var sc=rnd(W),sr=rnd(H);
@@ -257,7 +258,7 @@ function countFree(arrows,W,H){
 function generate(level){
   var p=params(level),W=p[0],H=p[1],target=p[2],maxLen=p[3];
   var best=null;
-  for(var k=0;k<300;k++){
+  for(var k=0;k<120;k++){
     var arrows=genOnce(W,H,target,maxLen);
     var free=countFree(arrows,W,H);
     var score=arrows.length*100-free;
@@ -285,7 +286,7 @@ function drawQuestion(){
 /* ---------- AFFICHAGE ---------- */
 function hud(){
   $('#lvl').textContent=S.level;$('#score').textContent=S.score;
-  var h='';for(var i=0;i<3;i++)h+='<span class="'+(i<S.lives?'':'lost')+'">&#9829;&#xFE0E;</span>';
+  var h='';for(var i=0;i<MAXL;i++)h+='<span class="'+(i<S.lives?'':'lost')+'">&#9829;&#xFE0E;</span>';
   $('#lives').innerHTML=h;
   $('#hintBtn').textContent='Indice ('+S.hints+')';
   $('#hintBtn').disabled=S.hints<=0||S.ended;
@@ -333,7 +334,7 @@ function build(){
     a.body=el('polyline',{'class':'body'},a.g);
     a.head=el('polygon',{'class':'head'},a.g);
     render(a,0);
-    a.hit.addEventListener('click',function(){onTap(a)});
+    a.g.addEventListener('click',function(){onTap(a)});
   });
   rebuildOcc();
 }
@@ -472,7 +473,7 @@ function newGame(mode){
 function startLevel(){
   var g=generate(S.level);
   S.W=g.W;S.H=g.H;S.arrows=g.arrows;
-  S.lives=3;S.hints=2;S.sel=null;S.q=null;S.busy=false;S.ended=false;
+  S.lives=MAXL;S.hints=3;S.sel=null;S.q=null;S.busy=false;S.ended=false;
   build();hud();hideScreen();
   idle('Touchez une flèche pour la déverrouiller.<br>Repérez celles dont le chemin est libre.');
 }
