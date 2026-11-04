@@ -910,6 +910,22 @@ function startBonus(kind){
   S.q=makeQ(drawItem(kind==='boom'));
   showQuestion();hud();
 }
+function boomNow(){
+  if(S.busy||S.ended||S.pickMode||S.boom<=0||remaining()===0)return;
+  clearSel();S.q=null;S.ctx=null;
+  var live=S.arrows.filter(function(a){return !a.removed}),score=new Map();
+  live.forEach(function(a){score.set(a,Math.random()*.5)});
+  live.forEach(function(a){
+    var h=a.path[a.n-1],x=h[0],y=h[1];
+    while(true){x+=a.dir[0];y+=a.dir[1];
+      if(x<0||y<0||x>=S.W||y>=S.H)break;
+      var o=S.occ[key(x,y)];
+      if(o){if(o!==a)score.set(o,score.get(o)+1);break}
+    }
+  });
+  var list=live.sort(function(a,b){return score.get(b)-score.get(a)}).slice(0,Math.min(3,live.length));
+  S.boom--;hud();explode(list);
+}
 function pickText(first){
   return (first?'<span class="ok">Correct!</span><br>':'')+'<b class="boomtxt">BOOM!</b><br>Tap '+S.need+' arrows to blow up ('+S.pick.length+'/'+S.need+').<br><em>Blocked arrows can be chosen too.</em>';
 }
@@ -1134,7 +1150,7 @@ function startScreen(){
     '<li>Answer correctly and the arrow unlocks, then slides out in the direction of its point.</li>'+
     '<li>If another arrow is in the way, you crash and lose a life. A wrong answer costs a life too.</li>'+
     '<li>Clear every arrow to finish the level. Check which arrows have a clear path first!</li>'+
-    '<li>Every 20 answers you earn a bonus question to win back a life. Every 10 correct answers you earn a BOOM: answer a harder question to blow up 3 arrows of your choice.</li></ol></details>'+
+    '<li>Every 20 answers you earn a bonus question to win back a life. Every 10 correct answers you earn a BOOM: tap the BOOM button and 3 arrows blow up instantly (the ones blocking the most other arrows).</li></ol></details>'+
     '<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns+
     '<p>Best score: <b class="big">'+S.best+'</b></p>');
   Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(b){
@@ -1199,7 +1215,7 @@ $('#menuBtn').addEventListener('click',function(){scheduleSave();flush();startSc
 window.addEventListener('pagehide',function(){scheduleSave();flush()});
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'){scheduleSave();flush()}});
 $('#lifeBtn').addEventListener('click',function(){startBonus('life')});
-$('#boomBtn').addEventListener('click',function(){startBonus('boom')});
+$('#boomBtn').addEventListener('click',boomNow);
 window.__g={P:P,snapshot:snapshot,scheduleSave:scheduleSave,flush:flush,S:S,generate:generate,countFree:countFree,blockDist:blockDist,NORMAL:NORMAL,HARD:HARD,CONN:CONN,VERBS:VERBS,WORDS:WORDS,params:params,answerMC:answerMC,makeQ:makeQ,MAXL:MAXL};
 boot();
 startScreen();
