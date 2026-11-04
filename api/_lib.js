@@ -8,7 +8,6 @@ const REPO = process.env.DATA_REPO || 'marcvasseurpolytech-dot/toeic-entrainemen
 const API = 'https://api.github.com';
 const DIR = 'letsplay/players';
 
-const CLASSES = ['TC3 8h','TC3 10h','TC3 14h','TC3 16h','TC4 8h','TC4 10h','TC4 14h','TC4 16h','TC2A3','TC2A4','M1 GC','M1 GM','Booster'];
 const TOKEN_DAYS = 30;
 
 const sha256hex = s => crypto.createHash('sha256').update(String(s)).digest('hex');
@@ -23,12 +22,10 @@ const hmac = s => crypto.createHmac('sha256', secret()).update(s).digest('hex');
 
 function slug(s) {
   return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase()
-    .replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30);
+    .replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 }
-function playerKey(nom, prenom) {
-  const a = slug(nom), b = slug(prenom);
-  return a && b ? a + '_' + b : '';
-}
+// L'identifiant d'un élève est son nom (accents, majuscules et ponctuation ignorés).
+function playerKey(nom) { return slug(nom); }
 const pathOf = key => `${DIR}/${key}.json`;
 const codeHash = (key, code) => hmac('code:' + key + ':' + code);
 
@@ -61,7 +58,7 @@ function keyFromRequest(req) {
   const parts = tok.split('.');
   if (parts.length !== 3) return null;
   const [key, exp, sig] = parts;
-  if (!/^[A-Z0-9-]+_[A-Z0-9-]+$/.test(key) || !/^\d+$/.test(exp) || Number(exp) < Date.now()) return null;
+  if (!/^[A-Z0-9-]{1,40}$/.test(key) || !/^\d+$/.test(exp) || Number(exp) < Date.now()) return null;
   return safeEqual(sig, hmac('tok:' + key + ':' + exp)) ? key : null;
 }
 
@@ -119,6 +116,6 @@ function cleanProgress(p) {
 }
 
 module.exports = {
-  CLASSES, ghGet, ghPut, pathOf, playerKey, codeHash, issueToken, keyFromRequest, safeEqual,
+  ghGet, ghPut, pathOf, playerKey, codeHash, issueToken, keyFromRequest, safeEqual,
   throttled, noteFailure, clearFailures, cleanProgress
 };

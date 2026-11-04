@@ -897,7 +897,6 @@ async function explode0(list){
 }
 
 /* ---------- PROFIL ET SAUVEGARDE ---------- */
-var CLASSES=['TC3 8h','TC3 10h','TC3 14h','TC3 16h','TC4 8h','TC4 10h','TC4 14h','TC4 16h','TC2A3','TC2A4','M1 GC','M1 GM','Booster'];
 var P={user:null,token:null,progress:null,timer:null,dirty:false,flight:false,guest:false,mode:'login',msg:'',confirmNew:false};
 function emptyStats(){return {byCat:{},answered:0,correct:0,levelsCleared:0,maxLevel:1}}
 function normStats(s){
@@ -1010,16 +1009,13 @@ function resume(){
 }
 function profileHTML(){
   if(P.user){
-    return '<div class="profile"><div class="who"><b>'+esc(P.user.prenom)+' '+esc(P.user.nom)+'</b> <span class="muted">('+esc(P.user.dept)+')</span>'+
+    return '<div class="profile"><div class="who"><b>'+esc(P.user.nom)+'</b>'+
       '<button class="btn" id="logout">Log out</button></div>'+statsHTML()+'</div>';
   }
   if(P.guest)return '<div class="profile"><div class="who"><span class="muted">Guest mode: no online save.</span><button class="btn" id="toLogin">Log in</button></div></div>';
-  var su=P.mode==='signup',opts='<option value="">Class...</option>';
-  CLASSES.forEach(function(c){opts+='<option>'+c+'</option>'});
+  var su=P.mode==='signup';
   return '<div class="profile"><div class="tabs"><button class="tab'+(su?'':' on')+'" data-t="login">Log in</button><button class="tab'+(su?' on':'')+'" data-t="signup">Create my profile</button></div>'+
-    '<input class="fld" id="fNom" placeholder="LAST NAME" autocomplete="family-name" maxlength="40">'+
-    '<input class="fld" id="fPre" placeholder="First name" autocomplete="given-name" maxlength="40">'+
-    (su?'<select class="fld" id="fDept">'+opts+'</select>':'')+
+    '<input class="fld" id="fNom" placeholder="Your name (e.g. DUPONT Lea)" autocomplete="name" maxlength="40">'+
     '<input class="fld" id="fCode" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4-digit secret code" autocomplete="off">'+
     '<p class="msg" id="pmsg">'+esc(P.msg)+'</p>'+
     '<div class="row"><button class="btn solid" id="pgo">'+(su?'Create profile':'Log in')+'</button><button class="btn" id="pguest">Play without a profile</button></div>'+
@@ -1035,11 +1031,9 @@ function wireProfile(){
   var go=$('#pgo');
   if(go)go.addEventListener('click',function(){
     var su=P.mode==='signup';
-    var body={nom:$('#fNom').value.trim(),prenom:$('#fPre').value.trim(),code:$('#fCode').value.trim()};
-    if(su)body.dept=$('#fDept').value;
+    var body={nom:$('#fNom').value.trim(),code:$('#fCode').value.trim()};
     var m=$('#pmsg');
-    if(!body.nom||!body.prenom){m.textContent='Please enter your last name and first name.';return}
-    if(su&&!body.dept){m.textContent='Please choose your class.';return}
+    if(!body.nom){m.textContent='Please enter your name.';return}
     if(!/^\d{4}$/.test(body.code)){m.textContent='Your secret code must be exactly 4 digits.';return}
     go.disabled=true;m.textContent='Please wait...';
     post(su?'signup':'login',body).then(function(r){

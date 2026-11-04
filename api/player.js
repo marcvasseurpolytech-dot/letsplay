@@ -16,23 +16,19 @@ module.exports = async (req, res) => {
 
   // ---------------------------------------------------------------- signup
   if (action === 'signup') {
-    const nom = String(b.nom || '').trim().slice(0, 40).toUpperCase();
-    const prenom = String(b.prenom || '').trim().slice(0, 40);
-    const dept = String(b.dept || '').trim();
+    const nom = String(b.nom || '').trim().slice(0, 40);
     const code = String(b.code || '');
-    if (!nom || !prenom) return res.status(400).json({ error: 'Please enter your last name and first name.' });
-    if (!L.CLASSES.includes(dept)) return res.status(400).json({ error: 'Please choose your class from the list.' });
+    const key = L.playerKey(nom);
+    if (!key) return res.status(400).json({ error: 'Please enter your name (letters and digits).' });
     if (!/^\d{4}$/.test(code)) return res.status(400).json({ error: 'Your secret code must be exactly 4 digits.' });
-    const key = L.playerKey(nom, prenom);
-    if (!key) return res.status(400).json({ error: 'Please use letters in your name.' });
     const profile = {
-      nom, prenom, dept, codeHash: L.codeHash(key, code),
+      nom: nom.toUpperCase(), codeHash: L.codeHash(key, code),
       createdAt: new Date().toISOString(), best: 0, progress: null
     };
     // Création sans sha : GitHub refuse (422) si le fichier existe déjà, ce qui garantit l'unicité.
     const r = await L.ghPut(L.pathOf(key), profile, null, ghToken, `new player ${key}`);
-    if (r.ok) return res.json({ token: L.issueToken(key), user: { key, nom, prenom, dept }, progress: null, best: 0 });
-    if (r.status === 422) return res.status(409).json({ error: 'This name is already registered. Please log in instead.' });
+    if (r.ok) return res.json({ token: L.issueToken(key), user: { key, nom: profile.nom }, progress: null, best: 0 });
+    if (r.status === 422) return res.status(409).json({ error: 'This name is already registered. Log in, or add your first name to be unique.' });
     return res.status(500).json({ error: 'Could not create the profile. Try again.' });
   }
 
@@ -40,9 +36,8 @@ module.exports = async (req, res) => {
   if (action === 'login') {
     if (L.throttled(req)) return res.status(429).json({ error: 'Too many attempts. Please wait a few minutes.' });
     const nom = String(b.nom || '').trim().slice(0, 40);
-    const prenom = String(b.prenom || '').trim().slice(0, 40);
     const code = String(b.code || '');
-    const key = L.playerKey(nom, prenom);
+    const key = L.playerKey(nom);
     const bad = () => { L.noteFailure(req); return res.status(401).json({ error: 'Incorrect name or code.' }); };
     if (!key || !/^\d{4}$/.test(code)) return bad();
     const f = await L.ghGet(L.pathOf(key), ghToken);
@@ -50,7 +45,7 @@ module.exports = async (req, res) => {
     if (f.missing || !L.safeEqual(f.data.codeHash || '', L.codeHash(key, code))) return bad();
     L.clearFailures(req);
     const d = f.data;
-    return res.json({ token: L.issueToken(key), user: { key, nom: d.nom, prenom: d.prenom, dept: d.dept }, progress: d.progress || null, best: d.best || 0 });
+    return res.json({ token: L.issueToken(key), user: { key, nom: d.nom }, progress: d.progress || null, best: d.best || 0 });
   }
 
   // ---------------------------------------------------------------- load / save (jeton requis)
