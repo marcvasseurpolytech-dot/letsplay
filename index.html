@@ -94,6 +94,9 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
 .arrow.pick .body{stroke:#ff8a65}
 .arrow.pick .head{fill:#ff8a65;stroke:#ff8a65}
 .boomtxt{color:#ff8a65;font-family:'Playfair Display',Georgia,serif;font-size:22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.chip{font-family:'Source Serif 4',Georgia,serif;font-size:15px;font-weight:600;color:var(--muted);background:transparent;border:1px solid rgba(245,238,220,.3);border-radius:20px;padding:8px 14px;cursor:pointer;touch-action:manipulation}
+.chip.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
 </style>
 </head>
 <body>
@@ -264,8 +267,220 @@ var HARD = [
  ["liability","responsabilité (juridique)"],["stakeholder","partie prenante"],["feasibility","faisabilité"],
  ["manufacturer","fabricant"],["bankruptcy","faillite"],["redundancy","licenciement économique"]
 ].map(function(a){return {t:'w',w:a[0],fr:a[1]}}));
-var NORMAL = CONN.concat(VERBS, WORDS);
-var MODE_LABEL={c:'Logical connector',v:'Irregular verb',w:'Vocabulary: unscramble the word'};
+
+function mk(t,arr){return arr.map(function(a){return {t:t,s:a[0],o:a[1],fr:a[2]}})}
+
+/* f : word families */
+var FAM = mk('f',[
+ ["The new manager spoke ___ about the merger.",["confidently","confident","confidence","confide"],"Le nouveau directeur a parlé avec assurance de la fusion."],
+ ["Improving energy ___ is our main goal.",["efficiency","efficient","efficiently","effect"],"Améliorer l'efficacité énergétique est notre objectif principal."],
+ ["Please submit your ___ before the deadline.",["application","apply","applicant","applying"],"Veuillez soumettre votre candidature avant la date limite."],
+ ["The ___ of the new software will take two weeks.",["installation","install","installed","installer"],"L'installation du nouveau logiciel prendra deux semaines."],
+ ["She is a very ___ employee who never misses a deadline.",["reliable","rely","reliably","reliability"],"C'est une employée très fiable qui ne manque jamais une échéance."],
+ ["The report was ___ written and easy to follow.",["clearly","clear","clarity","clarify"],"Le rapport était clairement rédigé et facile à suivre."],
+ ["The company is ___ for the safety of its workers.",["responsible","response","responsibly","responsibility"],"L'entreprise est responsable de la sécurité de ses employés."],
+ ["His ___ to the team was recognised by the board.",["contribution","contribute","contributory","contributor"],"Sa contribution à l'équipe a été reconnue par le conseil d'administration."],
+ ["The ___ of the product was delayed by two weeks.",["delivery","deliver","deliverer","delivered"],"La livraison du produit a été retardée de deux semaines."],
+ ["We need a more ___ way to process invoices.",["efficient","efficiency","efficiently","effect"],"Nous avons besoin d'une façon plus efficace de traiter les factures."],
+ ["The firm offers ___ priced products.",["competitively","competitive","competition","competitor"],"L'entreprise propose des produits à des prix compétitifs."],
+ ["Safety is our top ___.",["priority","prioritize","prior","prioritized"],"La sécurité est notre priorité absolue."],
+ ["The ___ was announced at the press conference.",["decision","decide","decisive","decisively"],"La décision a été annoncée lors de la conférence de presse."],
+ ["Employees are ___ to wear a badge at all times.",["required","require","requirement","requiring"],"Les employés doivent porter un badge en permanence."],
+ ["The ___ of the building took three years.",["construction","construct","constructive","constructed"],"La construction du bâtiment a pris trois ans."],
+ ["He answered all the questions ___.",["accurately","accurate","accuracy","accuse"],"Il a répondu à toutes les questions avec précision."],
+ ["The new law will have a ___ impact on small businesses.",["significant","significance","significantly","signify"],"La nouvelle loi aura un impact significatif sur les petites entreprises."],
+ ["Sales have increased ___ over the past year.",["dramatically","dramatic","drama","dramatize"],"Les ventes ont augmenté de façon spectaculaire au cours de l'année écoulée."],
+ ["Mr Lee was ___ to the position of director.",["promoted","promotion","promote","promotional"],"M. Lee a été promu au poste de directeur."],
+ ["The hotel offers ___ service to all guests.",["excellent","excellence","excellently","excel"],"L'hôtel offre un excellent service à tous ses clients."],
+ ["Please check the ___ of the information before publishing it.",["accuracy","accurate","accurately","accuse"],"Veuillez vérifier l'exactitude de l'information avant de la publier."],
+ ["She was ___ surprised by the result.",["genuinely","genuine","genuineness","genus"],"Elle a été sincèrement surprise par le résultat."],
+ ["Increased ___ is the key to our success.",["productivity","productive","productively","producer"],"L'augmentation de la productivité est la clé de notre réussite."],
+ ["The board has ___ the proposal.",["approved","approval","approve","approving"],"Le conseil d'administration a approuvé la proposition."]
+]);
+
+/* p : prepositions et paires */
+var PREP = mk('p',[
+ ["The report must be submitted ___ Friday at the latest.",["by","until","during","since"],"Le rapport doit être remis au plus tard vendredi."],
+ ["The shop stays open ___ 9 pm.",["until","by","during","since"],"Le magasin reste ouvert jusqu'à 21 h."],
+ ["The system crashed ___ the update.",["during","for","while","since"],"Le système a planté pendant la mise à jour."],
+ ["We have worked with this supplier ___ five years.",["for","since","during","ago"],"Nous travaillons avec ce fournisseur depuis cinq ans."],
+ ["We have worked with this supplier ___ 2018.",["since","for","during","from"],"Nous travaillons avec ce fournisseur depuis 2018."],
+ ["The decision depends ___ the budget.",["on","of","from","to"],"La décision dépend du budget."],
+ ["He is responsible ___ the delay.",["for","of","about","with"],"Il est responsable du retard."],
+ ["We are looking forward ___ meeting you next week.",["to","for","at","about"],"Nous avons hâte de vous rencontrer la semaine prochaine."],
+ ["The manager is in charge ___ the new project.",["of","for","on","about"],"Le responsable est chargé du nouveau projet."],
+ ["He apologised ___ the delay.",["for","of","with","at"],"Il s'est excusé du retard."],
+ ["The company specialises ___ renewable energy.",["in","on","at","of"],"L'entreprise est spécialisée dans les énergies renouvelables."],
+ ["Please reply ___ this email as soon as possible.",["to","at","for","on"],"Merci de répondre à cet e-mail dès que possible."],
+ ["The conference takes place ___ 14 March.",["on","in","at","by"],"La conférence a lieu le 14 mars."],
+ ["The meeting starts ___ 9 a.m.",["at","on","in","by"],"La réunion commence à 9 h."],
+ ["Prices will rise ___ 5% next year.",["by","of","from","on"],"Les prix augmenteront de 5 % l'an prochain."],
+ ["She has been ___ holiday since Monday.",["on","in","at","for"],"Elle est en vacances depuis lundi."],
+ ["We are interested ___ your proposal.",["in","on","by","for"],"Votre proposition nous intéresse."],
+ ["He is good ___ negotiating with clients.",["at","in","on","for"],"Il est doué pour négocier avec les clients."],
+ ["The company is famous ___ its customer service.",["for","of","with","about"],"L'entreprise est célèbre pour son service client."],
+ ["I would like to apply ___ the position of sales manager.",["for","to","at","on"],"Je souhaite postuler au poste de responsable des ventes."],
+ ["The delivery will arrive ___ three days.",["in","at","during","since"],"La livraison arrivera dans trois jours."],
+ ["We will finish the work ___ three days.",["within","since","during","by"],"Nous terminerons le travail en moins de trois jours."],
+ ["The new policy is similar ___ the old one.",["to","with","as","than"],"La nouvelle politique est semblable à l'ancienne."],
+ ["There was a shortage ___ skilled workers.",["of","in","for","on"],"Il y avait une pénurie de main-d'œuvre qualifiée."],
+ ["Compared ___ last year, sales have doubled.",["to","than","as","from"],"Par rapport à l'année dernière, les ventes ont doublé."]
+]);
+
+/* l : collocations */
+var COLL = mk('l',[
+ ["We must ___ the deadline, whatever happens.",["meet","hold","do","take"],"Nous devons respecter la date limite, quoi qu'il arrive."],
+ ["The CEO will ___ a meeting at 10 a.m.",["chair","do","make","put"],"Le PDG présidera une réunion à 10 h."],
+ ["Could you ___ an order for 500 units?",["place","do","hold","have"],"Pourriez-vous passer une commande de 500 unités ?"],
+ ["The company decided to ___ a new product next spring.",["launch","throw","pull","hold"],"L'entreprise a décidé de lancer un nouveau produit au printemps prochain."],
+ ["Please ___ a decision by the end of the week.",["make","do","have","go"],"Merci de prendre une décision d'ici la fin de la semaine."],
+ ["We need to ___ a profit this quarter.",["make","do","win","gain"],"Nous devons réaliser un bénéfice ce trimestre."],
+ ["He was asked to ___ a presentation to the board.",["give","tell","say","put"],"On lui a demandé de faire une présentation devant le conseil."],
+ ["The firm had to ___ bankruptcy last year.",["file for","make","do","run"],"L'entreprise a dû déposer le bilan l'an dernier."],
+ ["We should ___ the risks before signing.",["weigh","count","cast","hold"],"Nous devrions peser les risques avant de signer."],
+ ["The company has ___ a loan from the bank.",["taken out","taken up","taken in","taken off"],"L'entreprise a contracté un prêt auprès de la banque."],
+ ["Can you ___ me a favour?",["do","make","give","take"],"Pouvez-vous me rendre un service ?"],
+ ["The new manager wants to ___ changes to the schedule.",["make","do","put","hold"],"Le nouveau responsable veut apporter des modifications au planning."],
+ ["Let me ___ you an example.",["give","tell","say","speak"],"Laissez-moi vous donner un exemple."],
+ ["The two companies ___ a partnership last year.",["formed","did","took","held"],"Les deux entreprises ont formé un partenariat l'an dernier."],
+ ["He ___ a complaint about the poor service.",["made","did","took","gave"],"Il a déposé une plainte à propos du mauvais service."],
+ ["Please ___ attention to the safety instructions.",["pay","make","do","put"],"Veuillez prêter attention aux consignes de sécurité."],
+ ["We ___ a lot of progress this month.",["made","did","took","got"],"Nous avons fait beaucoup de progrès ce mois-ci."],
+ ["The team must ___ a budget for the project.",["draw up","draw out","draw off","draw down"],"L'équipe doit établir un budget pour le projet."],
+ ["The airline had to ___ all flights because of the storm.",["cancel","miss","lose","break"],"La compagnie aérienne a dû annuler tous les vols à cause de la tempête."],
+ ["I would like to ___ an appointment with Dr Lee.",["make","do","take","hold"],"Je voudrais prendre rendez-vous avec le docteur Lee."],
+ ["The board will ___ a vote on Friday.",["hold","make","do","give"],"Le conseil organisera un vote vendredi."],
+ ["We need to ___ an agreement before the end of the month.",["reach","do","hold","win"],"Nous devons parvenir à un accord avant la fin du mois."],
+ ["The manager ___ the blame for the failure.",["took","made","did","gave"],"Le responsable a endossé la responsabilité de l'échec."],
+ ["Could you ___ a look at this contract?",["take","do","make","give"],"Pourriez-vous jeter un coup d'œil à ce contrat ?"]
+]);
+
+/* s : synonymes en contexte (le mot en gras est entouré de * ) */
+var SYN = mk('s',[
+ ["The meeting was *postponed* until Friday. Closest meaning:",["delayed","cancelled","shortened","repeated"],"La réunion a été reportée à vendredi."],
+ ["The company plans to *expand* into Asia. Closest meaning:",["grow","shrink","move","close"],"L'entreprise prévoit de se développer en Asie."],
+ ["Please *forward* the email to the whole team. Closest meaning:",["send on","delete","reply to","print"],"Veuillez transférer l'e-mail à toute l'équipe."],
+ ["The supplier *guaranteed* delivery within a week. Closest meaning:",["promised","doubted","refused","delayed"],"Le fournisseur a garanti la livraison sous une semaine."],
+ ["The manager *rejected* the proposal. Closest meaning:",["turned down","accepted","postponed","amended"],"Le responsable a rejeté la proposition."],
+ ["We need to *reduce* our expenses. Closest meaning:",["cut","raise","share","record"],"Nous devons réduire nos dépenses."],
+ ["The two firms will *merge* next year. Closest meaning:",["combine","compete","separate","borrow"],"Les deux entreprises fusionneront l'an prochain."],
+ ["She *resigned* last week. Closest meaning:",["quit","was fired","was hired","was promoted"],"Elle a démissionné la semaine dernière."],
+ ["The report contains *numerous* errors. Closest meaning:",["many","few","serious","minor"],"Le rapport contient de nombreuses erreurs."],
+ ["The CEO gave a *brief* speech. Closest meaning:",["short","boring","formal","long"],"Le PDG a fait un bref discours."],
+ ["We were *obliged* to cancel the event. Closest meaning:",["forced","allowed","hoping","pleased"],"Nous avons été contraints d'annuler l'événement."],
+ ["The software is *compatible* with all devices. Closest meaning:",["able to work with","similar to","cheaper than","newer than"],"Le logiciel est compatible avec tous les appareils."],
+ ["He *attended* the conference in Paris. Closest meaning:",["went to","organised","cancelled","paid for"],"Il a assisté à la conférence à Paris."],
+ ["The firm is *seeking* a new accountant. Closest meaning:",["looking for","paying","firing","thanking"],"L'entreprise recherche un nouveau comptable."],
+ ["The results were *disappointing*. Closest meaning:",["unsatisfactory","impressive","unexpected","delayed"],"Les résultats étaient décevants."],
+ ["Prices have *fluctuated* this year. Closest meaning:",["gone up and down","risen steadily","fallen sharply","stayed stable"],"Les prix ont fluctué cette année."],
+ ["The project is *ahead of schedule*. Closest meaning:",["earlier than planned","over budget","behind plan","on hold"],"Le projet est en avance sur le calendrier."],
+ ["The new policy will *benefit* all employees. Closest meaning:",["help","harm","replace","inform"],"La nouvelle politique profitera à tous les employés."],
+ ["Please *submit* your expense report by Friday. Closest meaning:",["hand in","write","correct","copy"],"Veuillez remettre votre note de frais d'ici vendredi."],
+ ["The contract was *terminated* last month. Closest meaning:",["ended","signed","renewed","extended"],"Le contrat a été résilié le mois dernier."],
+ ["The company is *reluctant* to raise prices. Closest meaning:",["unwilling","eager","ready","forced"],"L'entreprise rechigne à augmenter ses prix."],
+ ["The manager *praised* the team's effort. Closest meaning:",["complimented","criticised","ignored","replaced"],"Le responsable a félicité les efforts de l'équipe."],
+ ["Sales *plummeted* in January. Closest meaning:",["fell sharply","rose slightly","stayed flat","recovered"],"Les ventes ont chuté en janvier."],
+ ["We need an *accurate* estimate. Closest meaning:",["precise","quick","cheap","rough"],"Nous avons besoin d'une estimation précise."]
+]);
+
+/* x : phrasal verbs */
+var PHR = mk('x',[
+ ["The match was ___ because of the rain.",["called off","called in","called up","called on"],"Le match a été annulé à cause de la pluie."],
+ ["The committee will ___ the complaint and report back.",["look into","look after","look up to","look out"],"Le comité examinera la plainte et fera un compte rendu."],
+ ["Could you ___ the figures before the meeting?",["go over","go off","go out","go up"],"Pourriez-vous revoir les chiffres avant la réunion ?"],
+ ["They ___ the offer because the salary was too low.",["turned down","turned up","turned on","turned in"],"Ils ont refusé l'offre parce que le salaire était trop bas."],
+ ["The company plans to ___ a new branch in Lyon.",["set up","set off","set down","set out"],"L'entreprise prévoit d'ouvrir une nouvelle agence à Lyon."],
+ ["We have to ___ the meeting until next week.",["put off","put on","put up","put out"],"Nous devons repousser la réunion à la semaine prochaine."],
+ ["The engineers will ___ the tests tomorrow.",["carry out","carry in","carry down","carry round"],"Les ingénieurs effectueront les tests demain."],
+ ["Please ___ this form and return it to HR.",["fill in","fill up","fill down","fill off"],"Veuillez remplir ce formulaire et le renvoyer aux RH."],
+ ["Sales have ___ since we changed our strategy.",["picked up","picked out","picked on","picked off"],"Les ventes ont repris depuis que nous avons changé de stratégie."],
+ ["I can't ___ with this noise any longer.",["put up","put off","put out","put in"],"Je ne supporte plus ce bruit."],
+ ["The printer has ___ again.",["broken down","broken out","broken in","broken up"],"L'imprimante est encore tombée en panne."],
+ ["He ___ the company in 2005 and sold it in 2015.",["set up","set off","set aside","set back"],"Il a créé l'entreprise en 2005 et l'a vendue en 2015."],
+ ["We ran ___ of paper, so we could not print.",["out","off","up","down"],"Nous n'avions plus de papier, donc nous n'avons pas pu imprimer."],
+ ["The CEO will ___ next year after 20 years.",["step down","step in","step over","step by"],"Le PDG quittera ses fonctions l'an prochain après 20 ans."],
+ ["Prices are expected to ___ in the next quarter.",["go up","go on","go off","go in"],"On s'attend à ce que les prix augmentent le trimestre prochain."],
+ ["We need to ___ the contract before signing it.",["read through","read in","read up","read off"],"Nous devons lire attentivement le contrat avant de le signer."],
+ ["She ___ her boss's job when he retired.",["took over","took off","took in","took out"],"Elle a repris le poste de son patron quand il est parti à la retraite."],
+ ["The plane ___ ten minutes late.",["took off","took over","took in","took up"],"L'avion a décollé avec dix minutes de retard."],
+ ["I will ___ the client at the airport.",["pick up","pick at","pick on","pick off"],"J'irai chercher le client à l'aéroport."],
+ ["The deal ___ because the two sides could not agree on the price.",["fell through","fell off","fell out","fell down"],"L'accord a capoté parce que les deux parties n'ont pas réussi à s'entendre sur le prix."],
+ ["The company ___ 50 new employees last year.",["took on","took up","took off","took after"],"L'entreprise a embauché 50 nouveaux employés l'an dernier."],
+ ["Let us ___ the main points before the presentation.",["go through","go out","go off","go by"],"Passons en revue les points principaux avant la présentation."],
+ ["He ___ with his boss about the bonus.",["fell out","fell off","fell behind","fell over"],"Il s'est brouillé avec son patron à propos de la prime."],
+ ["The workshop will ___ at 9 and finish at 5.",["kick off","kick out","kick in","kick up"],"L'atelier commencera à 9 h et finira à 17 h."]
+]);
+
+/* t : traduction FR vers EN (faux amis et pièges) */
+var TRAD = mk('t',[
+ ["Nous avons actuellement 50 employés. => We ___ have 50 employees.",["currently","actually","eventually","finally"],"Nous avons actuellement 50 employés."],
+ ["En fait, la réunion est annulée. => ___, the meeting is cancelled.",["Actually","Currently","Eventually","Recently"],"En fait, la réunion est annulée."],
+ ["Il a finalement accepté l'offre. => He ___ accepted the offer.",["eventually","actually","currently","lately"],"Il a finalement accepté l'offre."],
+ ["C'est un choix raisonnable. => It is a ___ choice.",["sensible","sensitive","sensational","senseless"],"C'est un choix raisonnable."],
+ ["Il assistera à la conférence. => He will ___ the conference.",["attend","assist","assist to","help"],"Il assistera à la conférence."],
+ ["Il passe sa journée à la bibliothèque. => He spends his day at the ___.",["library","bookshop","librarian","bookstand"],"Il passe sa journée à la bibliothèque."],
+ ["Nous attendons votre réponse. => We are ___ your reply.",["waiting for","waiting to","attending","hoping"],"Nous attendons votre réponse."],
+ ["Je travaille ici depuis trois ans. => I ___ here for three years.",["have worked","work","am working","worked"],"Je travaille ici depuis trois ans."],
+ ["Il m'a demandé de l'aide. => He ___ me for help.",["asked","demanded","claimed","wanted"],"Il m'a demandé de l'aide."],
+ ["Il fait semblant d'être occupé. => He ___ to be busy.",["pretends","claims","expects","intends"],"Il fait semblant d'être occupé."],
+ ["Nous sommes contre ce projet. => We are ___ this project.",["against","versus","opposite","contrary"],"Nous sommes contre ce projet."],
+ ["Je suis d'accord avec vous. => I ___ with you.",["agree","am agree","agree to","am agreeing"],"Je suis d'accord avec vous."],
+ ["Il a perdu son travail. => He ___ his job.",["lost","missed","left","failed"],"Il a perdu son travail."],
+ ["Elle a de bonnes connaissances en informatique. => She has good ___ of computing.",["knowledge","knowledges","knowing","science"],"Elle a de bonnes connaissances en informatique."],
+ ["Nous avons besoin de plus d'informations. => We need more ___.",["information","informations","informing","inform"],"Nous avons besoin de plus d'informations."],
+ ["Quel est le prix de cet article ? => What is the ___ of this item?",["price","prize","praise","pride"],"Quel est le prix de cet article ?"],
+ ["Je regrette de ne pas pouvoir venir. => I ___ that I cannot come.",["regret","regrettable","am regret","regretted"],"Je regrette de ne pas pouvoir venir."],
+ ["Il est important de rester calme. => It is important ___ calm.",["to stay","staying","stay","that stay"],"Il est important de rester calme."],
+ ["Ils ont mis fin à leur partenariat. => They ___ their partnership.",["ended","finished","stopped","left"],"Ils ont mis fin à leur partenariat."],
+ ["Pouvez-vous me prêter votre stylo ? => Can you ___ me your pen?",["lend","borrow","rent","owe"],"Pouvez-vous me prêter votre stylo ?"],
+ ["Elle a dû annuler son voyage. => She ___ cancel her trip.",["had to","must","ought","should"],"Elle a dû annuler son voyage."],
+ ["Il vit à Paris depuis 2015. => He has lived in Paris ___ 2015.",["since","for","from","ago"],"Il vit à Paris depuis 2015."],
+ ["Il y a deux ans, nous avons déménagé. => We moved two years ___.",["ago","before","since","last"],"Il y a deux ans, nous avons déménagé."],
+ ["Elle est plus grande que moi. => She is taller ___ me.",["than","that","as","from"],"Elle est plus grande que moi."]
+]);
+
+/* BOOM : questions plus difficiles pour les nouvelles catégories */
+HARD = HARD.concat(
+ mk('f',[
+  ["The ___ of the new regulations caused confusion among employees.",["implementation","implement","implementable","implementer"],"La mise en œuvre des nouvelles réglementations a semé la confusion chez les employés."],
+  ["He is widely ___ as an expert in logistics.",["regarded","regard","regarding","regardless"],"Il est largement considéré comme un expert en logistique."],
+  ["The proposal is ___ unrealistic given our current budget.",["wholly","whole","wholeness","hole"],"La proposition est tout à fait irréaliste compte tenu de notre budget actuel."]
+ ]),
+ mk('p',[
+  ["The shipment is subject ___ customs approval.",["to","of","for","with"],"L'expédition est soumise à l'approbation des douanes."],
+  ["The new software is compatible ___ all operating systems.",["with","to","for","of"],"Le nouveau logiciel est compatible avec tous les systèmes d'exploitation."],
+  ["The agreement remains in force ___ further notice.",["until","by","during","for"],"L'accord reste en vigueur jusqu'à nouvel ordre."],
+  ["She was accused ___ leaking confidential data.",["of","for","with","about"],"Elle a été accusée d'avoir divulgué des données confidentielles."]
+ ]),
+ mk('l',[
+  ["The government will ___ a ban on the product.",["impose","hold","do","ask"],"Le gouvernement imposera une interdiction sur le produit."],
+  ["We must ___ a balance between cost and quality.",["strike","throw","shoot","beat"],"Nous devons trouver un équilibre entre coût et qualité."],
+  ["The investors ___ concerns about the merger.",["raised","rose","arose","lifted"],"Les investisseurs ont exprimé des inquiétudes au sujet de la fusion."]
+ ]),
+ mk('s',[
+  ["The auditors found the figures *dubious*. Closest meaning:",["questionable","accurate","impressive","complete"],"Les auditeurs ont jugé les chiffres douteux."],
+  ["The company's *prudent* approach protected it from the crisis. Closest meaning:",["cautious","careless","aggressive","hasty"],"L'approche prudente de l'entreprise l'a protégée de la crise."],
+  ["The manager *mitigated* the risks. Closest meaning:",["reduced","ignored","created","increased"],"Le responsable a atténué les risques."],
+  ["Demand for the product is *dwindling*. Closest meaning:",["decreasing","growing","fluctuating","stable"],"La demande pour le produit diminue peu à peu."]
+ ]),
+ mk('x',[
+  ["The negotiations ___ without any agreement.",["broke down","broke in","broke out","broke into"],"Les négociations ont échoué sans aucun accord."],
+  ["The company ___ a rival firm last year.",["took over","took off","took up","took after"],"L'entreprise a racheté une société concurrente l'an dernier."]
+ ]),
+ mk('t',[
+  ["Bien qu'il soit jeune, il est très compétent. => ___ he is young, he is very competent.",["Although","Despite","However","Whereas"],"Bien qu'il soit jeune, il est très compétent."],
+  ["Il aurait dû nous prévenir. => He ___ have warned us.",["should","must","can","would"],"Il aurait dû nous prévenir."],
+  ["Je n'ai pas vu mon collègue depuis lundi. => I ___ my colleague since Monday.",["have not seen","did not see","do not see","am not seeing"],"Je n'ai pas vu mon collègue depuis lundi."],
+  ["Ça fait deux heures qu'il attend. => He ___ for two hours.",["has been waiting","is waiting","waits","waited"],"Ça fait deux heures qu'il attend."]
+ ])
+);
+
+var NORMAL = CONN.concat(VERBS, WORDS, FAM, PREP, COLL, SYN, PHR, TRAD);
+var CATS = [
+ ['c','Logical connectors'],['v','Irregular verbs'],['w','Vocabulary (unscramble)'],['f','Word families'],
+ ['p','Prepositions'],['l','Collocations'],['s','Synonyms in context'],['x','Phrasal verbs'],['t','French to English']
+];
+var MODE_LABEL={c:'Logical connector',v:'Irregular verb',w:'Vocabulary: unscramble the word',f:'Word family',p:'Preposition',l:'Collocation',s:'Synonym in context',x:'Phrasal verb',t:'Translation (French to English)'};
 
 /* ---------- OUTILS ---------- */
 var NS='http://www.w3.org/2000/svg';
@@ -343,14 +558,14 @@ function generate(level){
 }
 
 /* ---------- ETAT ---------- */
-var S={mode:'m',level:1,score:0,lives:MAXL,hints:3,W:0,H:0,arrows:[],occ:{},sel:null,q:null,ctx:null,
+var S={cats:{},level:1,score:0,lives:MAXL,hints:3,W:0,H:0,arrows:[],occ:{},sel:null,q:null,ctx:null,
   busy:false,ended:true,deck:[],hdeck:[],missed:[],best:0,
   qCount:0,okCount:0,lifeBonus:0,boom:0,pickMode:false,pick:[],need:0};
 try{S.best=parseInt(localStorage.getItem('arrowToeicBest')||'0',10)||0}catch(e){}
 
 function drawItem(hard){
   var k=hard?'hdeck':'deck',src=hard?HARD:NORMAL;
-  if(!S[k].length)S[k]=shuffle(src.filter(function(q){return S.mode==='m'||q.t===S.mode}));
+  if(!S[k].length){var f=src.filter(function(q){return S.cats[q.t]});if(!f.length)f=src;S[k]=shuffle(f)}
   return S[k].pop();
 }
 function scramble(word){
@@ -443,6 +658,7 @@ function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
 function sentenceHTML(item,fill,cls){
   var s=esc(item.s);
   if(item.t==='v')s=s.replace(/\(([a-z]+)\)\s*$/,'<span class="verb">($1)</span>');
+  s=s.replace(/\*([^*]+)\*/g,'<b>$1</b>');
   return s.replace('___','<span class="gap'+(cls?' '+cls:'')+'" id="gap">'+(fill?esc(fill):'&nbsp;')+'</span>');
 }
 function idle(msg){$('#panel').innerHTML='<div class="idle">'+msg+'</div>'}
@@ -497,7 +713,8 @@ function drawWord(){
 }
 function fullSentence(item){
   if(item.t==='w')return '<b>'+esc(item.w)+'</b> : '+esc(item.fr);
-  return esc(item.s.replace('___',item.o[0]).replace(/\s*\([a-z]+\)\s*$/,''));
+  if(item.s.indexOf('___')<0)return esc(item.s.replace(/\*/g,''))+' <b>'+esc(item.o[0])+'</b>';
+  return esc(item.s.replace('___',item.o[0]).replace(/\s*\([a-z]+\)\s*$/,'').replace(/\*/g,''));
 }
 
 /* ---------- JEU ---------- */
@@ -526,9 +743,9 @@ function answerMC(i){
     if(q.opts[k].ok)b.classList.add('good');
     else if(k===i)b.classList.add('bad');
   });
-  var gap=$('#gap');gap.textContent=q.item.o[0];gap.classList.add(ok?'ok':'ko');
+  var gap=$('#gap');if(gap){gap.textContent=q.item.o[0];gap.classList.add(ok?'ok':'ko')}
   $('#fb').innerHTML=(ok?'<span class="ok">Correct.</span> ':'<span class="ko">Wrong.</span> ')+
-    '<em>'+fullSentence(q.item)+'</em><br>'+esc(q.item.fr);
+    '<em>'+fullSentence(q.item)+'</em>'+(q.item.t==='t'?'':'<br>'+esc(q.item.fr));
   settle(ok);
 }
 function checkWord(){
@@ -664,11 +881,14 @@ function hideScreen(){$('#screen').classList.remove('on')}
 function recapHTML(){
   if(!S.missed.length)return '<p>No mistakes this round. Well done.</p>';
   var h='<p class="big">To review ('+S.missed.length+')</p><div class="recap">';
-  S.missed.forEach(function(it){h+='<div>'+fullSentence(it)+(it.t==='w'?'':'<br><em>'+esc(it.fr)+'</em>')+'</div>'});
+  S.missed.forEach(function(it){h+='<div>'+fullSentence(it)+(it.t==='w'||it.t==='t'?'':'<br><em>'+esc(it.fr)+'</em>')+'</div>'});
   return h+'</div>';
 }
 function startScreen(){
   S.ended=true;S.pickMode=false;S.busy=false;hud();
+  if(!Object.keys(S.cats).length)CATS.forEach(function(c){S.cats[c[0]]=true});
+  var chips='';
+  CATS.forEach(function(c){chips+='<button class="chip'+(S.cats[c[0]]?' on':'')+'" data-c="'+c[0]+'">'+c[1]+'</button>'});
   screen('<h1>ARROW <span>ESCAPE</span></h1><p class="big">TOEIC EDITION</p>'+
     '<p class="big">Directions</p>'+
     '<ol class="rules"><li>Tap an arrow: a TOEIC question locks it.</li>'+
@@ -676,19 +896,22 @@ function startScreen(){
     '<li>If another arrow is in the way, you crash and lose a life. A wrong answer costs a life too.</li>'+
     '<li>Clear every arrow to finish the level. Check which arrows have a clear path first!</li>'+
     '<li>Every 20 answers you earn a bonus question to win back a life. Every 10 correct answers you earn a BOOM: answer a harder question to blow up 3 arrows of your choice.</li></ol>'+
-    '<p class="big">Choose a mode</p>'+
-    '<div class="modes">'+
-    '<button class="mode" data-m="c">Logical connectors<small>although, whereas, unless, nevertheless, in case...</small></button>'+
-    '<button class="mode" data-m="v">Irregular verbs<small>past simple and past participle</small></button>'+
-    '<button class="mode" data-m="w">Vocabulary<small>unscramble business and TOEIC words</small></button>'+
-    '<button class="mode" data-m="m">Mixed<small>everything together</small></button></div>'+
+    '<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+
+    '<div class="row"><button class="btn solid" id="go">Start</button><button class="btn" id="allc">Select all</button></div>'+
     '<p>Best score: <b class="big">'+S.best+'</b></p>');
-  Array.prototype.forEach.call(document.querySelectorAll('.mode'),function(b){
-    b.addEventListener('click',function(){newGame(b.getAttribute('data-m'))});
+  Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(b){
+    b.addEventListener('click',function(){
+      var k=b.getAttribute('data-c'),on=Object.keys(S.cats).filter(function(x){return S.cats[x]});
+      if(S.cats[k]&&on.length===1)return;
+      S.cats[k]=!S.cats[k];b.classList.toggle('on',S.cats[k]);
+    });
   });
+  $('#allc').addEventListener('click',function(){CATS.forEach(function(c){S.cats[c[0]]=true});
+    Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(b){b.classList.add('on')})});
+  $('#go').addEventListener('click',newGame);
 }
-function newGame(mode){
-  S.mode=mode;S.level=1;S.score=0;S.deck=[];S.hdeck=[];S.missed=[];
+function newGame(){
+  S.level=1;S.score=0;S.deck=[];S.hdeck=[];S.missed=[];
   S.qCount=0;S.okCount=0;S.lifeBonus=0;S.boom=0;
   startLevel();
 }
