@@ -97,6 +97,22 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
 .chip{font-family:'Source Serif 4',Georgia,serif;font-size:15px;font-weight:600;color:var(--muted);background:transparent;border:1px solid rgba(245,238,220,.3);border-radius:20px;padding:8px 14px;cursor:pointer;touch-action:manipulation}
 .chip.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.profile{background:var(--navy2);border:1px solid rgba(201,162,39,.4);border-radius:12px;padding:12px;margin:10px 0 6px;display:flex;flex-direction:column;gap:8px}
+.who{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.small{font-size:12px;margin:0}
+.tabs{display:flex;gap:6px}
+.tab{flex:1;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--muted);background:transparent;border:1px solid rgba(245,238,220,.25);border-radius:6px;padding:8px;cursor:pointer;touch-action:manipulation}
+.tab.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.fld{width:100%;font-family:'Source Serif 4',Georgia,serif;font-size:16px;color:var(--cream);background:var(--navy);border:1px solid rgba(245,238,220,.3);border-radius:8px;padding:10px}
+.fld::placeholder{color:#6f7b99}
+select.fld{appearance:auto}
+.msg{color:var(--red);min-height:18px;margin:0;font-size:14px}
+.statsline{font-size:13px;color:var(--muted);line-height:1.5}
+.statsline b{color:var(--cream)}
+.rulebox{margin:8px 0}
+.rulebox summary{cursor:pointer;margin:6px 0}
+.saveinfo{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7f8bab;min-height:12px}
 </style>
 </head>
 <body>
@@ -116,6 +132,7 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
   <div class="bonus"><button class="btn" id="lifeBtn" disabled>+1 life (0)</button><button class="btn boom" id="boomBtn" disabled>BOOM (0)</button><small id="bonusInfo"></small></div>
   <div class="board" id="board"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
   <section class="panel" id="panel"></section>
+  <div id="saveInfo" class="saveinfo"></div>
   <footer>MARC VASSEUR | POLYTECH LILLE<br>marc.vasseur@polytech-lille.fr</footer>
   <div class="screen on" id="screen"></div>
 </div>
@@ -762,6 +779,7 @@ function checkWord(){
 function settle(ok){
   var ctx=S.ctx,q=S.q;
   if(!ok&&S.missed.indexOf(q.item)<0)S.missed.push(q.item);
+  var ct=q.item.t,cs=S.stats.byCat[ct]||(S.stats.byCat[ct]={n:0,ok:0});cs.n++;if(ok)cs.ok++;S.stats.answered++;if(ok)S.stats.correct++;
   if(ctx.kind==='arrow'){
     var a=ctx.arrow,msgs=[];
     S.qCount++;if(ok)S.okCount++;
@@ -785,8 +803,9 @@ function settle(ok){
     if(ok){setTimeout(startPick,900)}
     else addFb('<br><span class="ko">Bonus lost.</span>');
   }
+  scheduleSave();
 }
-async function attempt(a){
+async function attempt0(a){
   S.busy=true;hud();
   var d=blockDist(a);
   if(d===Infinity){
@@ -807,12 +826,13 @@ async function attempt(a){
     if(S.lives<=0)gameOver();
   }
 }
+async function attempt(a){await attempt0(a);scheduleSave()}
 function hint(){
   if(S.hints<=0||S.busy||S.ended||S.pickMode)return;
   var free=S.arrows.filter(function(a){return !a.removed&&blockDist(a)===Infinity});
   if(!free.length)return;
   var a=free[rnd(free.length)];
-  S.hints--;hud();
+  S.hints--;hud();scheduleSave();
   a.g.classList.add('hint');
   setTimeout(function(){a.g.classList.remove('hint')},1700);
 }
@@ -866,13 +886,167 @@ function boomFx(a){
     requestAnimationFrame(f);
   });
 }
-async function explode(list){
+async function explode(list){await explode0(list);scheduleSave()}
+async function explode0(list){
   S.busy=true;S.pickMode=false;hud();
   await Promise.all(list.map(boomFx));
   list.forEach(function(a){a.removed=true;a.g.remove()});
   rebuildOcc();S.score+=10*list.length;S.pick=[];S.busy=false;S.q=null;S.ctx=null;hud();
   if(remaining()===0)levelComplete();
   else idle('<b class="boomtxt">BOOM!</b> '+list.length+' arrows destroyed.<br>Pick the next arrow.');
+}
+
+/* ---------- PROFIL ET SAUVEGARDE ---------- */
+var CLASSES=['TC3 8h','TC3 10h','TC3 14h','TC3 16h','TC4 8h','TC4 10h','TC4 14h','TC4 16h','TC2A3','TC2A4','M1 GC','M1 GM','Booster'];
+var P={user:null,token:null,progress:null,timer:null,dirty:false,flight:false,guest:false,mode:'login',msg:'',confirmNew:false};
+function emptyStats(){return {byCat:{},answered:0,correct:0,levelsCleared:0,maxLevel:1}}
+function normStats(s){
+  var o=emptyStats();if(!s||typeof s!=='object')return o;
+  o.answered=s.answered|0;o.correct=s.correct|0;o.levelsCleared=s.levelsCleared|0;o.maxLevel=Math.max(1,s.maxLevel|0);
+  CATS.forEach(function(c){var x=s.byCat&&s.byCat[c[0]];if(x)o.byCat[c[0]]={n:x.n|0,ok:x.ok|0}});
+  return o;
+}
+S.stats=emptyStats();S.active=false;S.levelDone=true;S.nextLevel=0;
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k)}catch(e){}}
+function progKey(){return 'letsplayProg:'+(P.user?P.user.key:'guest')}
+function readLocal(){var j=lsGet(progKey());if(!j)return null;try{return JSON.parse(j)}catch(e){return null}}
+function newer(a,b){if(!a)return b||null;if(!b)return a;return (a.savedAt||0)>=(b.savedAt||0)?a:b}
+function saveSession(){if(P.user&&P.token)lsSet('letsplaySession',JSON.stringify({user:P.user,token:P.token}));else lsDel('letsplaySession')}
+function setStatus(t){var e=$('#saveInfo');if(e)e.textContent=t}
+function post(action,body){
+  var h={'Content-Type':'application/json'};if(P.token)h.Authorization='Bearer '+P.token;
+  return fetch('/api/player',{method:'POST',headers:h,keepalive:true,body:JSON.stringify(Object.assign({action:action},body||{}))})
+    .then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok,status:r.status,j:j}})})
+    .catch(function(){return {ok:false,status:0,j:{error:'No connection to the server.'}}});
+}
+function snapshot(){
+  var board=null;
+  if(!S.levelDone&&S.arrows.length&&remaining()>0){
+    board={W:S.W,H:S.H,arrows:S.arrows.map(function(a){return {path:a.path,dir:a.dir,removed:!!a.removed,unlocked:!!a.unlocked}})};
+  }
+  return {level:S.levelDone?(S.nextLevel||S.level):S.level,score:S.score,best:S.best,lives:S.lives,hints:S.hints,
+    cats:S.cats,qCount:S.qCount,okCount:S.okCount,lifeBonus:S.lifeBonus,boom:S.boom,stats:S.stats,board:board,savedAt:Date.now()};
+}
+function scheduleSave(){
+  if(!S.active)return;
+  var s=snapshot();P.progress=s;lsSet(progKey(),JSON.stringify(s));
+  if(!P.user){setStatus('Guest mode: progress is kept on this device only.');return}
+  P.dirty=true;setStatus('Progress will be saved online in a moment.');
+  clearTimeout(P.timer);P.timer=setTimeout(flush,12000);
+}
+function flush(){
+  clearTimeout(P.timer);
+  if(!P.user||!P.token||!P.dirty)return;
+  if(P.flight){P.timer=setTimeout(flush,3000);return}
+  P.dirty=false;P.flight=true;setStatus('Saving...');
+  post('save',{progress:P.progress}).then(function(r){
+    P.flight=false;
+    if(r.status===401){P.token=null;saveSession();setStatus('Session expired. Log in again to keep saving online.');return}
+    if(!r.ok){P.dirty=true;setStatus('Could not save online. Kept on this device, retrying.');P.timer=setTimeout(flush,30000);return}
+    setStatus('Progress saved online.');
+  });
+}
+function adopt(pr){
+  P.progress=pr||null;
+  S.stats=normStats(pr&&pr.stats);
+  if(pr&&pr.cats){var any=false;CATS.forEach(function(c){if(pr.cats[c[0]])any=true});
+    if(any){S.cats={};CATS.forEach(function(c){S.cats[c[0]]=!!pr.cats[c[0]]})}}
+  if(pr&&pr.best>S.best)S.best=pr.best;
+}
+function onAuth(j){
+  P.user=j.user;P.token=j.token;P.guest=false;P.msg='';saveSession();S.active=false;
+  if(j.best>S.best)S.best=j.best;
+  var local=readLocal(),pr=newer(j.progress,local);
+  adopt(pr);
+  if(pr&&pr===local&&pr!==j.progress){P.dirty=true;flush()}
+}
+function logout(){
+  flush();P.user=null;P.token=null;saveSession();S.active=false;S.stats=emptyStats();
+  P.progress=readLocal();if(P.progress)S.stats=normStats(P.progress.stats);
+  P.mode='login';P.msg='';startScreen();
+}
+function boot(){
+  var j=lsGet('letsplaySession');
+  if(j){try{var o=JSON.parse(j);if(o&&o.token&&o.user){P.user=o.user;P.token=o.token}}catch(e){}}
+  adopt(readLocal());
+  if(P.user){
+    post('load').then(function(r){
+      if(r.status===401){P.user=null;P.token=null;saveSession();P.msg='Your session expired. Please log in again.';adopt(readLocal());if(!S.active)startScreen();return}
+      if(r.ok){
+        if(r.j.best>S.best)S.best=r.j.best;
+        var pr=newer(r.j.progress,readLocal());
+        if(!S.active){adopt(pr);startScreen()}
+      }
+    });
+  }
+}
+function statsHTML(){
+  var st=S.stats;if(!st.answered)return '';
+  var pct=Math.round(100*st.correct/st.answered);
+  var weak=CATS.map(function(c){var x=st.byCat[c[0]]||{n:0,ok:0};return {l:c[1],n:x.n,p:x.n?Math.round(100*x.ok/x.n):100}})
+    .filter(function(x){return x.n>=5&&x.p<80}).sort(function(a,b){return a.p-b.p}).slice(0,3);
+  var h='<div class="statsline">Answered <b>'+st.answered+'</b> | Correct <b>'+pct+'%</b> | Levels cleared <b>'+st.levelsCleared+'</b></div>';
+  if(weak.length)h+='<div class="statsline">Work on: '+weak.map(function(x){return esc(x.l)+' ('+x.p+'%)'}).join(', ')+'</div>';
+  return h;
+}
+function resumable(){var p=P.progress;return !!p&&(!!p.board||p.level>1||p.score>0)}
+function applyProgress(p){
+  S.level=Math.max(1,p.level|0);S.score=p.score|0;S.qCount=p.qCount|0;S.okCount=p.okCount|0;
+  S.lifeBonus=p.lifeBonus|0;S.boom=p.boom|0;S.deck=[];S.hdeck=[];S.missed=[];
+}
+function restoreFlags(flags){
+  S.arrows.forEach(function(a,i){
+    var f=flags[i];if(!f)return;
+    if(f.removed){a.removed=true;a.g.remove()}
+    else if(f.unlocked){a.unlocked=true;a.g.classList.add('open')}
+  });
+  rebuildOcc();
+}
+function resume(){
+  var p=P.progress;if(!p){newGame();return}
+  applyProgress(p);startLevel(p);
+}
+function profileHTML(){
+  if(P.user){
+    return '<div class="profile"><div class="who"><b>'+esc(P.user.prenom)+' '+esc(P.user.nom)+'</b> <span class="muted">('+esc(P.user.dept)+')</span>'+
+      '<button class="btn" id="logout">Log out</button></div>'+statsHTML()+'</div>';
+  }
+  if(P.guest)return '<div class="profile"><div class="who"><span class="muted">Guest mode: no online save.</span><button class="btn" id="toLogin">Log in</button></div></div>';
+  var su=P.mode==='signup',opts='<option value="">Class...</option>';
+  CLASSES.forEach(function(c){opts+='<option>'+c+'</option>'});
+  return '<div class="profile"><div class="tabs"><button class="tab'+(su?'':' on')+'" data-t="login">Log in</button><button class="tab'+(su?' on':'')+'" data-t="signup">Create my profile</button></div>'+
+    '<input class="fld" id="fNom" placeholder="LAST NAME" autocomplete="family-name" maxlength="40">'+
+    '<input class="fld" id="fPre" placeholder="First name" autocomplete="given-name" maxlength="40">'+
+    (su?'<select class="fld" id="fDept">'+opts+'</select>':'')+
+    '<input class="fld" id="fCode" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4-digit secret code" autocomplete="off">'+
+    '<p class="msg" id="pmsg">'+esc(P.msg)+'</p>'+
+    '<div class="row"><button class="btn solid" id="pgo">'+(su?'Create profile':'Log in')+'</button><button class="btn" id="pguest">Play without a profile</button></div>'+
+    '<p class="muted small">Your progress is saved online, so you can continue on any device.</p></div>';
+}
+function wireProfile(){
+  var lo=$('#logout');if(lo)lo.addEventListener('click',logout);
+  var tl=$('#toLogin');if(tl)tl.addEventListener('click',function(){P.guest=false;startScreen()});
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(t){
+    t.addEventListener('click',function(){P.mode=t.getAttribute('data-t');P.msg='';startScreen()});
+  });
+  var g=$('#pguest');if(g)g.addEventListener('click',function(){P.guest=true;startScreen()});
+  var go=$('#pgo');
+  if(go)go.addEventListener('click',function(){
+    var su=P.mode==='signup';
+    var body={nom:$('#fNom').value.trim(),prenom:$('#fPre').value.trim(),code:$('#fCode').value.trim()};
+    if(su)body.dept=$('#fDept').value;
+    var m=$('#pmsg');
+    if(!body.nom||!body.prenom){m.textContent='Please enter your last name and first name.';return}
+    if(su&&!body.dept){m.textContent='Please choose your class.';return}
+    if(!/^\d{4}$/.test(body.code)){m.textContent='Your secret code must be exactly 4 digits.';return}
+    go.disabled=true;m.textContent='Please wait...';
+    post(su?'signup':'login',body).then(function(r){
+      if(r.ok){onAuth(r.j);startScreen();return}
+      go.disabled=false;P.msg=r.j.error||'Something went wrong.';m.textContent=P.msg;
+    });
+  });
 }
 
 /* ---------- ECRANS ---------- */
@@ -889,15 +1063,22 @@ function startScreen(){
   if(!Object.keys(S.cats).length)CATS.forEach(function(c){S.cats[c[0]]=true});
   var chips='';
   CATS.forEach(function(c){chips+='<button class="chip'+(S.cats[c[0]]?' on':'')+'" data-c="'+c[0]+'">'+c[1]+'</button>'});
-  screen('<h1>ARROW <span>ESCAPE</span></h1><p class="big">TOEIC EDITION</p>'+
-    '<p class="big">Directions</p>'+
+  var rs=resumable(),btns;
+  if(P.confirmNew){
+    btns='<p class="msg">Start over? This erases your saved level and score.</p><div class="row"><button class="btn solid" id="yes">Yes, start over</button><button class="btn" id="no">Cancel</button></div>';
+  }else if(rs){
+    btns='<div class="row"><button class="btn solid" id="cont">Continue (level '+Math.max(1,P.progress.level|0)+', score '+(P.progress.score|0)+')</button><button class="btn" id="newg">New game</button></div>';
+  }else{
+    btns='<div class="row"><button class="btn solid" id="go">Start</button><button class="btn" id="allc">Select all</button></div>';
+  }
+  screen('<h1>ARROW <span>ESCAPE</span></h1><p class="big">TOEIC EDITION</p>'+profileHTML()+
+    '<details class="rulebox"'+(P.user||rs?'':' open')+'><summary class="big">Directions</summary>'+
     '<ol class="rules"><li>Tap an arrow: a TOEIC question locks it.</li>'+
     '<li>Answer correctly and the arrow unlocks, then slides out in the direction of its point.</li>'+
     '<li>If another arrow is in the way, you crash and lose a life. A wrong answer costs a life too.</li>'+
     '<li>Clear every arrow to finish the level. Check which arrows have a clear path first!</li>'+
-    '<li>Every 20 answers you earn a bonus question to win back a life. Every 10 correct answers you earn a BOOM: answer a harder question to blow up 3 arrows of your choice.</li></ol>'+
-    '<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+
-    '<div class="row"><button class="btn solid" id="go">Start</button><button class="btn" id="allc">Select all</button></div>'+
+    '<li>Every 20 answers you earn a bonus question to win back a life. Every 10 correct answers you earn a BOOM: answer a harder question to blow up 3 arrows of your choice.</li></ol></details>'+
+    '<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns+
     '<p>Best score: <b class="big">'+S.best+'</b></p>');
   Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(b){
     b.addEventListener('click',function(){
@@ -906,28 +1087,39 @@ function startScreen(){
       S.cats[k]=!S.cats[k];b.classList.toggle('on',S.cats[k]);
     });
   });
-  $('#allc').addEventListener('click',function(){CATS.forEach(function(c){S.cats[c[0]]=true});
+  var allc=$('#allc');if(allc)allc.addEventListener('click',function(){CATS.forEach(function(c){S.cats[c[0]]=true});
     Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(b){b.classList.add('on')})});
-  $('#go').addEventListener('click',newGame);
+  var go=$('#go');if(go)go.addEventListener('click',newGame);
+  var cont=$('#cont');if(cont)cont.addEventListener('click',resume);
+  var ng=$('#newg');if(ng)ng.addEventListener('click',function(){P.confirmNew=true;startScreen()});
+  var yes=$('#yes');if(yes)yes.addEventListener('click',function(){P.confirmNew=false;newGame()});
+  var no=$('#no');if(no)no.addEventListener('click',function(){P.confirmNew=false;startScreen()});
+  wireProfile();
 }
 function newGame(){
   S.level=1;S.score=0;S.deck=[];S.hdeck=[];S.missed=[];
   S.qCount=0;S.okCount=0;S.lifeBonus=0;S.boom=0;
   startLevel();
 }
-function startLevel(){
-  var g=generate(S.level);
+function startLevel(saved){
+  var sb=saved&&saved.board?saved.board:null;
+  var g=sb?{W:sb.W,H:sb.H,arrows:sb.arrows.map(function(a,i){return {id:i,path:a.path,dir:a.dir}})}:generate(S.level);
   S.W=g.W;S.H=g.H;S.arrows=g.arrows;
-  S.lives=MAXL;S.hints=3;S.sel=null;S.q=null;S.ctx=null;S.busy=false;S.ended=false;S.pickMode=false;S.pick=[];
-  build();hud();hideScreen();
+  S.lives=sb?Math.max(1,saved.lives|0):MAXL;S.hints=sb?(saved.hints|0):3;
+  S.sel=null;S.q=null;S.ctx=null;S.busy=false;S.ended=false;S.pickMode=false;S.pick=[];
+  S.levelDone=false;S.nextLevel=0;S.active=true;S.stats.maxLevel=Math.max(S.stats.maxLevel,S.level);
+  build();
+  if(sb)restoreFlags(sb.arrows);
+  hud();hideScreen();
   idle('Tap an arrow to unlock it.<br>Look for arrows with a clear path.');
+  scheduleSave();
 }
 function saveBest(){
   if(S.score>S.best){S.best=S.score;try{localStorage.setItem('arrowToeicBest',String(S.best))}catch(e){}}
 }
 function levelComplete(){
-  S.ended=true;
-  var bonus=S.lives*20;S.score+=bonus;saveBest();hud();
+  S.ended=true;S.levelDone=true;S.nextLevel=S.level+1;S.stats.levelsCleared++;
+  var bonus=S.lives*20;S.score+=bonus;saveBest();hud();scheduleSave();flush();
   setTimeout(function(){
     screen('<h2>Level '+S.level+' cleared</h2><p>Bonus for remaining lives: <b class="big">+'+bonus+'</b><br>Score: <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
       '<div class="row"><button class="btn solid" id="nx">Next level</button><button class="btn" id="mn">Menu</button></div>');
@@ -936,7 +1128,7 @@ function levelComplete(){
   },450);
 }
 function gameOver(){
-  S.ended=true;saveBest();hud();
+  S.ended=true;S.levelDone=true;S.nextLevel=S.level;saveBest();hud();scheduleSave();flush();
   setTimeout(function(){
     screen('<h2>Out of lives</h2><p>Level '+S.level+': score <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
       '<div class="row"><button class="btn solid" id="rt">Replay this level</button><button class="btn" id="mn">Menu</button></div>');
@@ -946,10 +1138,13 @@ function gameOver(){
 }
 
 $('#hintBtn').addEventListener('click',hint);
-$('#menuBtn').addEventListener('click',startScreen);
+$('#menuBtn').addEventListener('click',function(){scheduleSave();flush();startScreen()});
+window.addEventListener('pagehide',function(){scheduleSave();flush()});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'){scheduleSave();flush()}});
 $('#lifeBtn').addEventListener('click',function(){startBonus('life')});
 $('#boomBtn').addEventListener('click',function(){startBonus('boom')});
-window.__g={S:S,generate:generate,countFree:countFree,blockDist:blockDist,NORMAL:NORMAL,HARD:HARD,CONN:CONN,VERBS:VERBS,WORDS:WORDS,params:params,answerMC:answerMC,makeQ:makeQ,MAXL:MAXL};
+window.__g={P:P,snapshot:snapshot,scheduleSave:scheduleSave,flush:flush,S:S,generate:generate,countFree:countFree,blockDist:blockDist,NORMAL:NORMAL,HARD:HARD,CONN:CONN,VERBS:VERBS,WORDS:WORDS,params:params,answerMC:answerMC,makeQ:makeQ,MAXL:MAXL};
+boot();
 startScreen();
 })();
 </script>
