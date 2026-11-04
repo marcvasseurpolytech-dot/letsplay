@@ -82,6 +82,9 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
 .bonus .btn em{font-style:normal;font-size:10px;opacity:.85;letter-spacing:.3px}
 .bonus .btn .prog{display:block;height:4px;border-radius:3px;background:#ffffff22;overflow:hidden}
 .bonus .btn .prog b{display:block;height:100%;background:currentColor;transition:width .4s}
+.timer{height:5px;border-radius:3px;background:#ffffff1f;overflow:hidden;margin-bottom:6px}
+.timer b{display:block;height:100%;width:100%;background:var(--green);transition:width .25s linear}
+.timer b.low{background:var(--red)}
 
 .bonus{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .bonus small{color:var(--muted);font-size:11px;flex:1;min-width:150px;line-height:1.35}
@@ -749,7 +752,8 @@ function tagText(){
   return base;
 }
 function showQuestion(){
-  var q=S.q,h='<div class="tag">'+tagText()+'</div>';
+  var q=S.q,h=(S.ctx.kind==='arrow'?'<div class="timer"><b id="tbar"></b></div>':'')+'<div class="tag">'+tagText()+'</div>';
+  if(!q.t0)q.t0=Date.now();
   if(q.type==='mc'){
     h+='<div class="sentence">'+sentenceHTML(q.item)+'</div><div class="opts">';
     q.opts.forEach(function(o,i){h+='<button class="opt" data-i="'+i+'">'+esc(o.t)+'</button>'});
@@ -814,6 +818,39 @@ function onTap(a){
   if(!a.q)a.q=makeQ(drawItem(false));
   S.q=a.q;showQuestion();
 }
+/* ---------- CHRONO : une flèche revient si on est trop lent ---------- */
+var MAX_RESPAWN=5;
+function timeLimit(q){return q.type==='mc'?20000:40000}
+function respawn(){
+  var best=null;
+  S.arrows.forEach(function(a){if(a.removed&&(!best||(a.rm||0)>=(best.rm||0)))best=a});
+  if(!best||S.respawns>=MAX_RESPAWN)return false;
+  var a=best,svg=$('#svg');
+  a.removed=false;a.unlocked=false;a.q=null;
+  a.g.classList.remove('open','crash','sel','pick','hint');
+  a.g.removeAttribute('transform');a.g.style.transition='none';a.g.style.opacity='0';
+  render(a,0);svg.appendChild(a.g);
+  rebuildOcc();S.respawns++;
+  requestAnimationFrame(function(){requestAnimationFrame(function(){a.g.style.transition='opacity .6s';a.g.style.opacity='1';a.g.classList.add('hint');setTimeout(function(){a.g.classList.remove('hint')},1700)})});
+  scheduleSave();
+  return true;
+}
+function tick(){
+  var q=S.q,bar=$('#tbar');
+  if(!bar)return;
+  if(!q||!S.ctx||S.ctx.kind!=='arrow'||q.answered||S.ended||S.busy||S.pickMode){bar.style.width='0%';return}
+  var el=Date.now()-q.t0,lim=timeLimit(q);
+  bar.style.width=Math.max(0,100-100*el/lim)+'%';
+  bar.classList.toggle('low',el>lim*.7);
+  if(el>=lim){
+    q.t0=Date.now();
+    var did=respawn();
+    addFb('<br><span class="ko">'+(did?'Too slow! A cleared arrow came back.':'Too slow! Hurry up.')+'</span>');
+    hud();
+  }
+}
+setInterval(tick,250);
+
 function clearSel(){
   S.arrows.forEach(function(a){if(a.g)a.g.classList.remove('sel')});
   S.sel=null;
@@ -881,7 +918,7 @@ async function attempt0(a){
   if(d===Infinity){
     var ms=Math.max(380,(a.e+a.n)*55);
     await tween(a,0,a.e+a.n+1.5,ms,easeIn);
-    a.removed=true;a.g.remove();rebuildOcc();
+    a.removed=true;a.rm=++S.rmSeq;a.g.remove();rebuildOcc();
     S.sel=null;S.busy=false;hud();
     if(remaining()===0)levelComplete();
     else addFb('<br><em>Arrow cleared. Pick the next one.</em>');
@@ -976,7 +1013,7 @@ async function explode(list){await explode0(list);scheduleSave()}
 async function explode0(list){
   S.busy=true;S.pickMode=false;hud();
   await Promise.all(list.map(boomFx));
-  list.forEach(function(a){a.removed=true;a.g.remove()});
+  list.forEach(function(a){a.removed=true;a.rm=++S.rmSeq;a.g.remove()});
   rebuildOcc();S.score+=10*list.length;S.pick=[];S.busy=false;S.q=null;S.ctx=null;hud();
   if(remaining()===0)levelComplete();
   else idle('<b class="boomtxt">BOOM!</b> '+list.length+' arrows destroyed.<br>Pick the next arrow.');
@@ -1173,7 +1210,7 @@ function startScreen(){
     '<ol class="rules"><li>Create a profile (your name and a 4-digit code) or log in to play.</li><li>Tap an arrow: a TOEIC question locks it.</li>'+
     '<li>Answer correctly and the arrow unlocks, then slides out in the direction of its point.</li>'+
     '<li>If another arrow is in the way, you crash and lose a life. A wrong answer costs a life too.</li>'+
-    '<li>Clear every arrow to finish the level. Check which arrows have a clear path first!</li>'+
+    '<li>Be quick: if you take more than 20 seconds on a question (40 for a scrambled word), a cleared arrow comes back.</li><li>Clear every arrow to finish the level. Check which arrows have a clear path first!</li>'+
     '<li>Every 20 answers you earn a bonus question to win back a life. Every 10 correct answers you earn a BOOM: tap the BOOM button and 3 arrows blow up instantly (the ones blocking the most other arrows).</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1206,7 +1243,7 @@ function startLevel(saved){
   S.W=g.W;S.H=g.H;S.arrows=g.arrows;
   S.lives=sb?Math.max(1,saved.lives|0):MAXL;S.hints=sb?(saved.hints|0):3;
   S.sel=null;S.q=null;S.ctx=null;S.busy=false;S.ended=false;S.pickMode=false;S.pick=[];
-  S.levelDone=false;S.nextLevel=0;S.active=true;S.stats.maxLevel=Math.max(S.stats.maxLevel,S.level);
+  S.levelDone=false;S.nextLevel=0;S.active=true;S.rmSeq=0;S.respawns=0;S.stats.maxLevel=Math.max(S.stats.maxLevel,S.level);
   build();
   if(sb)restoreFlags(sb.arrows);
   hud();hideScreen();
