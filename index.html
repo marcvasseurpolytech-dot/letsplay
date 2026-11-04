@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -76,6 +76,24 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
 .recap em{color:var(--muted)}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .big{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:15px}
+
+.bonus{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bonus small{color:var(--muted);font-size:11px;flex:1;min-width:150px;line-height:1.35}
+.btn.boom{color:#ff8a65;border-color:#ff8a65}
+.btn.boom:not(:disabled){animation:glow 1.1s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 10px #ff8a65}}
+.slots{display:flex;gap:5px;flex-wrap:wrap;min-height:38px}
+.slot{width:26px;height:36px;border-bottom:2px solid var(--gold);text-align:center;font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--cream);text-transform:uppercase;line-height:34px}
+.slot.ok{color:var(--green);border-color:var(--green)}
+.slot.ko{color:var(--red);border-color:var(--red)}
+.tiles{display:flex;gap:6px;flex-wrap:wrap}
+.tile{width:38px;height:42px;font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;text-transform:uppercase;background:var(--navy3);color:var(--cream);border:1px solid rgba(245,238,220,.3);border-radius:7px;cursor:pointer;touch-action:manipulation}
+.tile:disabled{opacity:.22;cursor:default}
+.row2{display:flex;gap:8px}
+.arrow.pick{filter:drop-shadow(0 0 6px #ff8a65)}
+.arrow.pick .body{stroke:#ff8a65}
+.arrow.pick .head{fill:#ff8a65;stroke:#ff8a65}
+.boomtxt{color:#ff8a65;font-family:'Playfair Display',Georgia,serif;font-size:22px}
 </style>
 </head>
 <body>
@@ -83,15 +101,16 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
   <header>
     <div class="brand">ARROW ESCAPE <span>TOEIC</span></div>
     <div class="stats">
-      <div>Niv. <b id="lvl">1</b></div>
+      <div>Lvl <b id="lvl">1</b></div>
       <div>Score <b id="score">0</b></div>
       <div class="lives" id="lives"></div>
     </div>
   </header>
   <div class="toolbar">
-    <div class="legend"><span><i style="background:var(--cream)"></i>verrouillée</span><span><i style="background:var(--gold)"></i>débloquée</span></div>
-    <div style="display:flex;gap:6px"><button class="btn" id="hintBtn">Indice (2)</button><button class="btn" id="menuBtn">Menu</button></div>
+    <div class="legend"><span><i style="background:var(--cream)"></i>locked</span><span><i style="background:var(--gold)"></i>unlocked</span></div>
+    <div style="display:flex;gap:6px"><button class="btn" id="hintBtn">Hint (3)</button><button class="btn" id="menuBtn">Menu</button></div>
   </div>
+  <div class="bonus"><button class="btn" id="lifeBtn" disabled>+1 life (0)</button><button class="btn boom" id="boomBtn" disabled>BOOM (0)</button><small id="bonusInfo"></small></div>
   <div class="board" id="board"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
   <section class="panel" id="panel"></section>
   <footer>MARC VASSEUR | POLYTECH LILLE<br>marc.vasseur@polytech-lille.fr</footer>
@@ -191,7 +210,62 @@ var VERBS = [
  {s:"The board has ___ a final decision. (make)", o:["made","maked","make","makes"], fr:"Le conseil d'administration a pris une décision finale."}
 ];
 CONN.forEach(function(q){q.t='c'}); VERBS.forEach(function(q){q.t='v'});
-var MODE_LABEL={c:'Connecteur logique',v:'Verbe irrégulier'};
+
+var WORDS = [
+ ["invoice","facture"],["deadline","date limite"],["supplier","fournisseur"],["warranty","garantie"],
+ ["schedule","emploi du temps, planning"],["refund","remboursement"],["colleague","collègue"],
+ ["shipment","expédition (de marchandises)"],["negotiate","négocier"],["headquarters","siège social"],
+ ["recruit","recruter"],["overdue","en retard (paiement)"],["turnover","chiffre d'affaires"],
+ ["premises","locaux"],["workforce","main-d'œuvre"],["shareholder","actionnaire"],["agenda","ordre du jour"],
+ ["delegate","déléguer"],["contractor","entrepreneur, sous-traitant"],["maintenance","entretien, maintenance"],
+ ["efficiency","efficacité"],["inventory","inventaire, stock"],["reliable","fiable"],["outcome","résultat, issue"],
+ ["benefit","avantage"],["branch","succursale, agence"],["payroll","paie, masse salariale"],["quotation","devis"],
+ ["compliance","conformité"],["landlord","propriétaire (bailleur)"],["applicant","candidat (à un poste)"],
+ ["supervisor","responsable, superviseur"],["attachment","pièce jointe"],["handout","document distribué"],
+ ["tenant","locataire"],["resignation","démission"]
+].map(function(a){return {t:'w',w:a[0],fr:a[1]}});
+
+/* Questions plus difficiles pour le bonus BOOM (même format ; o[0] = bonne réponse). */
+var HARD = [
+ {t:'c',s:"___ the fact that the project was over budget, the board approved the extension.", o:["Notwithstanding","Whereas","Provided","Unless"], fr:"Malgré le fait que le projet ait dépassé son budget, le conseil a approuvé la prolongation."},
+ {t:'c',s:"The offer is attractive, ___ somewhat risky.", o:["albeit","whereas","unless","lest"], fr:"L'offre est attrayante, bien que quelque peu risquée."},
+ {t:'c',s:"Employees must lock their computers ___ unauthorized staff gain access to the data.", o:["lest","unless","whereas","albeit"], fr:"Les employés doivent verrouiller leur ordinateur de peur que du personnel non autorisé n'accède aux données."},
+ {t:'c',s:"___ the contract is signed by Friday, the supplier will cancel the order.", o:["Unless","Providing","Whereas","In case of"], fr:"À moins que le contrat ne soit signé d'ici vendredi, le fournisseur annulera la commande."},
+ {t:'c',s:"The warranty is valid ___ the product is used in accordance with the instructions.", o:["only if","even though","as if","whereas"], fr:"La garantie n'est valable que si le produit est utilisé conformément aux instructions."},
+ {t:'c',s:"No sooner had the CEO left the room ___ the board began to argue.", o:["than","when","then","while"], fr:"À peine le PDG avait-il quitté la pièce que le conseil s'est mis à se disputer."},
+ {t:'c',s:"Hardly had the meeting started ___ the fire alarm went off.", o:["when","than","while","until"], fr:"La réunion avait à peine commencé que l'alarme incendie s'est déclenchée."},
+ {t:'c',s:"___ of the outcome, the team will receive a bonus.", o:["Regardless","Despite","Whereas","Provided"], fr:"Quel que soit le résultat, l'équipe recevra une prime."},
+ {t:'c',s:"The company opted for expansion ___ consolidation.", o:["rather than","owing to","whereas","provided"], fr:"L'entreprise a opté pour l'expansion plutôt que pour la consolidation."},
+ {t:'c',s:"The software will be updated ___ the end of the month.", o:["prior to","owing to","in view of","as per"], fr:"Le logiciel sera mis à jour avant la fin du mois."},
+ {t:'c',s:"The plan is acceptable ___ it stays within budget.", o:["insofar as","even though","let alone","owing to"], fr:"Le plan est acceptable dans la mesure où il reste dans les limites du budget."},
+ {t:'c',s:"You may leave early ___ you have finished all your tasks.", o:["so long as","in case","whereas","lest"], fr:"Vous pouvez partir plus tôt tant que vous avez terminé toutes vos tâches."},
+ {t:'c',s:"The merger, ___ was announced yesterday, will create 500 jobs.", o:["which","what","whose","who"], fr:"La fusion, qui a été annoncée hier, créera 500 emplois."},
+ {t:'c',s:"Sales fell sharply; ___, the company remained profitable.", o:["even so","as a result","for example","accordingly"], fr:"Les ventes ont fortement chuté ; malgré tout, l'entreprise est restée rentable."},
+ {t:'c',s:"___ he was offered a higher salary, he refused to leave.", o:["Even though","Provided that","Unless","In case"], fr:"Bien qu'on lui ait proposé un salaire plus élevé, il a refusé de partir."},
+ {t:'c',s:"She is the only candidate ___ experience matches the job description.", o:["whose","who","which","whom"], fr:"C'est la seule candidate dont l'expérience correspond à la description du poste."},
+ {t:'c',s:"Not until the results were published ___ the board realize the scale of the loss.", o:["did","had","was","has"], fr:"Ce n'est qu'après la publication des résultats que le conseil a pris conscience de l'ampleur de la perte."},
+ {t:'v',s:"The company has ___ a major restructuring this year. (undergo)", o:["undergone","underwent","undergoed","undergo"], fr:"L'entreprise a subi une restructuration majeure cette année."},
+ {t:'v',s:"The minister ___ the proposal and left the meeting. (withdraw)", o:["withdrew","withdrawn","withdrawed","withdraw"], fr:"Le ministre a retiré la proposition et a quitté la réunion."},
+ {t:'v',s:"She has ___ the new employee for a client. (mistake)", o:["mistaken","mistook","mistaked","mistake"], fr:"Elle a pris le nouvel employé pour un client."},
+ {t:'v',s:"The firm ___ to reduce its costs by 15%. (undertake)", o:["undertook","undertaken","undertaked","undertake"], fr:"L'entreprise s'est engagée à réduire ses coûts de 15 %."},
+ {t:'v',s:"The manager has ___ the bonus until the audit is complete. (withhold)", o:["withheld","withhold","withholded","withhelt"], fr:"Le responsable a retenu la prime jusqu'à la fin de l'audit."},
+ {t:'v',s:"Smoking is ___ on all company premises. (forbid)", o:["forbidden","forbade","forbidded","forbid"], fr:"Il est interdit de fumer dans tous les locaux de l'entreprise."},
+ {t:'v',s:"The new law has ___ the old regulation. (override)", o:["overridden","overrode","overrided","overriden"], fr:"La nouvelle loi a annulé l'ancienne réglementation."},
+ {t:'v',s:"Nobody had ___ the crisis. (foresee)", o:["foreseen","foresaw","foreseed","foreseeing"], fr:"Personne n'avait prévu la crise."},
+ {t:'v',s:"The workers ___ the cables around the pole. (wind)", o:["wound","winded","wounded","wind"], fr:"Les ouvriers ont enroulé les câbles autour du poteau."},
+ {t:'v',s:"The two companies are ___ by a ten-year contract. (bind)", o:["bound","binded","bind","bounded"], fr:"Les deux entreprises sont liées par un contrat de dix ans."},
+ {t:'v',s:"The team ___ every obstacle and finished on time. (overcome)", o:["overcame","overcome","overcomed","overcoming"], fr:"L'équipe a surmonté tous les obstacles et a terminé dans les temps."},
+ {t:'v',s:"The error was ___ before the report was published. (undo)", o:["undone","undid","undoed","undo"], fr:"L'erreur a été annulée avant la publication du rapport."},
+ {t:'v',s:"The article has been ___ twice by the editor. (rewrite)", o:["rewritten","rewrote","rewrited","rewrit"], fr:"L'article a été réécrit deux fois par le rédacteur."},
+ {t:'v',s:"The scandal has ___ investors' confidence. (shake)", o:["shaken","shook","shaked","shaking"], fr:"Le scandale a ébranlé la confiance des investisseurs."},
+ {t:'v',s:"The machine ___ to a halt at noon. (grind)", o:["ground","grinded","grounded","grind"], fr:"La machine s'est arrêtée net à midi."}
+].concat([
+ ["subcontractor","sous-traitant"],["reimbursement","remboursement (de frais)"],["procurement","approvisionnement, achats"],
+ ["liability","responsabilité (juridique)"],["stakeholder","partie prenante"],["feasibility","faisabilité"],
+ ["manufacturer","fabricant"],["bankruptcy","faillite"],["redundancy","licenciement économique"]
+].map(function(a){return {t:'w',w:a[0],fr:a[1]}}));
+var NORMAL = CONN.concat(VERBS, WORDS);
+var MODE_LABEL={c:'Logical connector',v:'Irregular verb',w:'Vocabulary: unscramble the word'};
 
 /* ---------- OUTILS ---------- */
 var NS='http://www.w3.org/2000/svg';
@@ -269,27 +343,41 @@ function generate(level){
 }
 
 /* ---------- ETAT ---------- */
-var S={mode:'m',level:1,score:0,lives:3,hints:2,W:0,H:0,arrows:[],occ:{},sel:null,q:null,busy:false,ended:true,deck:[],last:null,missed:[],best:0};
+var S={mode:'m',level:1,score:0,lives:MAXL,hints:3,W:0,H:0,arrows:[],occ:{},sel:null,q:null,ctx:null,
+  busy:false,ended:true,deck:[],hdeck:[],missed:[],best:0,
+  qCount:0,okCount:0,lifeBonus:0,boom:0,pickMode:false,pick:[],need:0};
 try{S.best=parseInt(localStorage.getItem('arrowToeicBest')||'0',10)||0}catch(e){}
 
-function pool(){return S.mode==='c'?CONN:S.mode==='v'?VERBS:CONN.concat(VERBS)}
-function drawQuestion(){
-  if(!S.deck.length){
-    S.deck=shuffle(pool());
-    if(S.last&&S.deck.length>1&&S.deck[S.deck.length-1]===S.last){var t=S.deck.pop();S.deck.unshift(t)}
-  }
-  var item=S.deck.pop();S.last=item;
+function drawItem(hard){
+  var k=hard?'hdeck':'deck',src=hard?HARD:NORMAL;
+  if(!S[k].length)S[k]=shuffle(src.filter(function(q){return S.mode==='m'||q.t===S.mode}));
+  return S[k].pop();
+}
+function scramble(word){
+  var letters=word.split(''),out=letters,tries=0;
+  do{out=shuffle(letters);tries++}while(out.join('')===word&&tries<30);
+  return out.map(function(ch,i){return {ch:ch,id:i}});
+}
+function makeQ(item){
+  if(item.t==='w')return {item:item,type:'w',tiles:scramble(item.w),built:[],answered:false};
   var opts=shuffle(item.o.map(function(t,i){return {t:t,ok:i===0}}));
-  return {item:item,opts:opts,answered:false};
+  return {item:item,type:'mc',opts:opts,answered:false};
 }
 
 /* ---------- AFFICHAGE ---------- */
+function remaining(){return S.arrows.filter(function(a){return !a.removed}).length}
 function hud(){
   $('#lvl').textContent=S.level;$('#score').textContent=S.score;
   var h='';for(var i=0;i<MAXL;i++)h+='<span class="'+(i<S.lives?'':'lost')+'">&#9829;&#xFE0E;</span>';
   $('#lives').innerHTML=h;
-  $('#hintBtn').textContent='Indice ('+S.hints+')';
-  $('#hintBtn').disabled=S.hints<=0||S.ended;
+  $('#hintBtn').textContent='Hint ('+S.hints+')';
+  $('#hintBtn').disabled=S.hints<=0||S.ended||S.pickMode;
+  var lock=S.ended||S.busy||S.pickMode;
+  $('#lifeBtn').textContent='+1 life ('+S.lifeBonus+')';
+  $('#lifeBtn').disabled=lock||S.lifeBonus<=0||S.lives>=MAXL;
+  $('#boomBtn').textContent='BOOM ('+S.boom+')';
+  $('#boomBtn').disabled=lock||S.boom<=0||remaining()===0;
+  $('#bonusInfo').textContent='Next life question in '+(20-S.qCount%20)+' answers. Next BOOM in '+(10-S.okCount%10)+' correct.';
 }
 function rebuildOcc(){
   S.occ={};
@@ -351,40 +439,84 @@ function tween(a,from,to,ms,ease){
 }
 
 /* ---------- PANNEAU QUESTION ---------- */
-function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;')}
 function sentenceHTML(item,fill,cls){
   var s=esc(item.s);
   if(item.t==='v')s=s.replace(/\(([a-z]+)\)\s*$/,'<span class="verb">($1)</span>');
   return s.replace('___','<span class="gap'+(cls?' '+cls:'')+'" id="gap">'+(fill?esc(fill):'&nbsp;')+'</span>');
 }
-function idle(msg){
-  $('#panel').innerHTML='<div class="idle">'+msg+'</div>';
+function idle(msg){$('#panel').innerHTML='<div class="idle">'+msg+'</div>'}
+function tagText(){
+  var base=MODE_LABEL[S.q.item.t];
+  if(S.ctx.kind==='boom')return 'BOOM question (hard) | '+base;
+  if(S.ctx.kind==='life')return 'Bonus life | '+base;
+  return base;
 }
 function showQuestion(){
-  var q=S.q,h='<div class="tag">'+MODE_LABEL[q.item.t]+'</div><div class="sentence">'+sentenceHTML(q.item)+'</div><div class="opts">';
-  q.opts.forEach(function(o,i){h+='<button class="opt" data-i="'+i+'">'+esc(o.t)+'</button>'});
-  h+='</div><div class="fb" id="fb"></div>';
+  var q=S.q,h='<div class="tag">'+tagText()+'</div>';
+  if(q.type==='mc'){
+    h+='<div class="sentence">'+sentenceHTML(q.item)+'</div><div class="opts">';
+    q.opts.forEach(function(o,i){h+='<button class="opt" data-i="'+i+'">'+esc(o.t)+'</button>'});
+    h+='</div>';
+  }else{
+    h+='<div class="sentence">Clue (French): <b>'+esc(q.item.fr)+'</b> <span class="verb">('+q.item.w.length+' letters)</span></div>'+
+       '<div class="slots" id="slots"></div><div class="tiles" id="tiles"></div>'+
+       '<div class="row2"><button class="btn" id="undo">Undo</button><button class="btn solid" id="check" disabled>Check</button></div>';
+  }
+  h+='<div class="fb" id="fb"></div>';
+  if(S.ctx.kind!=='arrow')h+='<div class="row2"><button class="btn" id="cancelB">Cancel (keep the bonus)</button></div>';
   $('#panel').innerHTML=h;
-  Array.prototype.forEach.call(document.querySelectorAll('.opt'),function(b){
-    b.addEventListener('click',function(){answer(parseInt(b.getAttribute('data-i'),10))});
-  });
+  if(q.type==='mc'){
+    Array.prototype.forEach.call(document.querySelectorAll('.opt'),function(b){
+      b.addEventListener('click',function(){answerMC(parseInt(b.getAttribute('data-i'),10))});
+    });
+  }else{
+    drawWord();
+    $('#undo').addEventListener('click',function(){if(!q.answered){q.built.pop();drawWord()}});
+    $('#check').addEventListener('click',checkWord);
+  }
+  var cb=$('#cancelB');
+  if(cb)cb.addEventListener('click',function(){S.q=null;S.ctx=null;idle('Tap an arrow to unlock it.<br>Look for arrows with a clear path.');hud()});
 }
-function fullSentence(item){return esc(item.s.replace('___',item.o[0]).replace(/\s*\([a-z]+\)\s*$/,''))}
+function drawWord(){
+  var q=S.q,n=q.item.w.length,sl='',tl='';
+  for(var i=0;i<n;i++)sl+='<span class="slot">'+(q.built[i]!==undefined?esc(q.tiles[q.built[i]].ch):'')+'</span>';
+  $('#slots').innerHTML=sl;
+  q.tiles.forEach(function(t,i){
+    tl+='<button class="tile" data-i="'+i+'"'+(q.built.indexOf(i)>=0||q.answered?' disabled':'')+'>'+esc(t.ch)+'</button>';
+  });
+  $('#tiles').innerHTML=tl;
+  Array.prototype.forEach.call(document.querySelectorAll('.tile'),function(b){
+    b.addEventListener('click',function(){
+      if(q.answered||q.built.length>=n)return;
+      q.built.push(parseInt(b.getAttribute('data-i'),10));drawWord();
+    });
+  });
+  $('#check').disabled=q.answered||q.built.length!==n;
+  $('#undo').disabled=q.answered||!q.built.length;
+}
+function fullSentence(item){
+  if(item.t==='w')return '<b>'+esc(item.w)+'</b> : '+esc(item.fr);
+  return esc(item.s.replace('___',item.o[0]).replace(/\s*\([a-z]+\)\s*$/,''));
+}
 
 /* ---------- JEU ---------- */
 function onTap(a){
   if(S.busy||S.ended||a.removed)return;
+  if(S.pickMode){togglePick(a);return}
+  if(S.ctx&&S.ctx.kind!=='arrow'&&S.q&&!S.q.answered)return;
   clearSel();
-  if(a.unlocked){S.sel=a;a.g.classList.add('sel');attempt(a);return}
   S.sel=a;a.g.classList.add('sel');
-  S.q=drawQuestion();showQuestion();
+  if(a.unlocked){S.ctx={kind:'arrow',arrow:a};attempt(a);return}
+  S.ctx={kind:'arrow',arrow:a};
+  S.q=makeQ(drawItem(false));showQuestion();
 }
 function clearSel(){
   S.arrows.forEach(function(a){if(a.g)a.g.classList.remove('sel')});
   S.sel=null;
 }
 function addFb(html){var f=$('#fb');if(f)f.innerHTML+=html}
-function answer(i){
+function answerMC(i){
   var q=S.q;
   if(!q||q.answered||S.busy||S.ended)return;
   q.answered=true;
@@ -395,44 +527,71 @@ function answer(i){
     else if(k===i)b.classList.add('bad');
   });
   var gap=$('#gap');gap.textContent=q.item.o[0];gap.classList.add(ok?'ok':'ko');
-  var fb=ok?'<span class="ok">Correct.</span> ':'<span class="ko">Faux.</span> ';
-  fb+='<em>'+fullSentence(q.item)+'</em><br>'+esc(q.item.fr);
-  $('#fb').innerHTML=fb;
-  var a=S.sel;
-  if(ok){
-    S.score+=10;
-    if(a){a.unlocked=true;a.g.classList.add('open');hud();attempt(a)}
+  $('#fb').innerHTML=(ok?'<span class="ok">Correct.</span> ':'<span class="ko">Wrong.</span> ')+
+    '<em>'+fullSentence(q.item)+'</em><br>'+esc(q.item.fr);
+  settle(ok);
+}
+function checkWord(){
+  var q=S.q;
+  if(!q||q.answered||S.busy||S.ended||q.built.length!==q.item.w.length)return;
+  q.answered=true;
+  var got=q.built.map(function(i){return q.tiles[i].ch}).join('');
+  var ok=got===q.item.w;
+  drawWord();
+  Array.prototype.forEach.call(document.querySelectorAll('.slot'),function(s){s.classList.add(ok?'ok':'ko')});
+  $('#fb').innerHTML=(ok?'<span class="ok">Correct.</span> ':'<span class="ko">Wrong.</span> The word is ')+fullSentence(q.item);
+  settle(ok);
+}
+function settle(ok){
+  var ctx=S.ctx,q=S.q;
+  if(!ok&&S.missed.indexOf(q.item)<0)S.missed.push(q.item);
+  if(ctx.kind==='arrow'){
+    var a=ctx.arrow,msgs=[];
+    S.qCount++;if(ok)S.okCount++;
+    if(S.qCount%20===0){S.lifeBonus++;msgs.push('Bonus earned: a +1 life question!')}
+    if(ok&&S.okCount%10===0){S.boom++;msgs.push('Bonus earned: a BOOM!')}
+    msgs.forEach(function(m){addFb('<br><span class="ok">'+m+'</span>')});
+    if(ok){
+      S.score+=10;
+      a.unlocked=true;a.g.classList.add('open');hud();attempt(a);
+    }else{
+      S.lives--;clearSel();hud();
+      if(S.lives<=0)gameOver();
+    }
+  }else if(ctx.kind==='life'){
+    S.lifeBonus--;
+    if(ok){S.lives=Math.min(MAXL,S.lives+1);addFb('<br><span class="ok">+1 life!</span>')}
+    else addFb('<br><span class="ko">Bonus lost.</span>');
+    hud();
   }else{
-    S.lives--;
-    if(S.missed.indexOf(q.item)<0)S.missed.push(q.item);
-    clearSel();hud();
-    if(S.lives<=0)gameOver();
+    S.boom--;hud();
+    if(ok){setTimeout(startPick,900)}
+    else addFb('<br><span class="ko">Bonus lost.</span>');
   }
 }
 async function attempt(a){
-  S.busy=true;
+  S.busy=true;hud();
   var d=blockDist(a);
   if(d===Infinity){
     var ms=Math.max(380,(a.e+a.n)*55);
     await tween(a,0,a.e+a.n+1.5,ms,easeIn);
     a.removed=true;a.g.remove();rebuildOcc();
-    S.sel=null;S.busy=false;
-    if(S.arrows.every(function(x){return x.removed}))levelComplete();
-    else if(S.q&&S.q.answered&&S.q.item&&$('#fb')&&S.lives>0){addFb('<br><em>Flèche libérée. Choisissez la suivante.</em>')}
+    S.sel=null;S.busy=false;hud();
+    if(remaining()===0)levelComplete();
+    else addFb('<br><em>Arrow cleared. Pick the next one.</em>');
   }else{
     var go=d+.25;
     await tween(a,0,go,120+d*60,easeOut);
     a.g.classList.add('crash');
     await tween(a,go,0,260,easeIO);
     a.g.classList.remove('crash','sel');
-    S.lives--;S.sel=null;hud();
-    addFb('<br><span class="ko">Collision !</span> Une autre flèche barre le chemin. Dégagez-la d\'abord.');
-    S.busy=false;
+    S.lives--;S.sel=null;S.busy=false;hud();
+    addFb('<br><span class="ko">Crash!</span> Another arrow is in the way. Clear it first.');
     if(S.lives<=0)gameOver();
   }
 }
 function hint(){
-  if(S.hints<=0||S.busy||S.ended)return;
+  if(S.hints<=0||S.busy||S.ended||S.pickMode)return;
   var free=S.arrows.filter(function(a){return !a.removed&&blockDist(a)===Infinity});
   if(!free.length)return;
   var a=free[rnd(free.length)];
@@ -441,41 +600,104 @@ function hint(){
   setTimeout(function(){a.g.classList.remove('hint')},1700);
 }
 
+/* ---------- BONUS : +1 VIE ET BOOM ---------- */
+function startBonus(kind){
+  if(S.busy||S.ended||S.pickMode)return;
+  if(kind==='life'&&(S.lifeBonus<=0||S.lives>=MAXL))return;
+  if(kind==='boom'&&(S.boom<=0||remaining()===0))return;
+  clearSel();
+  S.ctx={kind:kind};
+  S.q=makeQ(drawItem(kind==='boom'));
+  showQuestion();hud();
+}
+function pickText(){
+  return '<b class="boomtxt">BOOM!</b><br>Tap '+S.need+' arrows to blow up ('+S.pick.length+'/'+S.need+').<br><em>Blocked arrows can be chosen too.</em>';
+}
+function startPick(){
+  if(S.ended)return;
+  S.pickMode=true;S.pick=[];S.need=Math.min(3,remaining());
+  clearSel();idle(pickText());hud();
+}
+function togglePick(a){
+  var i=S.pick.indexOf(a);
+  if(i>=0){S.pick.splice(i,1);a.g.classList.remove('pick')}
+  else if(S.pick.length<S.need){S.pick.push(a);a.g.classList.add('pick')}
+  idle(pickText());
+  if(S.pick.length===S.need)explode(S.pick.slice());
+}
+function boomFx(a){
+  return new Promise(function(res){
+    var svg=$('#svg'),cx=0,cy=0;
+    a.path.forEach(function(p){cx+=p[0]+.5;cy+=p[1]+.5});cx/=a.path.length;cy/=a.path.length;
+    var g=el('g',{},svg),ps=[],cols=['#c9a227','#e0584f','#f5eedc','#ff8a65'];
+    for(var i=0;i<14;i++){
+      var ang=Math.PI*2*i/14+Math.random()*.4;
+      ps.push({c:el('circle',{cx:cx,cy:cy,r:.07+Math.random()*.06,fill:cols[i%4]},g),ang:ang,v:.9+Math.random()*.9});
+    }
+    var t0=performance.now(),ms=620;
+    function f(now){
+      var u=Math.min(1,(now-t0)/ms),s=1+u*1.1;
+      a.g.setAttribute('transform','translate('+cx+' '+cy+') scale('+s+') translate('+(-cx)+' '+(-cy)+')');
+      a.g.style.opacity=String(Math.max(0,1-u*1.4));
+      ps.forEach(function(p){
+        var r=p.v*easeOut(u);
+        p.c.setAttribute('cx',cx+Math.cos(p.ang)*r);p.c.setAttribute('cy',cy+Math.sin(p.ang)*r);
+        p.c.setAttribute('opacity',String(1-u));
+      });
+      if(u<1)requestAnimationFrame(f);else{g.remove();res()}
+    }
+    requestAnimationFrame(f);
+  });
+}
+async function explode(list){
+  S.busy=true;S.pickMode=false;hud();
+  await Promise.all(list.map(boomFx));
+  list.forEach(function(a){a.removed=true;a.g.remove()});
+  rebuildOcc();S.score+=10*list.length;S.pick=[];S.busy=false;S.q=null;S.ctx=null;hud();
+  if(remaining()===0)levelComplete();
+  else idle('<b class="boomtxt">BOOM!</b> '+list.length+' arrows destroyed.<br>Pick the next arrow.');
+}
+
 /* ---------- ECRANS ---------- */
 function screen(html){var s=$('#screen');s.innerHTML=html;s.classList.add('on');s.scrollTop=0}
 function hideScreen(){$('#screen').classList.remove('on')}
 function recapHTML(){
-  if(!S.missed.length)return '<p>Aucune erreur sur cette partie. Beau travail.</p>';
-  var h='<p class="big">À revoir ('+S.missed.length+')</p><div class="recap">';
-  S.missed.forEach(function(it){h+='<div>'+fullSentence(it)+'<br><em>'+esc(it.fr)+'</em></div>'});
+  if(!S.missed.length)return '<p>No mistakes this round. Well done.</p>';
+  var h='<p class="big">To review ('+S.missed.length+')</p><div class="recap">';
+  S.missed.forEach(function(it){h+='<div>'+fullSentence(it)+(it.t==='w'?'':'<br><em>'+esc(it.fr)+'</em>')+'</div>'});
   return h+'</div>';
 }
 function startScreen(){
-  S.ended=true;hud();
+  S.ended=true;S.pickMode=false;S.busy=false;hud();
   screen('<h1>ARROW <span>ESCAPE</span></h1><p class="big">TOEIC EDITION</p>'+
-    '<ol class="rules"><li>Touchez une flèche : une question TOEIC la verrouille.</li>'+
-    '<li>Bonne réponse : la flèche se débloque et glisse dans la direction de sa pointe.</li>'+
-    '<li>Si une autre flèche barre le chemin, c\'est la collision et vous perdez une vie. Une mauvaise réponse en coûte une aussi.</li>'+
-    '<li>Libérez toutes les flèches pour passer au niveau suivant. Repérez d\'abord celles dont la voie est libre.</li></ol>'+
+    '<p class="big">Directions</p>'+
+    '<ol class="rules"><li>Tap an arrow: a TOEIC question locks it.</li>'+
+    '<li>Answer correctly and the arrow unlocks, then slides out in the direction of its point.</li>'+
+    '<li>If another arrow is in the way, you crash and lose a life. A wrong answer costs a life too.</li>'+
+    '<li>Clear every arrow to finish the level. Check which arrows have a clear path first!</li>'+
+    '<li>Every 20 answers you earn a bonus question to win back a life. Every 10 correct answers you earn a BOOM: answer a harder question to blow up 3 arrows of your choice.</li></ol>'+
+    '<p class="big">Choose a mode</p>'+
     '<div class="modes">'+
-    '<button class="mode" data-m="c">Connecteurs logiques<small>although, whereas, unless, nevertheless, in case...</small></button>'+
-    '<button class="mode" data-m="v">Verbes irréguliers<small>prétérit et participe passé</small></button>'+
-    '<button class="mode" data-m="m">Mixte<small>les deux, mélangés</small></button></div>'+
-    '<p>Meilleur score : <b class="big">'+S.best+'</b></p>');
+    '<button class="mode" data-m="c">Logical connectors<small>although, whereas, unless, nevertheless, in case...</small></button>'+
+    '<button class="mode" data-m="v">Irregular verbs<small>past simple and past participle</small></button>'+
+    '<button class="mode" data-m="w">Vocabulary<small>unscramble business and TOEIC words</small></button>'+
+    '<button class="mode" data-m="m">Mixed<small>everything together</small></button></div>'+
+    '<p>Best score: <b class="big">'+S.best+'</b></p>');
   Array.prototype.forEach.call(document.querySelectorAll('.mode'),function(b){
     b.addEventListener('click',function(){newGame(b.getAttribute('data-m'))});
   });
 }
 function newGame(mode){
-  S.mode=mode;S.level=1;S.score=0;S.deck=[];S.last=null;S.missed=[];
+  S.mode=mode;S.level=1;S.score=0;S.deck=[];S.hdeck=[];S.missed=[];
+  S.qCount=0;S.okCount=0;S.lifeBonus=0;S.boom=0;
   startLevel();
 }
 function startLevel(){
   var g=generate(S.level);
   S.W=g.W;S.H=g.H;S.arrows=g.arrows;
-  S.lives=MAXL;S.hints=3;S.sel=null;S.q=null;S.busy=false;S.ended=false;
+  S.lives=MAXL;S.hints=3;S.sel=null;S.q=null;S.ctx=null;S.busy=false;S.ended=false;S.pickMode=false;S.pick=[];
   build();hud();hideScreen();
-  idle('Touchez une flèche pour la déverrouiller.<br>Repérez celles dont le chemin est libre.');
+  idle('Tap an arrow to unlock it.<br>Look for arrows with a clear path.');
 }
 function saveBest(){
   if(S.score>S.best){S.best=S.score;try{localStorage.setItem('arrowToeicBest',String(S.best))}catch(e){}}
@@ -484,17 +706,17 @@ function levelComplete(){
   S.ended=true;
   var bonus=S.lives*20;S.score+=bonus;saveBest();hud();
   setTimeout(function(){
-    screen('<h2>Niveau '+S.level+' réussi</h2><p>Bonus vies restantes : <b class="big">+'+bonus+'</b><br>Score : <b class="big">'+S.score+'</b> (meilleur : '+S.best+')</p>'+recapHTML()+
-      '<div class="row"><button class="btn solid" id="nx">Niveau suivant</button><button class="btn" id="mn">Menu</button></div>');
+    screen('<h2>Level '+S.level+' cleared</h2><p>Bonus for remaining lives: <b class="big">+'+bonus+'</b><br>Score: <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
+      '<div class="row"><button class="btn solid" id="nx">Next level</button><button class="btn" id="mn">Menu</button></div>');
     $('#nx').addEventListener('click',function(){S.level++;S.missed=[];startLevel()});
     $('#mn').addEventListener('click',startScreen);
-  },350);
+  },450);
 }
 function gameOver(){
   S.ended=true;saveBest();hud();
   setTimeout(function(){
-    screen('<h2>Plus de vies</h2><p>Niveau '+S.level+' : score <b class="big">'+S.score+'</b> (meilleur : '+S.best+')</p>'+recapHTML()+
-      '<div class="row"><button class="btn solid" id="rt">Rejouer ce niveau</button><button class="btn" id="mn">Menu</button></div>');
+    screen('<h2>Out of lives</h2><p>Level '+S.level+': score <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
+      '<div class="row"><button class="btn solid" id="rt">Replay this level</button><button class="btn" id="mn">Menu</button></div>');
     $('#rt').addEventListener('click',function(){S.missed=[];startLevel()});
     $('#mn').addEventListener('click',startScreen);
   },700);
@@ -502,7 +724,9 @@ function gameOver(){
 
 $('#hintBtn').addEventListener('click',hint);
 $('#menuBtn').addEventListener('click',startScreen);
-window.__g={S:S,generate:generate,countFree:countFree,blockDist:blockDist,CONN:CONN,VERBS:VERBS,params:params};
+$('#lifeBtn').addEventListener('click',function(){startBonus('life')});
+$('#boomBtn').addEventListener('click',function(){startBonus('boom')});
+window.__g={S:S,generate:generate,countFree:countFree,blockDist:blockDist,NORMAL:NORMAL,HARD:HARD,CONN:CONN,VERBS:VERBS,WORDS:WORDS,params:params,answerMC:answerMC,makeQ:makeQ,MAXL:MAXL};
 startScreen();
 })();
 </script>
