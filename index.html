@@ -78,6 +78,10 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
 .big{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:15px}
 .credit{font-family:'JetBrains Mono',monospace;font-size:11px;color:#7f8bab;letter-spacing:.5px;margin-top:6px}
 .banner{display:block;width:100%;max-width:340px;margin:8px auto;background:#0a1530;border:1px solid #c9a22755;border-radius:12px;padding:6px}
+.bonus .btn{display:flex;flex-direction:column;align-items:stretch;text-align:center;gap:2px;padding:6px 12px}
+.bonus .btn em{font-style:normal;font-size:10px;opacity:.85;letter-spacing:.3px}
+.bonus .btn .prog{display:block;height:4px;border-radius:3px;background:#ffffff22;overflow:hidden}
+.bonus .btn .prog b{display:block;height:100%;background:currentColor;transition:width .4s}
 
 .bonus{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .bonus small{color:var(--muted);font-size:11px;flex:1;min-width:150px;line-height:1.35}
@@ -644,11 +648,12 @@ function hud(){
   $('#hintBtn').textContent='Hint ('+S.hints+')';
   $('#hintBtn').disabled=S.hints<=0||S.ended||S.pickMode;
   var lock=S.ended||S.busy||S.pickMode;
-  $('#lifeBtn').textContent='+1 life ('+S.lifeBonus+')';
+  var lp=S.qCount%20,bp=S.okCount%10;
+  $('#lifeBtn').innerHTML='+1 life ('+S.lifeBonus+')<i class="prog"><b style="width:'+(lp*5)+'%"></b></i><em>'+lp+' / 20 answers</em>';
   $('#lifeBtn').disabled=lock||S.lifeBonus<=0||S.lives>=MAXL;
-  $('#boomBtn').textContent='BOOM ('+S.boom+')';
+  $('#boomBtn').innerHTML='BOOM ('+S.boom+')<i class="prog"><b style="width:'+(bp*10)+'%"></b></i><em>'+bp+' / 10 correct</em>';
   $('#boomBtn').disabled=lock||S.boom<=0||remaining()===0;
-  $('#bonusInfo').textContent='Next life question in '+(20-S.qCount%20)+' answers. Next BOOM in '+(10-S.okCount%10)+' correct.';
+  $('#bonusInfo').textContent='Next +1 life in '+(20-lp)+' answers. Next BOOM in '+(10-bp)+' correct answers.';
 }
 function rebuildOcc(){
   S.occ={};
