@@ -872,6 +872,7 @@ function startSwim(){
     if(gen!==S.gen)return;
     var dt=Math.min(now-last,50)/16;last=now;
     S.swim.forEach(function(s){
+      if(s.jump)return;
       s.x+=s.v*dt;if(s.x>505){s.v=-Math.abs(s.v)}if(s.x<15){s.v=Math.abs(s.v)}
       s.ph+=.03*dt;
       s.g.setAttribute('transform','translate('+s.x.toFixed(1)+','+(s.y+Math.sin(s.ph)*2).toFixed(1)+') scale('+(s.v>=0?1:-1)+',1)');
@@ -881,6 +882,47 @@ function startSwim(){
   requestAnimationFrame(loop);
 }
 /* ---------- bonus plane + Chomp challenge (every 3 correct answers in a row) ---------- */
+function awardFish(){
+  var tier=Math.min(5,Math.floor(S.streak/3)),id;
+  if(tier<=1)id=Math.random()<.6?'minnow':'perch';
+  else id=['','','trout','salmon','pike','carp'][tier];
+  S.fish[id]=(S.fish[id]|0)+1;
+  if(S.swim.length<14)addSwimmer(id);
+}
+/* tap above a fish and it leaps out of the river; as many times as you like */
+function fishJump(sw,tx,ty){
+  if(!sw||sw.jump)return;
+  var gen=S.gen,wy=S.mode==='liberty'?206:(S.mode==='eiffel'?214:208);
+  sw.jump=true;
+  var x0=sw.x,dir=sw.v>=0?1:-1,h=Math.max(45,Math.min(150,wy+8-ty)),dx=dir*(50+rnd(40));
+  function ring(x){
+    var r=el('ellipse',{cx:x,cy:wy+4,rx:4,ry:1.5,fill:'none',stroke:'#f5eedc','stroke-width':1.6,opacity:.9},layers.fish);
+    tw(500,function(u){r.setAttribute('rx',(4+22*u).toFixed(1));r.setAttribute('ry',(1.5+5*u).toFixed(1));r.setAttribute('opacity',(.9*(1-u)).toFixed(2))}).then(function(){if(r.parentNode)r.parentNode.removeChild(r)});
+  }
+  ring(x0);
+  tw(560+h*4,function(u){
+    if(gen!==S.gen)return;
+    var x=Math.max(15,Math.min(505,x0+dx*u)),y=wy+8-Math.sin(u*Math.PI)*h,ang=dir*(u-.5)*-100;
+    sw.g.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+') rotate('+ang.toFixed(0)+') scale(1.5)');
+    sw.x=x;
+  }).then(function(){
+    if(gen!==S.gen)return;
+    ring(sw.x);sw.y=216+Math.random()*24;sw.jump=false;
+  });
+}
+(function(){
+  var svg=document.getElementById('wb');if(!svg)return;
+  svg.addEventListener('pointerdown',function(e){
+    if(e.target.closest&&e.target.closest('.gift'))return;
+    var r=svg.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*520,y=(e.clientY-r.top)/r.height*250,best=null,bd=1e9;
+    (S.swim||[]).forEach(function(sw){
+      if(sw.jump)return;
+      var dx=Math.abs(sw.x-x);
+      if(dx<48&&y<sw.y+4&&dx<bd){bd=dx;best=sw}
+    });
+    if(best)fishJump(best,x,y);
+  });
+})();
 function flyPlane(bonus){
   if(!layers.birds)return;
   var gen=S.gen,y=70+rnd(14),g=el('g',{},layers.birds);
@@ -907,7 +949,7 @@ function threatPos(){
 async function chompThreat(){
   var gen=S.gen,p=threatPos(),cx=Math.max(40,Math.min(480,p.cx)),TY=p.ty;
   S.threat=true;
-  toast('Chomp challenge','Chomp is lurking under the bridge! Answer correctly and he backs off. Get it wrong and he bites.',false,3600);
+  toast('Chomp challenge','Chomp is lurking under the bridge! Answer correctly and he backs off. Get it wrong and he bites.',false,600000);
   layers.chomp.setAttribute('visibility','visible');
   setChomp(cx,300,0);
   await tw(420,function(u){setChomp(cx,300+(TY-300)*u,-10*u)},easeOut);
@@ -1140,7 +1182,7 @@ async function mainResult(ok){
     S.score+=10;S.coins++;S.streak++;S.placed++;markNext();
     drawPlank(S.placed-1,true);skyTo(S.placed/S.N);
     var three=(S.streak%3===0),bonus=Math.min(8,2+S.streak/3);
-    if(three&&S.placed<S.N){S.coins+=bonus;flyPlane(bonus)}
+    if(three&&S.placed<S.N){S.coins+=bonus;flyPlane(bonus);awardFish()}
     hud();scheduleSave();showPanel();
     await wait(450);
     if(gen!==S.gen)return;
@@ -1335,7 +1377,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more). Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop, even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop, even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1377,7 +1419,7 @@ function startLevel(saved){
   S.placed=res?Math.min(S.N-1,saved.placed|0):0;
   S.bitten=res&&Array.isArray(saved.bitten)?saved.bitten.filter(function(i){return i<S.placed}):[];
   S.q=null;S.gq=null;S.view='main';S.busy=false;S.ended=false;S.levelDone=false;S.nextLevel=0;S.active=true;
-  S.sinceGift=0;S.nextGift=(!res&&S.level===1)?2+rnd(2):4+rnd(3);S.streak=0;S.threat=false;S.paused=false;S.era=Math.min(Math.max(S.upg|0,1),6);
+  S.sinceGift=0;S.nextGift=(!res&&S.level===1)?2+rnd(2):4+rnd(3);S.streak=0;S.threat=false;$('#toast').className='toast';S.paused=false;S.era=Math.min(Math.max(S.upg|0,1),6);
   var wm=saved?saved.mode:S.nextMode;S.mode=MON[wm]?wm:'bridge';S.nextMode='';
   S.stats.maxLevel=Math.max(S.stats.maxLevel,S.level);
   buildScene();hud();hideScreen();
@@ -1420,7 +1462,7 @@ function shopScreen(back){
     h+='<div class="shopi"><span>'+d.n+' <em>('+d.fr+')</em></span>'+
       (own?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=d.c?' solid':'')+'" data-b="'+d.id+'"'+(S.coins>=d.c?'':' disabled')+'>Buy &middot; '+d.c+'</button>')+'</div>';
   });
-  h+='</div><p>Answer 3 questions in a row: a plane flies by with bonus coins, but Chomp comes to challenge you!</p><div class="row"><button class="btn solid" id="bk">Back</button></div>';
+  h+='</div><p>Answer 3 questions in a row: a plane flies by with bonus coins and a new fish joins the river (tap above it to make it jump), but Chomp comes to challenge you!</p><div class="row"><button class="btn solid" id="bk">Back</button></div>';
   screen(h);
   Array.prototype.forEach.call(document.querySelectorAll('[data-b]'),function(b){
     b.addEventListener('click',function(){
