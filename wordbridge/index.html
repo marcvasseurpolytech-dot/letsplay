@@ -146,6 +146,7 @@ select.fld{appearance:auto}
 .gift .halo{animation:giftpulse .9s ease-in-out infinite}
 @keyframes giftpulse{50%{opacity:.15}}
 .beacon{animation:blink 1.6s ease-in-out infinite}
+.bulb{animation:blink 2.2s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
 .coinchip{display:flex;align-items:center;gap:4px}
 .coin{display:inline-block;width:12px;height:12px;border-radius:50%;background:#f2c230;border:2px solid #b8921a;box-sizing:border-box}
@@ -230,7 +231,7 @@ function emptyStats(){return {byCat:{},answered:0,correct:0,levelsCleared:0,maxL
 var S={cats:{},level:1,score:0,lives:MAXL,N:10,placed:0,bitten:[],q:null,gq:null,view:'main',busy:false,ended:true,active:false,
   deck:[],hdeck:[],missed:[],best:0,qCount:0,okCount:0,sinceGift:0,nextGift:4+rnd(3),gift:null,biteN:rnd(ATTACKS.length),
   stats:emptyStats(),levelDone:true,nextLevel:0,gen:0,planks:[],ghosts:[],
-  coins:0,decor:[],fish:{},threat:false,streak:0,skyP:0,era:1,upg:1,mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
+  coins:0,decor:[],fish:{},threat:false,streak:0,skyP:0,era:1,upg:1,eup:1,mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
 function levelN(l){return Math.min(20,10+2*(l-1))}
 try{S.best=parseInt(localStorage.getItem('wordBridgeBest')||'0',10)||0}catch(e){}
 
@@ -433,6 +434,12 @@ var FISH=[
  {id:'minnow',n:'Minnow',fr:'vairon',col:'#a9b3c9',sz:7},{id:'perch',n:'Perch',fr:'perche',col:'#e8a23a',sz:9},
  {id:'trout',n:'Trout',fr:'truite',col:'#7fc8a9',sz:11},{id:'salmon',n:'Salmon',fr:'saumon',col:'#f08a7b',sz:13},
  {id:'pike',n:'Pike',fr:'brochet',col:'#5fa86a',sz:16},{id:'carp',n:'Golden carp',fr:'carpe dorée',col:'#f2c230',sz:14}
+];
+var EUP=[
+ {n:'Plain iron tower',fr:'tour de fer nue',c:0,w:'lattice (treillis) \u00b7 girder (poutre) \u00b7 rivet (rivet)'},
+ {n:'Warm lights',fr:'guirlandes lumineuses',c:30,w:'bulb (ampoule) \u00b7 string of lights (guirlande) \u00b7 glow (lueur)'},
+ {n:'Searchlight and flag',fr:'projecteur et drapeau',c:60,w:'beam (faisceau) \u00b7 flag (drapeau) \u00b7 flagpole (m\u00e2t)'},
+ {n:'Golden illumination',fr:'illumination dor\u00e9e',c:100,w:'sparkle (\u00e9tincelle) \u00b7 gilded (dor\u00e9) \u00b7 landmark (monument)'}
 ];
 var CABS={4:{x0:90,x1:430,yT:70,yC:140}};
 function slotW(){return (X1-X0)/S.N}
@@ -663,6 +670,37 @@ function buildParis(svg){
   });
 }
 function efLine(g,x1,y1,x2,y2,w){return el('line',{x1:x1.toFixed(1),y1:y1.toFixed(1),x2:x2.toFixed(1),y2:y2.toFixed(1),'stroke-width':w,'stroke-linecap':'round'},g)}
+function efExtras(g,i,t0,t1,y0,y1,a0,a1,cx,N){
+  var NS='http://www.w3.org/2000/svg',eup=S.eup;
+  if(eup>=4){
+    [-1,1].forEach(function(d){
+      var h=el('line',{x1:(cx+d*a0).toFixed(1),y1:y0.toFixed(1),x2:(cx+d*a1).toFixed(1),y2:y1.toFixed(1),stroke:'#f2c230','stroke-width':6,'stroke-linecap':'round',opacity:.3},g);
+      g.insertBefore(h,g.firstChild);
+    });
+  }
+  [-1,1].forEach(function(d){
+    [.3,.7].forEach(function(f,k){
+      var x=cx+d*(a0+(a1-a0)*f),y=y0+(y1-y0)*f;
+      var b=el('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:eup>=4?2:1.6,fill:eup>=4?'#ffe27a':'#ffd45a',class:'bulb'},g);
+      b.style.animationDelay=((i*.37+k*.9+(d>0?.5:0))%2.2).toFixed(2)+'s';
+    });
+  });
+  if(eup>=4&&i%2===0){
+    var yp=y1,sp=el('path',{d:'M'+(cx-2)+' '+(yp-9)+' l1.2 3.2 3.2 1.2 -3.2 1.2 -1.2 3.2 -1.2 -3.2 -3.2 -1.2 3.2 -1.2 z',fill:'#fff6b0',class:'bulb'},g);
+    sp.style.animationDelay=(i*.4%2).toFixed(2)+'s';
+  }
+  if(eup>=3&&i===N-1){
+    var yt=ty(1),pole=yt-15;
+    [['#2a4fa3',0],['#f5f5f5',3],['#d33a3a',6]].forEach(function(c){el('rect',{x:cx+1,y:pole+c[1]-2,width:12,height:3,fill:c[0]},g)});
+    [-1,1].forEach(function(dir){
+      var bm=el('polygon',{points:cx+','+(pole-2)+' '+(cx+dir*18-9)+','+(pole-62)+' '+(cx+dir*18+9)+','+(pole-62),fill:'#fff6b0',opacity:.22},g);
+      var an=document.createElementNS(NS,'animateTransform');
+      an.setAttribute('attributeName','transform');an.setAttribute('type','rotate');
+      an.setAttribute('values',(dir*-25)+' '+cx+' '+(pole-2)+';'+(dir*25)+' '+cx+' '+(pole-2)+';'+(dir*-25)+' '+cx+' '+(pole-2));
+      an.setAttribute('dur','5s');an.setAttribute('repeatCount','indefinite');bm.appendChild(an);
+    });
+  }
+}
 function drawSection(i,animate){
   if(S.mode==='liberty')return drawLibSection(i,animate);
   var R=S.ref,N=S.N,t0=S.mb[i],t1=S.mb[i+1],cx=EF.cx,g=el('g',{class:'pl'},layers.deck);
@@ -694,6 +732,7 @@ function drawSection(i,animate){
     R.ironF.push(el('rect',{x:cx-4,y:yt-1.5,width:8,height:3,rx:1},g));
     el('circle',{cx:cx,cy:yt-16,r:2,fill:'#ff6a5e',class:'beacon'},g);
   }
+  if(S.eup>=2)efExtras(g,i,t0,t1,y0,y1,a0,a1,cx,N);
   S.planks[i]=g;
   setSky(S.skyP);
   if(animate){
@@ -1033,6 +1072,7 @@ function chompHit(a){
   var ef=S.mode!=='bridge',pool=[['plank',55]];
   if(!ef&&S.decor.length)pool.push(['decor',30]);
   if(!ef&&S.upg>1)pool.push(['struct',15]);
+  if(S.mode==='eiffel'&&S.eup>1)pool.push(['estruct',15]);
   if(ef&&S.placed>1)pool.push(['top',20]);
   var tot=0;pool.forEach(function(p){tot+=p[1]});
   var r=Math.random()*tot,kind='plank';
@@ -1052,6 +1092,11 @@ function chompHit(a){
     var old=ERAS[S.upg-1],oi=S.upg-1;
     S.upg--;S.rebuild=true;
     return hitSentence(a,'your '+lowName(old,oi))+' It is now a '+lowName(ERAS[S.upg-1],S.upg-1)+'.';
+  }
+  if(kind==='estruct'){
+    var oe=EUP[S.eup-1];
+    S.eup--;S.rebuild=true;
+    return hitSentence(a,'your '+oe.n.toLowerCase())+' It is now: '+EUP[S.eup-1].n.toLowerCase()+'.';
   }
   if(kind==='top'){
     S.placed--;var g=S.planks[S.placed];
@@ -1225,7 +1270,7 @@ function post(action,body){
 function snapshot(){
   var inLevel=!S.levelDone&&S.active;
   return {level:S.levelDone?(S.nextLevel||S.level):S.level,score:S.score,best:S.best,lives:S.lives,placed:inLevel?S.placed:0,inLevel:inLevel,
-    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,mode:S.levelDone?(S.nextMode||S.mode):S.mode,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
+    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,eup:S.eup,mode:S.levelDone?(S.nextMode||S.mode):S.mode,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
 }
 function scheduleSave(){
   if(!S.active)return;
@@ -1250,6 +1295,7 @@ function adopt(pr){
   P.progress=pr||null;
   S.coins=Math.max(0,(pr&&pr.coins)|0);
   S.upg=Math.min(6,Math.max(1,(pr&&pr.upg)|0||1));
+  S.eup=Math.min(4,Math.max(1,(pr&&pr.eup)|0||1));
   S.decor=pr&&Array.isArray(pr.decor)?pr.decor.filter(function(id){return DECOR.some(function(d){return d.id===id})}):[];
   S.fish={};FISH.forEach(function(f){var n=pr&&pr.fish&&pr.fish[f.id];if(n>0)S.fish[f.id]=n|0});
   S.stats=normStats(pr&&pr.stats);
@@ -1377,7 +1423,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop, even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower with lights, a searchlight and golden illumination, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1456,6 +1502,12 @@ function shopScreen(back){
     h+='<div class="shopi"><span>'+lv+'. '+er.n+' <em>('+er.fr+')</em></span>'+
       (cur?'<span class="ok">Current</span>':own?'<span class="ok">Owned</span>':next?'<button class="btn'+(S.coins>=er.c?' solid':'')+'" data-u="'+lv+'"'+(S.coins>=er.c?'':' disabled')+'>Upgrade &middot; '+er.c+'</button>':'<span><em>Locked &middot; '+er.c+'</em></span>')+'</div>';
   });
+  h+='</div><p class="big">Eiffel Tower upgrades</p><p>Light up the tower you build in Paris. Chomp can wreck these too.</p><div class="shop">';
+  EUP.forEach(function(er,i){
+    var lv=i+1,cur=S.eup===lv,own=S.eup>lv,next=S.eup+1===lv;
+    h+='<div class="shopi"><span>'+lv+'. '+er.n+' <em>('+er.fr+')</em></span>'+
+      (cur?'<span class="ok">Current</span>':own?'<span class="ok">Owned</span>':next?'<button class="btn'+(S.coins>=er.c?' solid':'')+'" data-e="'+lv+'"'+(S.coins>=er.c?'':' disabled')+'>Upgrade &middot; '+er.c+'</button>':'<span><em>Locked &middot; '+er.c+'</em></span>')+'</div>';
+  });
   h+='</div><p class="big">Decorations</p><div class="shop">';
   DECOR.forEach(function(d){
     var own=S.decor.indexOf(d.id)>=0;
@@ -1471,7 +1523,7 @@ function shopScreen(back){
       S.coins-=d.c;S.decor.push(d.id);S.shopDirty=true;hud();
       if(S.mode==='bridge'&&layers.decor&&S.ref&&S.ref.glow)drawDecor(d.id);
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
@@ -1483,7 +1535,19 @@ function shopScreen(back){
       if(!er||lv!==S.upg+1||S.coins<er.c)return;
       S.coins-=er.c;S.upg=lv;S.shopDirty=true;hud();
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      P.progress=base;lsSet(progKey(),JSON.stringify(base));
+      if(P.user){P.dirty=true;flush()}
+      shopScreen(back);
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-e]'),function(b){
+    b.addEventListener('click',function(){
+      var lv=+b.getAttribute('data-e'),er=EUP[lv-1];
+      if(!er||lv!==S.eup+1||S.coins<er.c)return;
+      S.coins-=er.c;S.eup=lv;S.shopDirty=true;hud();
+      var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
