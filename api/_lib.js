@@ -141,7 +141,10 @@ function cleanProgress(p) {
   const fish = {};
   FISH_IDS.forEach(id => { const n = int(p.fish && p.fish[id], 0, 1e5, 0); if (n > 0) fish[id] = n; });
   return {
-    coins: int(p.coins, 0, 1e6, 0), upg: int(p.upg, 1, 6, 1), eup: int(p.eup, 1, 4, 1), mode: ['eiffel', 'liberty'].indexOf(p.mode) >= 0 ? p.mode : 'bridge', decor, fish,
+    coins: int(p.coins, 0, 1e6, 0), upg: int(p.upg, 1, 6, 1), eup: int(p.eup, 1, 4, 1), lup: int(p.lup, 1, 4, 1),
+    fx: Array.isArray(p.fx) ? ['fw', 'c_blue', 'c_rose', 'c_green', 'c_rainbow'].filter(id => p.fx.indexOf(id) >= 0) : [],
+    lc: ['gold', 'blue', 'rose', 'green', 'rainbow'].indexOf(p.lc) >= 0 ? p.lc : 'gold',
+    mode: ['eiffel', 'louvre', 'liberty'].indexOf(p.mode) >= 0 ? p.mode : 'bridge', decor, fish,
     level: int(p.level, 1, 99, 1), score: int(p.score, 0, 1e7, 0), best: int(p.best, 0, 1e7, 0),
     lives: int(p.lives, 0, 5, 5), hints: int(p.hints, 0, 9, 3),
     qCount: int(p.qCount, 0, 1e6, 0), okCount: int(p.okCount, 0, 1e6, 0),

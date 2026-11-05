@@ -147,6 +147,8 @@ select.fld{appearance:auto}
 @keyframes giftpulse{50%{opacity:.15}}
 .beacon{animation:blink 1.6s ease-in-out infinite}
 .bulb{animation:blink 2.2s ease-in-out infinite}
+.jet{animation:jet 1.4s ease-in-out infinite;transform-box:fill-box;transform-origin:bottom}
+@keyframes jet{0%,100%{transform:scaleY(.55);opacity:.6}50%{transform:scaleY(1);opacity:1}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
 .coinchip{display:flex;align-items:center;gap:4px}
 .coin{display:inline-block;width:12px;height:12px;border-radius:50%;background:#f2c230;border:2px solid #b8921a;box-sizing:border-box}
@@ -231,7 +233,7 @@ function emptyStats(){return {byCat:{},answered:0,correct:0,levelsCleared:0,maxL
 var S={cats:{},level:1,score:0,lives:MAXL,N:10,placed:0,bitten:[],q:null,gq:null,view:'main',busy:false,ended:true,active:false,
   deck:[],hdeck:[],missed:[],best:0,qCount:0,okCount:0,sinceGift:0,nextGift:4+rnd(3),gift:null,biteN:rnd(ATTACKS.length),
   stats:emptyStats(),levelDone:true,nextLevel:0,gen:0,planks:[],ghosts:[],
-  coins:0,decor:[],fish:{},threat:false,streak:0,skyP:0,era:1,upg:1,eup:1,mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
+  coins:0,decor:[],fish:{},threat:false,streak:0,skyP:0,era:1,upg:1,eup:1,lup:1,fx:[],lc:'gold',mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
 function levelN(l){return Math.min(20,10+2*(l-1))}
 try{S.best=parseInt(localStorage.getItem('wordBridgeBest')||'0',10)||0}catch(e){}
 
@@ -441,6 +443,22 @@ var EUP=[
  {n:'Searchlight and flag',fr:'projecteur et drapeau',c:60,w:'beam (faisceau) \u00b7 flag (drapeau) \u00b7 flagpole (m\u00e2t)'},
  {n:'Golden illumination',fr:'illumination dor\u00e9e',c:100,w:'sparkle (\u00e9tincelle) \u00b7 gilded (dor\u00e9) \u00b7 landmark (monument)'}
 ];
+var LUP=[
+ {n:'Plain glass pyramid',fr:'pyramide de verre',c:0},
+ {n:'Warm lights',fr:'guirlandes lumineuses',c:30},
+ {n:'Fountains',fr:'bassins et jets d\'eau',c:60},
+ {n:'Golden glass',fr:'verre dor\u00e9 illumin\u00e9',c:100}
+];
+var FXC=[
+ {id:'gold',n:'Gold',fr:'or',c:0,col:'#ffd45a'},{id:'blue',n:'Blue',fr:'bleu',c:20,col:'#7fc8ff'},
+ {id:'rose',n:'Rose',fr:'rose',c:20,col:'#ff8fc8'},{id:'green',n:'Green',fr:'vert',c:20,col:'#8dff9a'},{id:'rainbow',n:'Rainbow',fr:'arc-en-ciel',c:40,col:null}
+];
+var RAINBOW=['#ff6a5e','#ffb347','#ffe27a','#8dff9a','#7fc8ff','#c79bff'];
+var FX_IDS=['fw','c_blue','c_rose','c_green','c_rainbow'];
+function lcol(i){
+  if(S.lc==='rainbow')return RAINBOW[((i|0)%6+6)%6];
+  var c=FXC.filter(function(x){return x.id===S.lc})[0];return c&&c.col?c.col:'#ffd45a';
+}
 var CABS={4:{x0:90,x1:430,yT:70,yC:140}};
 function slotW(){return (X1-X0)/S.N}
 function plankX(i){return X0+i*slotW()}
@@ -576,9 +594,10 @@ function plankExtras(i,cx,g){
 /* ---------- monuments: Eiffel Tower (Paris) and Statue of Liberty (New York) ---------- */
 var MON={
  eiffel:{title:'Eiffel Tower',place:'Paris',noun:'tower',words:'wrought iron (fer puddlé) · lattice (treillis) · rivet (rivet)',done:'The Eiffel Tower is finished. Fireworks over Paris!',base:'girder'},
+ louvre:{title:'Louvre Pyramid',place:'Paris',noun:'pyramid',words:'glass (verre) \u00b7 steel (acier) \u00b7 museum (mus\u00e9e)',done:'The Louvre Pyramid is finished. Fireworks over Paris!',base:'glass panel'},
  liberty:{title:'Statue of Liberty',place:'New York',noun:'statue',words:'copper (cuivre) · pedestal (piédestal) · torch (flambeau)',done:'Lady Liberty is finished. Fireworks over New York!',base:'copper plate'}
 };
-var NEXTMODE={bridge:'eiffel',eiffel:'liberty',liberty:'bridge'};
+var NEXTMODE={bridge:'eiffel',eiffel:'louvre',louvre:'liberty',liberty:'bridge'};
 var EF_MS=[[0.18,'First floor','premier étage'],[0.355,'Second floor','deuxième étage'],[0.85,'Third floor','troisième étage (sommet)']];
 var LB={cx:262,yB:200,yT:14};
 var LB_MS=[[.37,'The pedestal','pedestal (piédestal) · granite (granit)'],[.64,'Robe and torso','robe (robe) · tablet (tablette)'],[.85,'Head and crown','crown (couronne) · rays (rayons)'],[1,'The torch','torch (flambeau) · flame (flamme)']];
@@ -645,6 +664,83 @@ function drawLibSection(i,animate){
   }
   return g;
 }
+/* ---------- PARIS: the Louvre Pyramid level ---------- */
+var LV={cx:262,yB:198,yT:82,w0:80};
+function lvY(t){return LV.yB-(LV.yB-LV.yT)*t}
+function lvW(t){return LV.w0*(1-t)+1.5*t}
+function buildLouvre(svg){
+  var R=S.ref,g=el('g',{},svg),yB=LV.yB;
+  /* palace wings */
+  R.cliffs.push(el('rect',{x:0,y:yB-38,width:520,height:38},g));
+  R.tops.push(el('rect',{x:0,y:yB-46,width:520,height:8},g));
+  [[60,60],[400,60],[232,62]].forEach(function(p){
+    R.cliffs.push(el('rect',{x:p[0],y:yB-p[1]-12,width:60,height:p[1]+12},g));
+    R.tops.push(el('polygon',{points:(p[0]-3)+','+(yB-p[1]-12)+' '+(p[0]+63)+','+(yB-p[1]-12)+' '+(p[0]+50)+','+(yB-p[1]-30)+' '+(p[0]+10)+','+(yB-p[1]-30)},g));
+    R.tops.push(el('rect',{x:p[0]+27,y:yB-p[1]-38,width:6,height:8},g));
+  });
+  for(var wx=6;wx<514;wx+=11)for(var wy=yB-34;wy<yB-6;wy+=11){
+    var inP=(wx>56&&wx<124)||(wx>396&&wx<464)||(wx>228&&wx<296);
+    if(!inP)R.glow.push(el('rect',{x:wx,y:wy,width:3,height:5,fill:'#f2c230',opacity:0},g));
+  }
+  [[68,60],[408,60],[240,62]].forEach(function(p){
+    for(var yy=yB-p[1]-4;yy<yB-8;yy+=12)for(var xx=p[0];xx<p[0]+46;xx+=12)R.glow.push(el('rect',{x:xx,y:yy,width:3.4,height:6,fill:'#f2c230',opacity:0},g));
+  });
+  R.ground.push(el('rect',{x:0,y:yB,width:520,height:16},svg));
+  [[28,yB],[490,yB],[150,yB],[372,yB]].forEach(function(p){
+    el('rect',{x:p[0]-1,y:p[1]-9,width:2,height:9,fill:'#5a3a1b'},svg);R.tops.push(el('circle',{cx:p[0],cy:p[1]-13,r:8},svg));
+  });
+}
+function lvExtras(g,i,t0,t1,y0,y1,a0,a1,N){
+  var cx=LV.cx,NS='http://www.w3.org/2000/svg',up=S.lup;
+  if(up>=4){
+    var gl=el('polygon',{points:(cx-a0)+','+y0+' '+(cx+a0)+','+y0+' '+(cx+a1)+','+y1+' '+(cx-a1)+','+y1,fill:lcol(i),opacity:.3,class:'bulb'},g);
+    gl.style.animationDuration='3.4s';gl.style.animationDelay=((i*.45)%3).toFixed(2)+'s';
+    if(i%2===0)el('path',{d:'M'+(cx-2)+' '+(y1-9)+' l1.2 3.2 3.2 1.2 -3.2 1.2 -1.2 3.2 -1.2 -3.2 -3.2 -1.2 3.2 -1.2 z',fill:lcol(i+2),class:'bulb'},g);
+  }
+  [-1,1].forEach(function(d){
+    [.3,.7].forEach(function(f,k){
+      var b=el('circle',{cx:(cx+d*(a0+(a1-a0)*f)).toFixed(1),cy:(y0+(y1-y0)*f).toFixed(1),r:1.7,fill:lcol(i*3+k+(d>0?1:0)),class:'bulb'},g);
+      b.style.animationDelay=((i*.37+k*.9+(d>0?.5:0))%2.2).toFixed(2)+'s';
+    });
+  });
+  if(i===0){
+    for(var x=-a0-4;x<=a0+4;x+=14){var bb=el('circle',{cx:(cx+x).toFixed(1),cy:LV.yB+3,r:1.6,fill:lcol(x/14+9),class:'bulb'},g);bb.style.animationDelay=((x/14+6)*.3%2).toFixed(2)+'s'}
+    if(up>=3){
+      [-1,1].forEach(function(d){
+        var bx=cx+d*(a0+34);
+        el('ellipse',{cx:bx,cy:LV.yB+2,rx:20,ry:4,fill:'#7fc8ff',opacity:.55},g);
+        [-10,0,10].forEach(function(o,k){
+          var jt=el('path',{d:'M'+(bx+o)+' '+(LV.yB+1)+' Q'+(bx+o)+' '+(LV.yB-17-(k===1?8:0))+' '+(bx+o+(o>0?3:o<0?-3:0))+' '+(LV.yB-6),fill:'none',stroke:'#dff3ff','stroke-width':1.6,'stroke-linecap':'round',class:'jet'},g);
+          jt.style.animationDelay=(k*.35).toFixed(2)+'s';
+        });
+      });
+    }
+  }
+}
+function drawLouvreSection(i,animate){
+  var R=S.ref,N=S.N,t0=S.mb[i],t1=S.mb[i+1],cx=LV.cx,g=el('g',{class:'pl'},layers.deck);
+  var y0=lvY(t0),y1=lvY(t1),a0=lvW(t0),a1=lvW(t1);
+  el('polygon',{points:(cx-a0)+','+y0+' '+(cx+a0)+','+y0+' '+(cx+a1)+','+y1+' '+(cx-a1)+','+y1,fill:'#bfe6f5',opacity:.34},g);
+  var L=function(x1,yy1,x2,yy2,w){var e=efLine(g,x1,yy1,x2,yy2,w);R.iron.push(e);return e};
+  L(cx-a0,y0,cx-a1,y1,2.2);L(cx+a0,y0,cx+a1,y1,2.2);L(cx-a1,y1,cx+a1,y1,1.6);
+  var c=Math.max(1,Math.round(a0/9));
+  for(var j=0;j<c;j++){
+    var xa=-a0+2*a0*j/c,xb=-a0+2*a0*(j+1)/c,ua=-a1+2*a1*j/c,ub=-a1+2*a1*(j+1)/c;
+    L(cx+xa,y0,cx+ub,y1,.8);L(cx+xb,y0,cx+ua,y1,.8);
+  }
+  if(i===0)R.ironF.push(el('rect',{x:cx-a0-8,y:LV.yB-1,width:2*a0+16,height:4,rx:1.2},g));
+  if(i===N-1)el('circle',{cx:cx,cy:y1-1,r:2.2,fill:'#ff6a5e',class:'beacon'},g);
+  if(S.lup>=2)lvExtras(g,i,t0,t1,y0,y1,a0,a1,N);
+  S.planks[i]=g;setSky(S.skyP);
+  if(animate){
+    if(i===0||i===N-1||i===Math.floor(N/2))toast(i===N-1?'The apex':(i===0?'The base':'Halfway up'),'glass (verre) \u00b7 steel (acier) \u00b7 museum (mus\u00e9e)',true,2400);
+    g.style.transform='translateY(-40px)';g.style.opacity='0';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      g.style.transition='transform .4s cubic-bezier(.3,1.4,.5,1),opacity .25s';g.style.transform='';g.style.opacity='1';
+    })});
+  }
+  return g;
+}
 /* ---------- PARIS: the Eiffel Tower level ---------- */
 var EF={cx:260,yB:198,yT:30,w0:74,wT:2.5};
 function hw(t){return EF.wT+(EF.w0-EF.wT)*Math.pow(1-t,2.35)}
@@ -674,19 +770,19 @@ function efExtras(g,i,t0,t1,y0,y1,a0,a1,cx,N){
   var NS='http://www.w3.org/2000/svg',eup=S.eup;
   if(eup>=4){
     [-1,1].forEach(function(d){
-      var h=el('line',{x1:(cx+d*a0).toFixed(1),y1:y0.toFixed(1),x2:(cx+d*a1).toFixed(1),y2:y1.toFixed(1),stroke:'#f2c230','stroke-width':6,'stroke-linecap':'round',opacity:.3},g);
+      var h=el('line',{x1:(cx+d*a0).toFixed(1),y1:y0.toFixed(1),x2:(cx+d*a1).toFixed(1),y2:y1.toFixed(1),stroke:lcol(i+(d>0?1:0)),'stroke-width':6,'stroke-linecap':'round',opacity:.3},g);
       g.insertBefore(h,g.firstChild);
     });
   }
   [-1,1].forEach(function(d){
     [.3,.7].forEach(function(f,k){
       var x=cx+d*(a0+(a1-a0)*f),y=y0+(y1-y0)*f;
-      var b=el('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:eup>=4?2:1.6,fill:eup>=4?'#ffe27a':'#ffd45a',class:'bulb'},g);
+      var b=el('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:eup>=4?2:1.6,fill:lcol(i*3+k+(d>0?1:0)),class:'bulb'},g);
       b.style.animationDelay=((i*.37+k*.9+(d>0?.5:0))%2.2).toFixed(2)+'s';
     });
   });
   if(eup>=4&&i%2===0){
-    var yp=y1,sp=el('path',{d:'M'+(cx-2)+' '+(yp-9)+' l1.2 3.2 3.2 1.2 -3.2 1.2 -1.2 3.2 -1.2 -3.2 -3.2 -1.2 3.2 -1.2 z',fill:'#fff6b0',class:'bulb'},g);
+    var yp=y1,sp=el('path',{d:'M'+(cx-2)+' '+(yp-9)+' l1.2 3.2 3.2 1.2 -3.2 1.2 -1.2 3.2 -1.2 -3.2 -3.2 -1.2 3.2 -1.2 z',fill:lcol(i+2),class:'bulb'},g);
     sp.style.animationDelay=(i*.4%2).toFixed(2)+'s';
   }
   if(eup>=3&&i===N-1){
@@ -703,6 +799,7 @@ function efExtras(g,i,t0,t1,y0,y1,a0,a1,cx,N){
 }
 function drawSection(i,animate){
   if(S.mode==='liberty')return drawLibSection(i,animate);
+  if(S.mode==='louvre')return drawLouvreSection(i,animate);
   var R=S.ref,N=S.N,t0=S.mb[i],t1=S.mb[i+1],cx=EF.cx,g=el('g',{class:'pl'},layers.deck);
   var push=function(e){R.iron.push(e);return e};
   var y0=ty(t0),y1=ty(t1),ym=(y0+y1)/2,a0=hw(t0),a1=hw(t1),am=hw((t0+t1)/2);
@@ -750,12 +847,16 @@ function efBitMark(i){
     var d2=efBitX(i),y2=(i%3===0)?193:150+(i%4)*9,x2=LB.cx+d2*((i%3===0)?58:20);
     el('circle',{cx:x2,cy:y2,r:3.4,fill:'#16294f'},g);return;
   }
+  if(S.mode==='louvre'){
+    var yl=LV.yB-8-(i%4)*10,tl=(LV.yB-yl)/(LV.yB-LV.yT),dl=efBitX(i),xl=LV.cx+dl*lvW(tl)*(i%3===0?.9:.45);
+    el('circle',{cx:xl.toFixed(1),cy:yl,r:3.4,fill:'#16294f'},g);return;
+  }
   var yy=EF.yB-6-(i%4)*8,t=(EF.yB-yy)/(EF.yB-EF.yT),d=efBitX(i);
   var x=EF.cx+d*hw(t)*(i%3===0?1:.5);
   el('circle',{cx:x.toFixed(1),cy:yy,r:3.4,fill:'#16294f'},g);
   el('polyline',{points:(x-3)+','+(yy+3)+' '+x+','+(yy+6)+' '+(x+2)+','+(yy+3),fill:'none',stroke:'#16294f','stroke-width':1},g);
 }
-function efBiteX(){var side=S.biteN%2?1:-1;if(S.mode==='liberty')return LB.cx+side*(S.biteN%3===0?70:38);return EF.cx+side*(S.biteN%3===0?EF.w0:EF.w0*.5)}
+function efBiteX(){var side=S.biteN%2?1:-1;if(S.mode==='louvre')return LV.cx+side*(S.biteN%3===0?LV.w0:LV.w0*.5);if(S.mode==='liberty')return LB.cx+side*(S.biteN%3===0?70:38);return EF.cx+side*(S.biteN%3===0?EF.w0:EF.w0*.5)}
 async function fireworks(){
   var gen=S.gen,cols=['#f2c230','#e0584f','#4cc36e','#4a7be8','#e65aa8','#f5eedc'];
   var bursts=[];
@@ -772,6 +873,22 @@ async function fireworks(){
   await Promise.all(bursts);
   return gen===S.gen;
 }
+function showRocket(){
+  if(!layers.truck||S.mode==='bridge')return;
+  var gen=S.gen,x=60+rnd(400),y=24+rnd(60),g=el('g',{},layers.truck),k0=rnd(6);
+  var tr=el('circle',{cx:x,cy:200,r:1.8,fill:'#fff6b0'},g),parts=[];
+  for(var k=0;k<16;k++)parts.push(el('circle',{r:1.8,fill:lcol(k+k0),opacity:0},g));
+  tw(650,function(u){if(gen!==S.gen)return;tr.setAttribute('cy',(200+(y-200)*u).toFixed(1))},easeOut).then(function(){
+    if(gen!==S.gen)return;
+    tr.setAttribute('opacity',0);
+    return tw(1200,function(u){if(gen!==S.gen)return;
+      parts.forEach(function(c,k){var a=k/16*6.283;c.setAttribute('cx',(x+Math.cos(a)*u*30).toFixed(1));c.setAttribute('cy',(y+Math.sin(a)*u*30+u*u*10).toFixed(1));c.setAttribute('opacity',(1-u).toFixed(2))})
+    });
+  }).then(function(){if(g.parentNode)g.parentNode.removeChild(g)});
+}
+setInterval(function(){
+  if(S.fx&&S.fx.indexOf('fw')>=0&&S.mode!=='bridge'&&S.active&&!S.ended&&!S.paused&&document.visibilityState==='visible')showRocket();
+},4200);
 function buildScene(){
   S.gen++;
   var svg=$('#wb');svg.innerHTML='';
@@ -791,10 +908,11 @@ function buildScene(){
   S.ghosts=[];S.planks=[];
   if(ef){
     S.cab=null;S.mb=monBounds(S.N,S.mode);
-    if(lib)buildNY(svg);else buildParis(svg);
+    if(lib)buildNY(svg);else if(S.mode==='louvre')buildLouvre(svg);else buildParis(svg);
     for(var i=0;i<S.N;i++){
       var t0=S.mb[i],t1=S.mb[i+1];
       if(lib){var lw=t1<.1?72:(t1<.42?34:(t1<.7?28:32));S.ghosts.push(el('rect',{x:LB.cx-lw,y:lty(t1).toFixed(1),width:2*lw,height:(lty(t0)-lty(t1)).toFixed(1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));continue}
+      if(S.mode==='louvre'){S.ghosts.push(el('polygon',{points:(LV.cx-lvW(t0))+','+lvY(t0)+' '+(LV.cx+lvW(t0))+','+lvY(t0)+' '+(LV.cx+lvW(t1))+','+lvY(t1)+' '+(LV.cx-lvW(t1))+','+lvY(t1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));continue}
       S.ghosts.push(el('polygon',{points:(EF.cx-hw(t0))+','+ty(t0)+' '+(EF.cx+hw(t0))+','+ty(t0)+' '+(EF.cx+hw(t1))+','+ty(t1)+' '+(EF.cx-hw(t1))+','+ty(t1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));
     }
   }else{
@@ -931,7 +1049,7 @@ function awardFish(){
 /* tap above a fish and it leaps out of the river; as many times as you like */
 function fishJump(sw,tx,ty){
   if(!sw||sw.jump)return;
-  var gen=S.gen,wy=S.mode==='liberty'?206:(S.mode==='eiffel'?214:208);
+  var gen=S.gen,wy=S.mode==='liberty'?206:(S.mode!=='bridge'?214:208);
   sw.jump=true;
   var x0=sw.x,dir=sw.v>=0?1:-1,h=Math.max(45,Math.min(150,wy+8-ty)),dx=dir*(50+rnd(40));
   function ring(x){
@@ -1073,6 +1191,7 @@ function chompHit(a){
   if(!ef&&S.decor.length)pool.push(['decor',30]);
   if(!ef&&S.upg>1)pool.push(['struct',15]);
   if(S.mode==='eiffel'&&S.eup>1)pool.push(['estruct',15]);
+  if(S.mode==='louvre'&&S.lup>1)pool.push(['lstruct',15]);
   if(ef&&S.placed>1)pool.push(['top',20]);
   var tot=0;pool.forEach(function(p){tot+=p[1]});
   var r=Math.random()*tot,kind='plank';
@@ -1080,7 +1199,7 @@ function chompHit(a){
   var base=a[3];
   if(ef){
     base=base.replace(/plank/gi,MON[S.mode].base).replace(/the bridge/,'the '+MON[S.mode].noun);
-    if(a[0]==='swim')base=S.mode==='eiffel'?'Chomp swam up the Seine.':'Chomp swam around the island.';
+    if(a[0]==='swim')base=S.mode==='liberty'?'Chomp swam around the island.':'Chomp swam up the Seine.';
   }
   if(kind==='decor'){
     var id=S.decor[rnd(S.decor.length)],d=DECOR.filter(function(x){return x.id===id})[0];
@@ -1097,6 +1216,11 @@ function chompHit(a){
     var oe=EUP[S.eup-1];
     S.eup--;S.rebuild=true;
     return hitSentence(a,'your '+oe.n.toLowerCase())+' It is now: '+EUP[S.eup-1].n.toLowerCase()+'.';
+  }
+  if(kind==='lstruct'){
+    var ol=LUP[S.lup-1];
+    S.lup--;S.rebuild=true;
+    return hitSentence(a,'your '+ol.n.toLowerCase())+' It is now: '+LUP[S.lup-1].n.toLowerCase()+'.';
   }
   if(kind==='top'){
     S.placed--;var g=S.planks[S.placed];
@@ -1270,7 +1394,7 @@ function post(action,body){
 function snapshot(){
   var inLevel=!S.levelDone&&S.active;
   return {level:S.levelDone?(S.nextLevel||S.level):S.level,score:S.score,best:S.best,lives:S.lives,placed:inLevel?S.placed:0,inLevel:inLevel,
-    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,eup:S.eup,mode:S.levelDone?(S.nextMode||S.mode):S.mode,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
+    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,eup:S.eup,lup:S.lup,fx:S.fx.slice(),lc:S.lc,mode:S.levelDone?(S.nextMode||S.mode):S.mode,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
 }
 function scheduleSave(){
   if(!S.active)return;
@@ -1296,6 +1420,9 @@ function adopt(pr){
   S.coins=Math.max(0,(pr&&pr.coins)|0);
   S.upg=Math.min(6,Math.max(1,(pr&&pr.upg)|0||1));
   S.eup=Math.min(4,Math.max(1,(pr&&pr.eup)|0||1));
+  S.lup=Math.min(4,Math.max(1,(pr&&pr.lup)|0||1));
+  S.fx=pr&&Array.isArray(pr.fx)?FX_IDS.filter(function(id){return pr.fx.indexOf(id)>=0}):[];
+  S.lc=FXC.some(function(c){return c.id===(pr&&pr.lc)})?pr.lc:'gold';
   S.decor=pr&&Array.isArray(pr.decor)?pr.decor.filter(function(id){return DECOR.some(function(d){return d.id===id})}):[];
   S.fish={};FISH.forEach(function(f){var n=pr&&pr.fish&&pr.fish[f.id];if(n>0)S.fish[f.id]=n|0});
   S.stats=normStats(pr&&pr.stats);
@@ -1423,7 +1550,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower with lights, a searchlight and golden illumination, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower and your Louvre Pyramid, buy a fireworks show and choose the color of the sparkles, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then the glass Louvre Pyramid, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1508,6 +1635,20 @@ function shopScreen(back){
     h+='<div class="shopi"><span>'+lv+'. '+er.n+' <em>('+er.fr+')</em></span>'+
       (cur?'<span class="ok">Current</span>':own?'<span class="ok">Owned</span>':next?'<button class="btn'+(S.coins>=er.c?' solid':'')+'" data-e="'+lv+'"'+(S.coins>=er.c?'':' disabled')+'>Upgrade &middot; '+er.c+'</button>':'<span><em>Locked &middot; '+er.c+'</em></span>')+'</div>';
   });
+  h+='</div><p class="big">Louvre Pyramid upgrades</p><p>Make the glass pyramid in Paris shine. Chomp can wreck these too.</p><div class="shop">';
+  LUP.forEach(function(er,i){
+    var lv=i+1,cur=S.lup===lv,own=S.lup>lv,next=S.lup+1===lv;
+    h+='<div class="shopi"><span>'+lv+'. '+er.n+' <em>('+er.fr+')</em></span>'+
+      (cur?'<span class="ok">Current</span>':own?'<span class="ok">Owned</span>':next?'<button class="btn'+(S.coins>=er.c?' solid':'')+'" data-l="'+lv+'"'+(S.coins>=er.c?'':' disabled')+'>Upgrade &middot; '+er.c+'</button>':'<span><em>Locked &middot; '+er.c+'</em></span>')+'</div>';
+  });
+  h+='</div><p class="big">Light show</p><p>Fireworks and sparkling colors for your monuments in Paris and New York.</p><div class="shop">';
+  var fwOwn=S.fx.indexOf('fw')>=0;
+  h+='<div class="shopi"><span>Fireworks show <em>(feux d\'artifice)</em></span>'+(fwOwn?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=80?' solid':'')+'" data-fw="1"'+(S.coins>=80?'':' disabled')+'>Buy &middot; 80</button>')+'</div>';
+  FXC.forEach(function(c){
+    var own=c.id==='gold'||S.fx.indexOf('c_'+c.id)>=0,use=S.lc===c.id;
+    h+='<div class="shopi"><span>Sparkle: '+c.n+' <em>('+c.fr+')</em></span>'+
+      (use?'<span class="ok">In use</span>':own?'<button class="btn solid" data-lc="'+c.id+'">Use</button>':'<button class="btn'+(S.coins>=c.c?' solid':'')+'" data-lc="'+c.id+'"'+(S.coins>=c.c?'':' disabled')+'>Buy &middot; '+c.c+'</button>')+'</div>';
+  });
   h+='</div><p class="big">Decorations</p><div class="shop">';
   DECOR.forEach(function(d){
     var own=S.decor.indexOf(d.id)>=0;
@@ -1523,7 +1664,7 @@ function shopScreen(back){
       S.coins-=d.c;S.decor.push(d.id);S.shopDirty=true;hud();
       if(S.mode==='bridge'&&layers.decor&&S.ref&&S.ref.glow)drawDecor(d.id);
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
@@ -1535,10 +1676,39 @@ function shopScreen(back){
       if(!er||lv!==S.upg+1||S.coins<er.c)return;
       S.coins-=er.c;S.upg=lv;S.shopDirty=true;hud();
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
+    });
+  });
+  function persistShop(){
+    var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
+    base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+    P.progress=base;lsSet(progKey(),JSON.stringify(base));
+    if(P.user){P.dirty=true;flush()}
+    S.shopDirty=true;hud();shopScreen(back);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-l]'),function(b){
+    b.addEventListener('click',function(){
+      var lv=+b.getAttribute('data-l'),er=LUP[lv-1];
+      if(!er||lv!==S.lup+1||S.coins<er.c)return;
+      S.coins-=er.c;S.lup=lv;persistShop();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-fw]'),function(b){
+    b.addEventListener('click',function(){
+      if(S.coins<80||S.fx.indexOf('fw')>=0)return;
+      S.coins-=80;S.fx.push('fw');persistShop();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-lc]'),function(b){
+    b.addEventListener('click',function(){
+      var id=b.getAttribute('data-lc'),c=FXC.filter(function(x){return x.id===id})[0];
+      if(!c)return;
+      var own=id==='gold'||S.fx.indexOf('c_'+id)>=0;
+      if(!own){if(S.coins<c.c)return;S.coins-=c.c;S.fx.push('c_'+id)}
+      S.lc=id;persistShop();
     });
   });
   Array.prototype.forEach.call(document.querySelectorAll('[data-e]'),function(b){
@@ -1547,7 +1717,7 @@ function shopScreen(back){
       if(!er||lv!==S.eup+1||S.coins<er.c)return;
       S.coins-=er.c;S.eup=lv;S.shopDirty=true;hud();
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
