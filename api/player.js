@@ -23,11 +23,11 @@ module.exports = async (req, res) => {
     if (!/^\d{4}$/.test(code)) return res.status(400).json({ error: 'Your secret code must be exactly 4 digits.' });
     const profile = {
       nom: nom.toUpperCase(), codeHash: L.codeHash(key, code),
-      createdAt: new Date().toISOString(), best: 0, progress: null, wb: null, wbBest: 0
+      createdAt: new Date().toISOString(), best: 0, progress: null, wb: null, wbBest: 0, xm: null, xmBest: 0
     };
     // Création sans sha : GitHub refuse (422) si le fichier existe déjà, ce qui garantit l'unicité.
     const r = await L.ghPut(L.pathOf(key), profile, null, ghToken, `new player ${key}`);
-    if (r.ok) return res.json({ token: L.issueToken(key), user: { key, nom: profile.nom }, progress: null, best: 0, wb: null, wbBest: 0 });
+    if (r.ok) return res.json({ token: L.issueToken(key), user: { key, nom: profile.nom }, progress: null, best: 0, wb: null, wbBest: 0, xm: null, xmBest: 0 });
     if (r.status === 422) return res.status(409).json({ error: 'This name is already registered. Log in, or add your first name to be unique.' });
     return res.status(500).json({ error: 'Could not create the profile. Try again.' });
   }
@@ -45,7 +45,7 @@ module.exports = async (req, res) => {
     if (f.missing || !L.safeEqual(f.data.codeHash || '', L.codeHash(key, code))) return bad();
     L.clearFailures(req);
     const d = f.data;
-    return res.json({ token: L.issueToken(key), user: { key, nom: d.nom }, progress: d.progress || null, best: d.best || 0, wb: d.wb || null, wbBest: d.wbBest || 0 });
+    return res.json({ token: L.issueToken(key), user: { key, nom: d.nom }, progress: d.progress || null, best: d.best || 0, wb: d.wb || null, wbBest: d.wbBest || 0, xm: d.xm || null, xmBest: d.xmBest || 0 });
   }
 
   // ---------------------------------------------------------------- load / save (jeton requis)
@@ -55,7 +55,22 @@ module.exports = async (req, res) => {
     if (action === 'load') {
       const f = await L.ghGet(L.pathOf(key), ghToken);
       if (f.error || f.missing) return res.status(500).json({ error: 'Profile not found.' });
-      return res.json({ progress: f.data.progress || null, best: f.data.best || 0, wb: f.data.wb || null, wbBest: f.data.wbBest || 0 });
+      return res.json({ progress: f.data.progress || null, best: f.data.best || 0, wb: f.data.wb || null, wbBest: f.data.wbBest || 0, xm: f.data.xm || null, xmBest: f.data.xmBest || 0 });
+    }
+    if (b.game === 'xm') {
+      const xm = L.cleanXmProgress(b.progress);
+      if (!xm) return res.status(400).json({ error: 'Invalid progress data.' });
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const f = await L.ghGet(L.pathOf(key), ghToken);
+        if (f.error || f.missing) return res.status(500).json({ error: 'Profile not found.' });
+        const d = f.data;
+        d.xm = xm;
+        d.xmBest = Math.max(d.xmBest || 0, xm.best);
+        d.xmUpdatedAt = new Date().toISOString();
+        const r = await L.ghPut(L.pathOf(key), d, f.sha, ghToken, `save xm ${key}`);
+        if (r.ok) return res.json({ success: true, best: d.xmBest });
+      }
+      return res.status(500).json({ error: 'Save conflict. Try again.' });
     }
     if (b.game === 'wb') {
       const wb = L.cleanWbProgress(b.progress);

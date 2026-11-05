@@ -48,6 +48,14 @@ module.exports = async (req, res) => {
           levelsCleared: (d.wb.stats || {}).levelsCleared || 0, maxLevel: (d.wb.stats || {}).maxLevel || 1,
           gifts: (d.wb.stats || {}).gifts || 0, giftsOk: (d.wb.stats || {}).giftsOk || 0,
           byCat: (d.wb.stats || {}).byCat || {}
+        } : null,
+        xm: d.xm ? {
+          day: d.xm.day || 1, score: d.xm.score || 0, best: d.xmBest || 0, updatedAt: d.xmUpdatedAt || null,
+          answered: (d.xm.stats || {}).answered || 0, correct: (d.xm.stats || {}).correct || 0,
+          levelsCleared: (d.xm.stats || {}).levelsCleared || 0, maxLevel: (d.xm.stats || {}).maxLevel || 1,
+          gifts: (d.xm.stats || {}).gifts || 0, giftsOk: (d.xm.stats || {}).giftsOk || 0,
+          items: (d.xm.own || []).length, coins: d.xm.coins || 0, advent: (d.xm.adv || []).length,
+          byCat: (d.xm.stats || {}).byCat || {}
         } : null
       };
     });

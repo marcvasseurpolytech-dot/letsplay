@@ -190,7 +190,47 @@ function cleanWbProgress(p) {
   };
 }
 
+// Noel (village de Noel) : progression stockee a part (champs xm / xmBest du meme profil).
+const ID = /^[a-z0-9_]{1,24}$/;
+const ids = (a, max) => Array.isArray(a) ? Array.from(new Set(a.filter(x => typeof x === 'string' && ID.test(x)))).slice(0, max) : [];
+function cleanXmProgress(p) {
+  if (!p || typeof p !== 'object' || typeof p.day !== 'number' || typeof p.score !== 'number') return null;
+  const cats = {};
+  CATS.forEach(k => { cats[k] = !!(p.cats && p.cats[k]); });
+  if (!CATS.some(k => cats[k])) CATS.forEach(k => { cats[k] = true; });
+  const st = p.stats && typeof p.stats === 'object' ? p.stats : {};
+  const byCat = {};
+  CATS.forEach(k => {
+    const c = st.byCat && st.byCat[k];
+    if (c) byCat[k] = { n: int(c.n, 0, 1e6, 0), ok: int(c.ok, 0, 1e6, 0) };
+  });
+  const cu = {};
+  if (p.cu && typeof p.cu === 'object') {
+    Object.keys(p.cu).slice(0, 120).forEach(k => {
+      const v = p.cu[k];
+      if (/^[a-z0-9_]{1,16}$/.test(k) && typeof v === 'string' && /^[A-Za-z0-9_#.-]{0,20}$/.test(v)) cu[k] = v;
+    });
+  }
+  const inv = p.inv && typeof p.inv === 'object' ? p.inv : {};
+  return {
+    coins: int(p.coins, 0, 1e7, 0), own: ids(p.own, 160), unl: ids(p.unl, 100), pk: ids(p.pk, 12), cs: ids(p.cs, 12), cu,
+    inv: { shield: int(inv.shield, 0, 99, 0), half: int(inv.half, 0, 99, 0), freeze: int(inv.freeze, 0, 99, 0) },
+    adv: Array.isArray(p.adv) ? Array.from(new Set(p.adv.map(n => int(n, 1, 24, 0)).filter(n => n > 0))) : [],
+    qi: int(p.qi, 0, 200, 0), stg: int(p.stg, 1, 5, 1),
+    day: int(p.day, 1, 9999, 1), score: int(p.score, 0, 1e7, 0), best: int(p.best, 0, 1e7, 0),
+    lives: int(p.lives, 0, 5, 5), placed: int(p.placed, 0, 40, 0), inLevel: !!p.inLevel,
+    qCount: int(p.qCount, 0, 1e6, 0), okCount: int(p.okCount, 0, 1e6, 0),
+    cats,
+    stats: { byCat, answered: int(st.answered, 0, 1e6, 0), correct: int(st.correct, 0, 1e6, 0),
+             levelsCleared: int(st.levelsCleared, 0, 1e4, 0), maxLevel: int(st.maxLevel, 1, 9999, 1),
+             gifts: int(st.gifts, 0, 1e6, 0), giftsOk: int(st.giftsOk, 0, 1e6, 0),
+             maxStreak: int(st.maxStreak, 0, 1e5, 0), chests: int(st.chests, 0, 1e5, 0),
+             takeoffs: int(st.takeoffs, 0, 1e5, 0), cust: int(st.cust, 0, 1e6, 0) },
+    savedAt: int(p.savedAt, 0, 8.64e15, Date.now())
+  };
+}
+
 module.exports = {
   ghGet, ghPut, ghList, ghDelete, DIR, checkAdminPassword, issueAdminToken, isAdmin, pathOf, playerKey, codeHash, issueToken, keyFromRequest, safeEqual,
-  throttled, noteFailure, clearFailures, cleanProgress, cleanWbProgress
+  throttled, noteFailure, clearFailures, cleanProgress, cleanWbProgress, cleanXmProgress
 };
