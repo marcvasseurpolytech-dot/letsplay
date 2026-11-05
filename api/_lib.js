@@ -148,7 +148,32 @@ function cleanProgress(p) {
   };
 }
 
+// Word Bridge : progression stockée à part (champs wb / wbBest du même profil que Arrow Escape).
+function cleanWbProgress(p) {
+  if (!p || typeof p !== 'object' || typeof p.level !== 'number' || typeof p.score !== 'number') return null;
+  const cats = {};
+  CATS.forEach(k => { cats[k] = !!(p.cats && p.cats[k]); });
+  if (!CATS.some(k => cats[k])) CATS.forEach(k => { cats[k] = true; });
+  const st = p.stats && typeof p.stats === 'object' ? p.stats : {};
+  const byCat = {};
+  CATS.forEach(k => {
+    const c = st.byCat && st.byCat[k];
+    if (c) byCat[k] = { n: int(c.n, 0, 1e6, 0), ok: int(c.ok, 0, 1e6, 0) };
+  });
+  const bitten = Array.isArray(p.bitten) ? p.bitten.slice(0, 10).map(v => int(v, 0, 29, -1)).filter(v => v >= 0) : [];
+  return {
+    level: int(p.level, 1, 99, 1), score: int(p.score, 0, 1e7, 0), best: int(p.best, 0, 1e7, 0),
+    lives: int(p.lives, 0, 5, 5), placed: int(p.placed, 0, 30, 0), inLevel: !!p.inLevel, bitten,
+    qCount: int(p.qCount, 0, 1e6, 0), okCount: int(p.okCount, 0, 1e6, 0),
+    cats,
+    stats: { byCat, answered: int(st.answered, 0, 1e6, 0), correct: int(st.correct, 0, 1e6, 0),
+             levelsCleared: int(st.levelsCleared, 0, 1e4, 0), maxLevel: int(st.maxLevel, 1, 99, 1),
+             gifts: int(st.gifts, 0, 1e6, 0), giftsOk: int(st.giftsOk, 0, 1e6, 0) },
+    savedAt: int(p.savedAt, 0, 8.64e15, Date.now())
+  };
+}
+
 module.exports = {
   ghGet, ghPut, ghList, ghDelete, DIR, checkAdminPassword, issueAdminToken, isAdmin, pathOf, playerKey, codeHash, issueToken, keyFromRequest, safeEqual,
-  throttled, noteFailure, clearFailures, cleanProgress
+  throttled, noteFailure, clearFailures, cleanProgress, cleanWbProgress
 };

@@ -41,7 +41,14 @@ module.exports = async (req, res) => {
         key: it.name.replace(/\.json$/, ''), nom: d.nom, createdAt: d.createdAt || null, updatedAt: d.updatedAt || null,
         level: p.level || 1, score: p.score || 0, best: d.best || 0,
         answered: st.answered || 0, correct: st.correct || 0, levelsCleared: st.levelsCleared || 0,
-        maxLevel: st.maxLevel || 1, byCat: st.byCat || {}
+        maxLevel: st.maxLevel || 1, byCat: st.byCat || {},
+        wb: d.wb ? {
+          level: d.wb.level || 1, score: d.wb.score || 0, best: d.wbBest || 0, updatedAt: d.wbUpdatedAt || null,
+          answered: (d.wb.stats || {}).answered || 0, correct: (d.wb.stats || {}).correct || 0,
+          levelsCleared: (d.wb.stats || {}).levelsCleared || 0, maxLevel: (d.wb.stats || {}).maxLevel || 1,
+          gifts: (d.wb.stats || {}).gifts || 0, giftsOk: (d.wb.stats || {}).giftsOk || 0,
+          byCat: (d.wb.stats || {}).byCat || {}
+        } : null
       };
     });
     return res.json({ players: rows.filter(Boolean) });
