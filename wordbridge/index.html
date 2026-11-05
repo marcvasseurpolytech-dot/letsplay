@@ -159,6 +159,34 @@ select.fld{appearance:auto}
 @keyframes flick{from{transform:scale(1,1)}to{transform:scale(1.12,.92)}}
 .bird .wing{transform-box:fill-box;transform-origin:center;animation:flap .3s ease-in-out infinite alternate}
 @keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(-.45)}}
+.shophead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.shophead h2{margin:0}
+.coinchip{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--navy);background:var(--gold);border-radius:999px;padding:4px 12px}
+.coinchip b{font-size:15px}
+.stabs{display:flex;gap:6px;overflow-x:auto;margin:12px 0 6px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.stab{flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;background:var(--navy2);color:var(--cream);border:1px solid rgba(245,238,220,.18);border-radius:999px;padding:7px 12px;cursor:pointer;touch-action:manipulation;white-space:nowrap}
+.stab i{font-style:normal;font-weight:400;opacity:.65;margin-left:6px;font-size:11px}
+.stab.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.stab.on i{opacity:.8}
+.sintro{font-size:14px;line-height:1.4;color:var(--muted);margin:8px 0}
+.sbar{height:5px;border-radius:3px;background:rgba(245,238,220,.12);overflow:hidden;margin:6px 0 10px}
+.sbar b{display:block;height:100%;background:var(--gold)}
+.sstep{display:flex;align-items:center;gap:10px;background:var(--navy2);border:1px solid rgba(245,238,220,.12);border-radius:10px;padding:9px 10px}
+.sstep .snum{flex:0 0 26px;height:26px;border-radius:50%;background:rgba(245,238,220,.12);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700}
+.sstep .sname{flex:1;font-size:15px;font-weight:600;line-height:1.25}
+.sstep .sname em{display:block;font-style:normal;font-weight:400;font-size:12px;color:var(--muted)}
+.sstep.done .snum{background:var(--green);color:var(--navy)}
+.sstep.now{border-color:var(--gold)}.sstep.now .snum{background:var(--gold);color:var(--navy)}
+.sstep.lock{opacity:.55}
+.sstep .ok{font-family:'JetBrains Mono',monospace;font-size:12px}
+.sstep .slock{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.swatches{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.sw{display:flex;align-items:center;gap:8px;text-align:left;background:var(--navy2);color:var(--cream);border:1px solid rgba(245,238,220,.14);border-radius:10px;padding:8px;cursor:pointer;font-family:'Source Serif 4',Georgia,serif;font-size:14px;font-weight:600;touch-action:manipulation}
+.sw:disabled{opacity:.4;cursor:default}
+.sw.use{border-color:var(--gold)}
+.sw .dot{flex:0 0 22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.4)}
+.sw em{display:block;font-style:normal;font-weight:400;font-size:11px;color:var(--muted)}
+.sw .sst{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)}
 .shop{display:flex;flex-direction:column;gap:6px;margin:8px 0}
 .shopi{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--navy2);border:1px solid rgba(245,238,220,.12);border-radius:8px;padding:8px 10px;font-size:15px}
 .shopi em{color:var(--muted);font-style:normal}
@@ -1603,7 +1631,7 @@ function startScreen(){
   var ng=$('#newg');if(ng)ng.addEventListener('click',function(){P.confirmNew=true;startScreen()});
   var yes=$('#yes');if(yes)yes.addEventListener('click',function(){P.confirmNew=false;newGame()});
   var no=$('#no');if(no)no.addEventListener('click',function(){P.confirmNew=false;startScreen()});
-  var sh0=$('#shp0');if(sh0)sh0.addEventListener('click',function(){shopScreen(startScreen)});
+  var sh0=$('#shp0');if(sh0)sh0.addEventListener('click',function(){S.shopTab=null;shopScreen(startScreen)});
   wireProfile();
 }
 function newGame(){
@@ -1651,52 +1679,52 @@ function levelDoneScreen(bonus,cb){
   var efd=S.mode!=='bridge',goParis=S.nextMode!=='bridge',nm=MON[S.nextMode];
   screen('<h2>'+(efd?MON[S.mode].title+' complete':'Bridge '+S.level+' complete')+'</h2>'+(goParis?'<p class="ok">'+(efd?MON[S.mode].title+' finished!':'Bridge finished!')+' Next stop: '+nm.place+'. Build the '+nm.title+'!</p>':'')+'<p>Bonus for remaining lives: <b class="big">+'+bonus+'</b> points and <b class="big">+'+cb+'</b> coins<br>Score: <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
     '<div class="row"><button class="btn solid" id="nx">'+(goParis?'Go to '+nm.place:'Next bridge')+'</button><button class="btn" id="shp">Shop ('+S.coins+' coins)</button><button class="btn" id="mn">Menu</button></div>');
-  $('#shp').addEventListener('click',function(){shopScreen(function(){levelDoneScreen(bonus,cb)})});
+  $('#shp').addEventListener('click',function(){S.shopTab=null;shopScreen(function(){levelDoneScreen(bonus,cb)})});
   $('#nx').addEventListener('click',function(){S.level++;S.missed=[];startLevel()});
   $('#mn').addEventListener('click',startScreen);
 }
-function shopScreen(back){
-  var h='<h2>Shop and album</h2><p>You have <b class="big">'+S.coins+'</b> coins. Earn 1 coin per correct answer, 5 per gift, and 3 per life left at the end of a bridge.</p>';
-  h+='<p class="big">Bridge upgrades</p><p>Start from a rope bridge and work your way up to the Pont de Normandie. Your upgrade shows on your bridge as soon as you go back to the game.</p><div class="shop">';
-  ERAS.forEach(function(er,i){
-    var lv=i+1,cur=S.upg===lv,own=S.upg>lv,next=S.upg+1===lv;
-    h+='<div class="shopi"><span>'+lv+'. '+er.n+' <em>('+er.fr+')</em></span>'+
-      (cur?'<span class="ok">Current</span>':own?'<span class="ok">Owned</span>':next?'<button class="btn'+(S.coins>=er.c?' solid':'')+'" data-u="'+lv+'"'+(S.coins>=er.c?'':' disabled')+'>Upgrade &middot; '+er.c+'</button>':'<span><em>Locked &middot; '+er.c+'</em></span>')+'</div>';
+var SHOP_TABS=[['bridge','Bridge'],['eiffel','Eiffel'],['louvre','Louvre'],['liberty','Liberty'],['show','Light show'],['decor','Decor']];
+function shopSteps(list,cur,attr,intro){
+  var h='<p class="sintro">'+intro+'</p><div class="sbar"><b style="width:'+Math.round((cur-1)/(list.length-1)*100)+'%"></b></div><div class="shop">';
+  list.forEach(function(er,i){
+    var lv=i+1,done=cur>lv,now=cur===lv,next=cur+1===lv,afford=S.coins>=er.c;
+    h+='<div class="sstep'+(now?' now':done?' done':next?' next':' lock')+'"><span class="snum">'+(done?'\u2713':lv)+'</span><span class="sname">'+er.n+'<em>'+er.fr+'</em></span>'+
+      (now?'<span class="ok">Current</span>':done?'<span class="ok">Owned</span>':next?'<button class="btn'+(afford?' solid':'')+'" data-'+attr+'="'+lv+'"'+(afford?'':' disabled')+'>'+er.c+' coins</button>':'<span class="slock">'+er.c+' coins</span>')+'</div>';
   });
-  h+='</div><p class="big">Eiffel Tower upgrades</p><p>Light up the tower you build in Paris. Chomp can wreck these too.</p><div class="shop">';
-  EUP.forEach(function(er,i){
-    var lv=i+1,cur=S.eup===lv,own=S.eup>lv,next=S.eup+1===lv;
-    h+='<div class="shopi"><span>'+lv+'. '+er.n+' <em>('+er.fr+')</em></span>'+
-      (cur?'<span class="ok">Current</span>':own?'<span class="ok">Owned</span>':next?'<button class="btn'+(S.coins>=er.c?' solid':'')+'" data-e="'+lv+'"'+(S.coins>=er.c?'':' disabled')+'>Upgrade &middot; '+er.c+'</button>':'<span><em>Locked &middot; '+er.c+'</em></span>')+'</div>';
-  });
-  h+='</div><p class="big">Louvre Pyramid upgrades</p><p>Make the glass pyramid in Paris shine. Chomp can wreck these too.</p><div class="shop">';
-  LUP.forEach(function(er,i){
-    var lv=i+1,cur=S.lup===lv,own=S.lup>lv,next=S.lup+1===lv;
-    h+='<div class="shopi"><span>'+lv+'. '+er.n+' <em>('+er.fr+')</em></span>'+
-      (cur?'<span class="ok">Current</span>':own?'<span class="ok">Owned</span>':next?'<button class="btn'+(S.coins>=er.c?' solid':'')+'" data-l="'+lv+'"'+(S.coins>=er.c?'':' disabled')+'>Upgrade &middot; '+er.c+'</button>':'<span><em>Locked &middot; '+er.c+'</em></span>')+'</div>';
-  });
-  h+='</div><p class="big">Statue of Liberty upgrades</p><p>Make Lady Liberty shine over New York harbor. Chomp can wreck these too.</p><div class="shop">';
-  SUP.forEach(function(er,i){
-    var lv=i+1,cur=S.sup===lv,own=S.sup>lv,next=S.sup+1===lv;
-    h+='<div class="shopi"><span>'+lv+'. '+er.n+' <em>('+er.fr+')</em></span>'+
-      (cur?'<span class="ok">Current</span>':own?'<span class="ok">Owned</span>':next?'<button class="btn'+(S.coins>=er.c?' solid':'')+'" data-s="'+lv+'"'+(S.coins>=er.c?'':' disabled')+'>Upgrade &middot; '+er.c+'</button>':'<span><em>Locked &middot; '+er.c+'</em></span>')+'</div>';
-  });
-  h+='</div><p class="big">Light show</p><p>Fireworks and sparkling colors for your monuments in Paris and New York.</p><div class="shop">';
-  var fwOwn=S.fx.indexOf('fw')>=0;
-  h+='<div class="shopi"><span>Fireworks show <em>(feux d\'artifice)</em></span>'+(fwOwn?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=35?' solid':'')+'" data-fw="1"'+(S.coins>=35?'':' disabled')+'>Buy &middot; 35</button>')+'</div>';
-  FXC.forEach(function(c){
-    var own=c.id==='gold'||S.fx.indexOf('c_'+c.id)>=0,use=S.lc===c.id;
-    h+='<div class="shopi"><span>Sparkle: '+c.n+' <em>('+c.fr+')</em></span>'+
-      (use?'<span class="ok">In use</span>':own?'<button class="btn solid" data-lc="'+c.id+'">Use</button>':'<button class="btn'+(S.coins>=c.c?' solid':'')+'" data-lc="'+c.id+'"'+(S.coins>=c.c?'':' disabled')+'>Buy &middot; '+c.c+'</button>')+'</div>';
-  });
-  h+='</div><p class="big">Decorations</p><div class="shop">';
-  DECOR.forEach(function(d){
-    var own=S.decor.indexOf(d.id)>=0;
-    h+='<div class="shopi"><span>'+d.n+' <em>('+d.fr+')</em></span>'+
-      (own?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=d.c?' solid':'')+'" data-b="'+d.id+'"'+(S.coins>=d.c?'':' disabled')+'>Buy &middot; '+d.c+'</button>')+'</div>';
-  });
-  h+='</div><p>Answer 3 questions in a row: a plane flies by with bonus coins and a new fish joins the river (tap above it to make it jump), but Chomp comes to challenge you!</p><div class="row"><button class="btn solid" id="bk">Back</button></div>';
+  return h+'</div>';
+}
+function shopScreen(back,tab){
+  var modeTab={bridge:'bridge',eiffel:'eiffel',louvre:'louvre',liberty:'liberty'}[S.mode]||'bridge';
+  if(tab)S.shopTab=tab;
+  if(!S.shopTab||!SHOP_TABS.some(function(t){return t[0]===S.shopTab}))S.shopTab=modeTab;
+  var cur=S.shopTab;
+  var badge={bridge:S.upg+'/'+ERAS.length,eiffel:S.eup+'/'+EUP.length,louvre:S.lup+'/'+LUP.length,liberty:S.sup+'/'+SUP.length,show:(S.fx.length+1)+'/'+(FX_IDS.length+1),decor:S.decor.length+'/'+DECOR.length};
+  var h='<div class="shophead"><h2>Shop</h2><span class="coinchip"><b>'+S.coins+'</b> coins</span></div>';
+  h+='<div class="stabs">'+SHOP_TABS.map(function(t){return '<button class="stab'+(t[0]===cur?' on':'')+'" data-tab="'+t[0]+'">'+t[1]+'<i>'+badge[t[0]]+'</i></button>'}).join('')+'</div>';
+  if(cur==='bridge')h+=shopSteps(ERAS,S.upg,'u','From a rope bridge up to the Pont de Normandie. It shows on your bridge when you go back to the game.');
+  else if(cur==='eiffel')h+=shopSteps(EUP,S.eup,'e','Light up the tower you build in Paris. Chomp can wreck these.');
+  else if(cur==='louvre')h+=shopSteps(LUP,S.lup,'l','Make the glass pyramid shine. Chomp can wreck these.');
+  else if(cur==='liberty')h+=shopSteps(SUP,S.sup,'s','Make Lady Liberty shine over New York harbor. Chomp can wreck these.');
+  else if(cur==='show'){
+    var fwOwn=S.fx.indexOf('fw')>=0;
+    h+='<p class="sintro">For your monuments in Paris and New York.</p><div class="shop"><div class="sstep'+(fwOwn?' done':'')+'"><span class="snum">'+(fwOwn?'\u2713':'*')+'</span><span class="sname">Fireworks show<em>feux d\'artifice</em></span>'+(fwOwn?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=35?' solid':'')+'" data-fw="1"'+(S.coins>=35?'':' disabled')+'>35 coins</button>')+'</div></div>';
+    h+='<p class="big">Sparkle color</p><div class="swatches">';
+    FXC.forEach(function(c){
+      var own=c.id==='gold'||S.fx.indexOf('c_'+c.id)>=0,use=S.lc===c.id,bg=c.col||'linear-gradient(90deg,#ff6a5e,#ffe27a,#8dff9a,#7fc8ff,#c79bff)';
+      h+='<button class="sw'+(use?' use':'')+'" data-lc="'+c.id+'"'+(!own&&S.coins<c.c?' disabled':'')+'><span class="dot" style="background:'+bg+'"></span><span>'+c.n+'<em>'+c.fr+'</em></span><span class="sst">'+(use?'In use':own?'Use':c.c+' coins')+'</span></button>';
+    });
+    h+='</div>';
+  }else{
+    h+='<p class="sintro">Decorations for your bridge. Chomp can destroy them.</p><div class="shop">';
+    DECOR.forEach(function(d){
+      var own=S.decor.indexOf(d.id)>=0;
+      h+='<div class="sstep'+(own?' done':'')+'"><span class="snum">'+(own?'\u2713':'+')+'</span><span class="sname">'+d.n+'<em>'+d.fr+'</em></span>'+(own?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=d.c?' solid':'')+'" data-b="'+d.id+'"'+(S.coins>=d.c?'':' disabled')+'>'+d.c+' coins</button>')+'</div>';
+    });
+    h+='</div>';
+  }
+  h+='<p class="sintro">Earn 1 coin per correct answer, bonus coins from the plane, 5 per gift, and 3 per life left at the end of a level.</p><div class="row"><button class="btn solid" id="bk">Back</button></div>';
   screen(h);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tab]'),function(b){b.addEventListener('click',function(){shopScreen(back,b.getAttribute('data-tab'))})});
   Array.prototype.forEach.call(document.querySelectorAll('[data-b]'),function(b){
     b.addEventListener('click',function(){
       var d=DECOR.filter(function(x){return x.id===b.getAttribute('data-b')})[0];
@@ -1792,7 +1820,7 @@ function closeGameShop(){
 function openGameShop(){
   if(!S.active||S.ended||S.busy||S.view!=='main'){toast('','Answer or finish the current step first.');return}
   S.paused=true;S.shopDirty=false;
-  shopScreen(closeGameShop);
+  S.shopTab=null;shopScreen(closeGameShop);
 }
 $('#shopBtn').addEventListener('click',openGameShop);
 $('#menuBtn').addEventListener('click',function(){S.paused=false;scheduleSave();flush();startScreen()});
