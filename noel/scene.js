@@ -45,7 +45,9 @@ function pal(){return PALS[G.time]||PALS.night}
 var HOR=112;
 
 /* ---------- cached static background: sky, mountains, drifts, path ---------- */
-function mtnY(x,k){return k?(66+Math.sin(x*.05+1.3)*9+Math.sin(x*.13)*4+Math.abs(((x*.7)%34)-17)*.45):(58+Math.sin(x*.035)*10+Math.sin(x*.09+2)*5+Math.abs(((x*.5)%46)-23)*.5)}
+var PEAKS=[[[14,40],[72,54],[126,36],[188,60],[246,46],[302,58],[340,40]],[[-4,26],[46,32],[102,24],[158,36],[214,28],[268,34],[322,26]]];
+function mtnY(x,k){var pk=PEAKS[k?1:0],best=k?10:16,sl=k?.85:1.05;for(var i=0;i<pk.length;i++){var v=pk[i][1]-Math.abs(x-pk[i][0])*sl;if(v>best)best=v}
+  return HOR+8-best-((x*7+k*3)%3)*.5-((x*13)%5===0?.8:0)}
 function driftY(x,k){return k===0?(HOR-2+Math.sin(x*.04)*2.5):k===1?(126+Math.sin(x*.027+1)*3+Math.sin(x*.08)*1.2):(152+Math.sin(x*.021+2)*3+Math.sin(x*.07)*1.4)}
 function pathCx(y){var t=(y-138)/42;return 222-60*t+Math.sin(t*3)*8}
 function pathW(y){return 13+((y-138)/42)*30}
@@ -56,15 +58,42 @@ function buildBg(time){
   for(y=0;y<HOR+6;y++){var b=Math.min(bands.length-1,Math.floor(y/bh)),f=(y/bh)-b,col=bands[b];
     R(0,y,W,1,col);
     if(b<bands.length-1&&f>0.78){var nc=bands[b+1],ph=y%2;for(x=ph;x<W;x+=2)P(x,y,nc)}}
-  /* mountains */
-  for(var k=0;k<2;k++){for(x=0;x<W;x++){var my=Math.round(mtnY(x,k));R(x,my,1,HOR+8-my,p.mtn[k]);
-    if(Math.abs(Math.sin(x*(k?.05:.035)+(k?1.3:0)))>.0&&my<(k?76:70)){R(x,my,1,2,k?'#9db3dc':'#b9c9e8')}}
-    if(k===0){for(x=0;x<W;x+=3){var yy=Math.round(mtnY(x,0))+4+((x*13)%7);P(x,yy,'#ffffff22')}}}
-  /* snow drifts */
+  /* mountains: lit and shaded facets, jagged snow caps, haze at the foot */
+  var hz=p.sky[p.sky.length-1];
+  for(var k=0;k<2;k++){
+    var base=p.mtn[k],lit=shade(base,k?.12:.15),dk=shade(base,k?-.18:-.14);
+    for(x=0;x<W;x++){
+      var my=Math.round(mtnY(x,k)),sl=mtnY(x+2,k)-mtnY(x-2,k),h2=HOR+8-my;
+      R(x,my,1,h2,base);
+      /* facets: the side facing the moon is lighter, with ridge lines */
+      var fc=sl<-.5?lit:sl>.5?dk:base;
+      R(x,my,1,Math.min(h2,26+((x*5)%9)),fc);
+      if(((x*3+k)%13)===0)R(x,my+3,1,Math.min(h2-3,6+((x*7)%9)),dk);
+      /* snow cap, deeper on high peaks */
+      var thr=k?84:78,cap=my<thr?Math.min(9,1+Math.floor((thr-my)/2.2)+((x*7)%2)):0;
+      if(cap>0){R(x,my,1,cap,sl>.5?p.snow[2]:p.snow[0]);if(sl<=.5)R(x,my,1,1,'#ffffff')}
+    }
+    /* distant haze for depth */
+    for(y=HOR-20;y<HOR+8;y++){var al=(y-(HOR-20))/28*(k?.55:.8);c.globalAlpha=Math.min(.85,al);R(0,y,W,1,hz)}
+    c.globalAlpha=1;
+  }
+  /* far cabins with lit windows on the hills */
+  [[6,0],[22,1],[38,0],[58,1],[246,0],[266,1],[286,0],[308,1]].forEach(function(f){
+    var fx=f[0],fy=HOR+1-f[1]*2;R(fx,fy-3,5,3,'#1a1630');R(fx-1,fy-4,7,1,'#d9e4f5');R(fx,fy-5,5,1,'#d9e4f5');P(fx+1,fy-2,'#ffc65a');P(fx+3,fy-2,'#ffc65a')});
+  /* snow drifts, with dithered edges */
   R(0,HOR+2,W,H-HOR,p.snow[1]);
-  for(k=0;k<3;k++){for(x=0;x<W;x++){var dy=Math.round(driftY(x,k));R(x,dy,1,H-dy,p.snow[k===0?0:k===1?1:2]);R(x,dy,1,1,p.snow[0])}}
+  for(k=0;k<3;k++){var cl=p.snow[k===0?0:k===1?1:2],nx=p.snow[Math.min(3,(k===0?1:k===1?2:3))];
+    for(x=0;x<W;x++){var dy=Math.round(driftY(x,k));R(x,dy,1,H-dy,cl);R(x,dy,1,1,p.snow[0]);if((x+k)%2===0)P(x,dy+1,nx);if((x+k)%4===0)P(x,dy+2,nx)}}
   /* near foreground bank */
-  for(x=0;x<W;x++){var dy2=Math.round(168+Math.sin(x*.03+4)*3+Math.sin(x*.09)*1.2);R(x,dy2,1,H-dy2,p.snow[3]);R(x,dy2,1,1,p.snow[2])}
+  for(x=0;x<W;x++){var dy2=Math.round(168+Math.sin(x*.03+4)*3+Math.sin(x*.09)*1.2);R(x,dy2,1,H-dy2,p.snow[3]);R(x,dy2,1,1,p.snow[2]);if(x%2===0)P(x,dy2+1,p.snow[2])}
+  /* wind ripples and soft blue shadows in the snow */
+  seedv=29;for(i=0;i<70;i++){var rx=Math.floor(rand()*W),ry=HOR+10+Math.floor(rand()*(H-HOR-12)),rl=3+Math.floor(rand()*6);R(rx,ry,rl,1,p.snow[2]);R(rx+1,ry+1,rl-2,1,p.snow[0])}
+  /* little bushes and rocks so the empty plain does not look bare */
+  function bush(bx,by,w){R(bx-1,by+1,w+2,1,shade(p.snow[3],-.18));R(bx+1,by-3,w-2,1,p.snow[0]);R(bx,by-2,w,3,'#1d4a35');R(bx+2,by-2,w-4,1,'#2b6a45');R(bx+1,by-2,2,1,p.snow[0]);R(bx+w-4,by-2,3,1,p.snow[0]);P(bx+2,by,'#d63a3a');P(bx+w-3,by-1,'#d63a3a')}
+  function rock(rx2,ry2){R(rx2,ry2-3,6,4,'#4b556f');R(rx2+1,ry2-4,4,1,'#5d6988');R(rx2,ry2-4,6,1,p.snow[0]);R(rx2+1,ry2-5,3,1,p.snow[0])}
+  bush(2,150,9);bush(310,150,9);bush(60,176,8);rock(280,176);rock(114,172);bush(246,170,8);
+  /* wooden signpost and footprints at the start of the path */
+  seedv=7;for(i=0;i<14;i++){var fy=140+i*3,fx=pathCx(fy)+(i%2?-3:3)+Math.round(rand()*2-1);R(fx,fy,2,1,shade(p.snow[2],-.12));P(fx,fy+1,shade(p.snow[2],-.12))}
   /* path */
   for(y=134;y<H;y++){var cx2=pathCx(y),hw=pathW(y)/2;R(cx2-hw-1,y,hw*2+3,1,p.snow[2]);R(cx2-hw,y,hw*2+1,1,p.snow[0]);
     if(((y>>2)&1)===0)P(cx2-hw+((y*7)%5),y,p.snow[1])}
