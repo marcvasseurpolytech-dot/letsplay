@@ -135,7 +135,13 @@ function cleanProgress(p) {
     const c = st.byCat && st.byCat[k];
     if (c) byCat[k] = { n: int(c.n, 0, 1e6, 0), ok: int(c.ok, 0, 1e6, 0) };
   });
+  const DECOR_IDS = ['lantern', 'railing', 'flag', 'flowers', 'bench', 'bunting', 'statue'];
+  const FISH_IDS = ['minnow', 'perch', 'trout', 'salmon', 'pike', 'carp'];
+  const decor = Array.isArray(p.decor) ? DECOR_IDS.filter(id => p.decor.indexOf(id) >= 0) : [];
+  const fish = {};
+  FISH_IDS.forEach(id => { const n = int(p.fish && p.fish[id], 0, 1e5, 0); if (n > 0) fish[id] = n; });
   return {
+    coins: int(p.coins, 0, 1e6, 0), decor, fish,
     level: int(p.level, 1, 99, 1), score: int(p.score, 0, 1e7, 0), best: int(p.best, 0, 1e7, 0),
     lives: int(p.lives, 0, 5, 5), hints: int(p.hints, 0, 9, 3),
     qCount: int(p.qCount, 0, 1e6, 0), okCount: int(p.okCount, 0, 1e6, 0),
