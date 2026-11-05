@@ -222,7 +222,7 @@ function emptyStats(){return {byCat:{},answered:0,correct:0,levelsCleared:0,maxL
 var S={cats:{},level:1,score:0,lives:MAXL,N:10,placed:0,bitten:[],q:null,gq:null,view:'main',busy:false,ended:true,active:false,
   deck:[],hdeck:[],missed:[],best:0,qCount:0,okCount:0,sinceGift:0,nextGift:4+rnd(3),gift:null,biteN:rnd(ATTACKS.length),
   stats:emptyStats(),levelDone:true,nextLevel:0,gen:0,planks:[],ghosts:[],
-  coins:0,decor:[],fish:{},streak:0,skyP:0,era:1,upg:1,ref:{},cab:null,swim:[]};
+  coins:0,decor:[],fish:{},streak:0,skyP:0,era:1,upg:1,mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
 function levelN(l){return Math.min(20,10+2*(l-1))}
 try{S.best=parseInt(localStorage.getItem('wordBridgeBest')||'0',10)||0}catch(e){}
 
@@ -393,8 +393,9 @@ function hud(){
   $('#lvl').textContent=S.level;$('#score').textContent=S.score;
   var h='';for(var i=0;i<MAXL;i++)h+='<span class="'+(i<S.lives?'':'lost')+'">&#9829;&#xFE0E;</span>';
   $('#lives').innerHTML=h;
-  $('#planks').textContent='Plank '+Math.min(S.placed+1,S.N)+' / '+S.N;
-  if(S.ended&&S.levelDone)$('#planks').textContent='Plank 0 / '+S.N;
+  var pn=S.mode==='eiffel'?'Section ':'Plank ';
+  $('#planks').textContent=pn+Math.min(S.placed+1,S.N)+' / '+S.N;
+  if(S.ended&&S.levelDone)$('#planks').textContent=pn+'0 / '+S.N;
   $('#coins').textContent=S.coins+(S.coins===1?' coin':' coins');
 }
 function toast(v,m,good,ms){
@@ -452,6 +453,8 @@ function setSky(p){
   r.cliffs.forEach(function(e){e.setAttribute('fill',cl)});r.tops.forEach(function(e){e.setAttribute('fill',ct)});
   var ic=inkColor();r.ink.forEach(function(e){e.setAttribute('stroke',ic)});
   var sc=ramp('#a9b3c9','#9aa3b8','#6f7b98',p);r.steel.forEach(function(e){e.setAttribute('fill',sc)});
+  var ic2=ramp('#c4b29a','#a98a68','#6e5238',p);(r.iron||[]).forEach(function(e){e.setAttribute('stroke',ic2)});(r.ironF||[]).forEach(function(e){e.setAttribute('fill',ic2)});
+  var gc=ramp('#1d3a3a','#4e6b44','#5d8a4f',p);(r.ground||[]).forEach(function(e){e.setAttribute('fill',gc)});
   var pc=ramp('#2a3a66','#4a5575','#8a96b0',p);r.pier.forEach(function(e){e.setAttribute('fill',pc)});
   var g=Math.max(0,1-p*1.4)*.6;r.glow.forEach(function(e){e.setAttribute('opacity',g.toFixed(2))});
 }
@@ -553,10 +556,99 @@ function plankExtras(i,cx,g){
   }
 }
 
+/* ---------- PARIS: the Eiffel Tower level ---------- */
+var EF={cx:260,yB:198,yT:30,w0:74,wT:2.5};
+function hw(t){return EF.wT+(EF.w0-EF.wT)*Math.pow(1-t,2.35)}
+function ty(t){return EF.yB-(EF.yB-EF.yT)*t}
+var EF_FLOORS=[0.18,0.355,0.85];
+function buildParis(svg){
+  var R=S.ref,g=el('g',{},svg);
+  var bx=0,k=0;
+  while(bx<520){
+    var w=22+((k*7)%4)*6,h=26+((k*13)%5)*5;
+    if(bx+w<150||bx>370){
+      R.cliffs.push(el('rect',{x:bx,y:EF.yB-h,width:w-1.5,height:h},g));
+      R.tops.push(el('rect',{x:bx,y:EF.yB-h-3,width:w-1.5,height:3},g));
+      for(var wy=EF.yB-h+6;wy<EF.yB-6;wy+=9)for(var wx=bx+4;wx<bx+w-5;wx+=8)R.glow.push(el('rect',{x:wx,y:wy,width:2.4,height:3.2,fill:'#f2c230',opacity:0},g));
+    }
+    bx+=w;k++;
+  }
+  var dome=el('g',{},g);
+  R.tops.push(el('ellipse',{cx:62,cy:EF.yB-46,rx:15,ry:11},dome));R.tops.push(el('rect',{x:57,y:EF.yB-60,width:10,height:6},dome));
+  el('line',{x1:62,y1:EF.yB-66,x2:62,y2:EF.yB-58,stroke:'#f2c230','stroke-width':1.4},dome);
+  R.ground.push(el('rect',{x:0,y:EF.yB,width:520,height:16},svg));
+  [[118,EF.yB],[142,EF.yB],[378,EF.yB],[402,EF.yB],[40,EF.yB],[480,EF.yB]].forEach(function(p){
+    el('rect',{x:p[0]-1,y:p[1]-9,width:2,height:9,fill:'#5a3a1b'},svg);R.tops.push(el('circle',{cx:p[0],cy:p[1]-13,r:8},svg));
+  });
+}
+function efLine(g,x1,y1,x2,y2,w){return el('line',{x1:x1.toFixed(1),y1:y1.toFixed(1),x2:x2.toFixed(1),y2:y2.toFixed(1),'stroke-width':w,'stroke-linecap':'round'},g)}
+function drawSection(i,animate){
+  var R=S.ref,N=S.N,t0=i/N,t1=(i+1)/N,cx=EF.cx,g=el('g',{class:'pl'},layers.deck);
+  var push=function(e){R.iron.push(e);return e};
+  var y0=ty(t0),y1=ty(t1),ym=(y0+y1)/2,a0=hw(t0),a1=hw(t1),am=hw((t0+t1)/2);
+  var strips=t0<0.355?[[-1,-.5],[.5,1]]:[[-1,1]];
+  strips.forEach(function(st){
+    var xa0=cx+st[0]*a0,xb0=cx+st[1]*a0,xa1=cx+st[0]*a1,xb1=cx+st[1]*a1;
+    push(efLine(g,xa0,y0,xa1,y1,2.3));push(efLine(g,xb0,y0,xb1,y1,2.3));
+    push(efLine(g,xa0,y0,xb1,y1,.9));push(efLine(g,xb0,y0,xa1,y1,.9));
+    var xam=cx+st[0]*am,xbm=cx+st[1]*am;push(efLine(g,xam,ym,xbm,ym,.9));
+  });
+  push(efLine(g,cx-a1,y1,cx+a1,y1,1.8));
+  if(i===0){
+    var cy=2*ty(.11)-EF.yB;
+    push(el('path',{d:'M'+(cx-.5*a0)+' '+EF.yB+' Q'+cx+' '+cy+' '+(cx+.5*a0)+' '+EF.yB,fill:'none','stroke-width':2.4},g));
+  }
+  EF_FLOORS.forEach(function(f,fi){
+    if(f>=t0&&f<t1){
+      var yf=ty(f),wf=hw(f)+(fi===2?4:7);
+      R.ironF.push(el('rect',{x:cx-wf,y:yf-2,width:2*wf,height:4,rx:1.2},g));
+    }
+  });
+  if(i===N-1){
+    var yt=ty(1);
+    push(efLine(g,cx,yt,cx,yt-15,1.6));
+    R.ironF.push(el('rect',{x:cx-4,y:yt-1.5,width:8,height:3,rx:1},g));
+    el('circle',{cx:cx,cy:yt-16,r:2,fill:'#ff6a5e',class:'beacon'},g);
+  }
+  S.planks[i]=g;
+  setSky(S.skyP);
+  if(animate){
+    g.style.transform='translateY(-40px)';g.style.opacity='0';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      g.style.transition='transform .4s cubic-bezier(.3,1.4,.5,1),opacity .25s';g.style.transform='';g.style.opacity='1';
+    })});
+  }
+  return g;
+}
+function efBitX(i){return (i%2?1:-1)}
+function efBitMark(i){
+  var g=S.planks[0];if(!g)return;
+  var yy=EF.yB-6-(i%4)*8,t=(EF.yB-yy)/(EF.yB-EF.yT),d=efBitX(i);
+  var x=EF.cx+d*hw(t)*(i%3===0?1:.5);
+  el('circle',{cx:x.toFixed(1),cy:yy,r:3.4,fill:'#16294f'},g);
+  el('polyline',{points:(x-3)+','+(yy+3)+' '+x+','+(yy+6)+' '+(x+2)+','+(yy+3),fill:'none',stroke:'#16294f','stroke-width':1},g);
+}
+function efBiteX(){var side=S.biteN%2?1:-1;return EF.cx+side*(S.biteN%3===0?EF.w0:EF.w0*.5)}
+async function fireworks(){
+  var gen=S.gen,cols=['#f2c230','#e0584f','#4cc36e','#4a7be8','#e65aa8','#f5eedc'];
+  var bursts=[];
+  for(var b=0;b<6;b++){(function(b){
+    bursts.push(wait(b*380).then(function(){
+      if(gen!==S.gen)return;
+      var x=60+rnd(400),y=30+rnd(70),col=cols[b%cols.length],g=el('g',{},layers.truck),parts=[];
+      for(var k=0;k<14;k++)parts.push(el('circle',{r:1.8,fill:col},g));
+      return tw(1100,function(u){if(gen!==S.gen)return;
+        parts.forEach(function(c,k){var a=k/14*6.283;c.setAttribute('cx',(x+Math.cos(a)*u*34).toFixed(1));c.setAttribute('cy',(y+Math.sin(a)*u*34+u*u*10).toFixed(1));c.setAttribute('opacity',(1-u).toFixed(2))})
+      }).then(function(){if(g.parentNode)g.parentNode.removeChild(g)});
+    }));
+  })(b)}
+  await Promise.all(bursts);
+  return gen===S.gen;
+}
 function buildScene(){
   S.gen++;
   var svg=$('#wb');svg.innerHTML='';
-  S.ref={ink:[],steel:[],glow:[],cliffs:[],tops:[],waves:[],pier:[]};var R=S.ref;
+  S.ref={ink:[],steel:[],glow:[],cliffs:[],tops:[],waves:[],pier:[],iron:[],ironF:[],ground:[]};var R=S.ref;
   var defs=el('defs',{},svg);
   var gr=el('linearGradient',{id:'skyG',gradientUnits:'userSpaceOnUse',x1:0,y1:0,x2:0,y2:210},defs);
   R.gs=[el('stop',{offset:0},gr),el('stop',{offset:1},gr)];
@@ -567,27 +659,36 @@ function buildScene(){
   el('circle',{cx:455,cy:42,r:15,fill:'#f5eedc',opacity:.92},R.moon);el('circle',{cx:449,cy:38,r:14,fill:'#16294f'},R.moon);
   R.sun=el('g',{},svg);
   el('circle',{cx:150,cy:232,r:20,fill:'#f2a65a'},R.sun);
-  R.wb=el('rect',{x:0,y:205,width:520,height:45},svg);
-  R.cliffs.push(el('polygon',{points:'0,150 50,150 50,250 0,250'},svg));R.cliffs.push(el('polygon',{points:'470,150 520,150 520,250 470,250'},svg));
-  R.tops.push(el('rect',{x:0,y:148,width:50,height:5},svg));R.tops.push(el('rect',{x:470,y:148,width:50,height:5},svg));
-  drawEra(svg,S.era);
+  var ef=S.mode==='eiffel',WY=ef?214:208;
+  R.wb=el('rect',{x:0,y:ef?WY:205,width:520,height:250-(ef?WY:205)},svg);
   S.ghosts=[];S.planks=[];
-  for(var i=0;i<S.N;i++){
-    S.ghosts.push(el('rect',{x:plankX(i)+1.5,y:149,width:slotW()-3,height:9,rx:1.5,fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));
+  if(ef){
+    S.cab=null;buildParis(svg);
+    for(var i=0;i<S.N;i++){
+      var t0=i/S.N,t1=(i+1)/S.N;
+      S.ghosts.push(el('polygon',{points:(EF.cx-hw(t0))+','+ty(t0)+' '+(EF.cx+hw(t0))+','+ty(t0)+' '+(EF.cx+hw(t1))+','+ty(t1)+' '+(EF.cx-hw(t1))+','+ty(t1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));
+    }
+  }else{
+    R.cliffs.push(el('polygon',{points:'0,150 50,150 50,250 0,250'},svg));R.cliffs.push(el('polygon',{points:'470,150 520,150 520,250 470,250'},svg));
+    R.tops.push(el('rect',{x:0,y:148,width:50,height:5},svg));R.tops.push(el('rect',{x:470,y:148,width:50,height:5},svg));
+    drawEra(svg,S.era);
+    for(var i=0;i<S.N;i++){
+      S.ghosts.push(el('rect',{x:plankX(i)+1.5,y:149,width:slotW()-3,height:9,rx:1.5,fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));
+    }
   }
   layers.deck=el('g',{},svg);
   layers.decor=el('g',{},svg);
   layers.chomp=buildChomp(svg);
-  R.wf=el('rect',{x:0,y:208,width:520,height:42,opacity:.94},svg);
-  R.waves.push(el('path',{class:'waves',d:'M-40 214 q10 -5 20 0'+' t20 0'.repeat(34),fill:'none','stroke-width':1.5},svg));
-  R.waves.push(el('path',{class:'waves b',d:'M-40 230 q10 -5 20 0'+' t20 0'.repeat(34),fill:'none','stroke-width':1.5},svg));
+  R.wf=el('rect',{x:0,y:WY,width:520,height:250-WY,opacity:.94},svg);
+  R.waves.push(el('path',{class:'waves',d:'M-40 '+(WY+6)+' q10 -5 20 0'+' t20 0'.repeat(34),fill:'none','stroke-width':1.5},svg));
+  R.waves.push(el('path',{class:'waves b',d:'M-40 '+(WY+22)+' q10 -5 20 0'+' t20 0'.repeat(34),fill:'none','stroke-width':1.5},svg));
   layers.fish=el('g',{},svg);
   layers.birds=el('g',{},svg);
   layers.truck=el('g',{},svg);
   layers.gifts=el('g',{},svg);
   for(var k=0;k<S.placed;k++)drawPlank(k,false);
   S.bitten.forEach(function(i){if(i<S.placed)bitMark(i)});
-  S.decor.forEach(function(id){drawDecor(id)});
+  if(!ef)S.decor.forEach(function(id){drawDecor(id)});
   startSwim();
   setSky(S.placed/S.N);
   markNext();
@@ -600,6 +701,7 @@ function markNext(){
   });
 }
 function drawPlank(i,animate){
+  if(S.mode==='eiffel')return drawSection(i,animate);
   var w=slotW(),x=plankX(i),g=el('g',{class:'pl'},layers.deck);
   var cx=x+w/2;
   plankExtras(i,cx,g);
@@ -615,6 +717,7 @@ function drawPlank(i,animate){
   return g;
 }
 function bitMark(i){
+  if(S.mode==='eiffel')return efBitMark(i);
   var g=S.planks[i];if(!g)return;
   var w=slotW(),cx=plankX(i)+w/2+((i*7)%5-2)*1.5;
   el('circle',{cx:cx,cy:149,r:4,fill:'#16294f'},g);
@@ -750,13 +853,15 @@ function fragments(cx){
   }
 }
 async function bite(){
-  var gen=S.gen,idx=Math.max(S.placed-1,0),cx=S.placed>0?plankX(idx)+slotW()/2:X0+8;
+  var gen=S.gen,ef=S.mode==='eiffel',TY=ef?176:138;
+  var idx=ef?Math.max(0,Math.min(S.placed-1,S.bitten.length)):Math.max(S.placed-1,0);
+  var cx=ef?efBiteX():(S.placed>0?plankX(idx)+slotW()/2:X0+8);
   var a=ATTACKS[S.biteN%ATTACKS.length];S.biteN++;
   layers.chomp.setAttribute('visibility','visible');
   setChomp(cx,300,-28);
-  await tw(360,function(u){setChomp(cx,300+(138-300)*u,-28)},easeOut);
+  await tw(360,function(u){setChomp(cx,300+(TY-300)*u,-28)},easeOut);
   if(gen!==S.gen)return;
-  await tw(130,function(u){setChomp(cx,138,-28*(1-u))},easeIn);
+  await tw(130,function(u){setChomp(cx,TY,-28*(1-u))},easeIn);
   if(gen!==S.gen)return;
   if(S.placed>0){
     if(S.bitten.indexOf(idx)<0)S.bitten.push(idx);
@@ -764,15 +869,15 @@ async function bite(){
   }
   fragments(cx);
   var sc=$('#scene');sc.classList.remove('shake');void sc.offsetWidth;sc.classList.add('shake');
-  toast(a[0]+' · '+a[1]+' · '+a[2],a[3]);
+  toast(a[0]+' · '+a[1]+' · '+a[2],ef?a[3].replace(/plank/gi,'girder'):a[3]);
   await wait(650);
   if(gen!==S.gen)return;
-  await tw(330,function(u){setChomp(cx,138+(300-138)*u,0)},easeIn);
+  await tw(330,function(u){setChomp(cx,TY+(300-TY)*u,0)},easeIn);
   layers.chomp.setAttribute('visibility','hidden');
 }
 async function collapse(){
   var gen=S.gen;
-  toast('fall · fell · fallen','The bridge fell into the river.');
+  toast('fall · fell · fallen',S.mode==='eiffel'?'The tower came crashing down.':'The bridge fell into the river.');
   S.planks.forEach(function(g,i){
     if(!g)return;
     g.style.transition='transform .9s ease-in '+(i*0.05).toFixed(2)+'s,opacity .9s ease-in '+(i*0.05).toFixed(2)+'s';
@@ -897,7 +1002,7 @@ function post(action,body){
 function snapshot(){
   var inLevel=!S.levelDone&&S.active;
   return {level:S.levelDone?(S.nextLevel||S.level):S.level,score:S.score,best:S.best,lives:S.lives,placed:inLevel?S.placed:0,inLevel:inLevel,
-    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
+    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,mode:S.levelDone?(S.nextMode||S.mode):S.mode,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
 }
 function scheduleSave(){
   if(!S.active)return;
@@ -1049,7 +1154,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row to catch a fish; longer streaks catch bigger fish.</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row to catch a fish; longer streaks catch bigger fish.</li><li>Finish the Pont de Normandie and the scenery changes: you move to Paris and build the Eiffel Tower, section by section. Chomp follows you up the Seine.</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1073,7 +1178,7 @@ function startScreen(){
 }
 function newGame(){
   if(!P.user){startScreen();return}
-  S.level=1;S.score=0;S.deck=[];S.hdeck=[];S.missed=[];S.qCount=0;S.okCount=0;
+  S.level=1;S.score=0;S.deck=[];S.hdeck=[];S.missed=[];S.qCount=0;S.okCount=0;S.nextMode='';
   startLevel();
 }
 function resume(){
@@ -1092,9 +1197,10 @@ function startLevel(saved){
   S.bitten=res&&Array.isArray(saved.bitten)?saved.bitten.filter(function(i){return i<S.placed}):[];
   S.q=null;S.gq=null;S.view='main';S.busy=false;S.ended=false;S.levelDone=false;S.nextLevel=0;S.active=true;
   S.sinceGift=0;S.nextGift=4+rnd(3);S.streak=0;S.era=Math.min(Math.max(S.upg|0,1),6);
+  S.mode=((saved?saved.mode:S.nextMode)==='eiffel'&&S.upg===6)?'eiffel':'bridge';S.nextMode='';
   S.stats.maxLevel=Math.max(S.stats.maxLevel,S.level);
   buildScene();hud();hideScreen();
-  if(!res||S.placed===0){var E=ERAS[S.era-1];toast(E.n,E.w,true,4200)}
+  if(!res||S.placed===0){if(S.mode==='eiffel')toast('Paris: the Eiffel Tower','wrought iron (fer puddl\u00e9) \u00b7 lattice (treillis) \u00b7 rivet (rivet)',true,4600);else{var E=ERAS[S.era-1];toast(E.n,E.w,true,4200)}}
   nextQuestion();scheduleSave();
 }
 function saveBest(){
@@ -1103,16 +1209,18 @@ function saveBest(){
 async function levelComplete(){
   var gen=S.gen;
   S.ended=true;S.levelDone=true;S.nextLevel=S.level+1;S.stats.levelsCleared++;removeGift();
-  var bonus=S.lives*20,cb=S.lives*3;S.score+=bonus;S.coins+=cb;saveBest();hud();scheduleSave();flush();
-  idle('The bridge is finished. Here comes the first truck!');
+  var ef=S.mode==='eiffel';S.nextMode=(!ef&&S.upg===6)?'eiffel':'bridge';
+  var bonus=S.lives*20,cb=S.lives*3+(ef?20:0);S.score+=bonus;S.coins+=cb;saveBest();hud();scheduleSave();flush();
+  idle(ef?'The Eiffel Tower is finished. Fireworks over Paris!':'The bridge is finished. Here comes the first truck!');
   for(var b=0;b<5;b++)setTimeout(spawnBird,b*350);
-  var ok=await truck();
+  var ok=ef?await fireworks():await truck();
   if(!ok||gen!==S.gen)return;
   levelDoneScreen(bonus,cb);
 }
 function levelDoneScreen(bonus,cb){
-  screen('<h2>Bridge '+S.level+' complete</h2><p>Bonus for remaining lives: <b class="big">+'+bonus+'</b> points and <b class="big">+'+cb+'</b> coins<br>Score: <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
-    '<div class="row"><button class="btn solid" id="nx">Next bridge</button><button class="btn" id="shp">Shop ('+S.coins+' coins)</button><button class="btn" id="mn">Menu</button></div>');
+  var efd=S.mode==='eiffel',goParis=S.nextMode==='eiffel';
+  screen('<h2>'+(efd?'Eiffel Tower complete':'Bridge '+S.level+' complete')+'</h2>'+(goParis?'<p class="ok">You have built the Pont de Normandie! Next stop: Paris. Build the Eiffel Tower!</p>':'')+'<p>Bonus for remaining lives: <b class="big">+'+bonus+'</b> points and <b class="big">+'+cb+'</b> coins<br>Score: <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
+    '<div class="row"><button class="btn solid" id="nx">'+(goParis?'Go to Paris':'Next bridge')+'</button><button class="btn" id="shp">Shop ('+S.coins+' coins)</button><button class="btn" id="mn">Menu</button></div>');
   $('#shp').addEventListener('click',function(){shopScreen(function(){levelDoneScreen(bonus,cb)})});
   $('#nx').addEventListener('click',function(){S.level++;S.missed=[];startLevel()});
   $('#mn').addEventListener('click',startScreen);
@@ -1166,9 +1274,9 @@ function shopScreen(back){
   $('#bk').addEventListener('click',back);
 }
 function gameOver(){
-  S.ended=true;S.levelDone=true;S.nextLevel=S.level;S.busy=false;removeGift();saveBest();hud();scheduleSave();flush();
-  screen('<h2>The bridge collapsed</h2><p>Bridge '+S.level+': score <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
-    '<div class="row"><button class="btn solid" id="rt">Rebuild this bridge</button><button class="btn" id="mn">Menu</button></div>');
+  S.ended=true;S.levelDone=true;S.nextLevel=S.level;S.nextMode=S.mode;S.busy=false;removeGift();saveBest();hud();scheduleSave();flush();
+  screen('<h2>The '+(S.mode==='eiffel'?'tower':'bridge')+' collapsed</h2><p>'+(S.mode==='eiffel'?'Eiffel Tower':'Bridge '+S.level)+': score <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
+    '<div class="row"><button class="btn solid" id="rt">Rebuild this '+(S.mode==='eiffel'?'tower':'bridge')+'</button><button class="btn" id="mn">Menu</button></div>');
   $('#rt').addEventListener('click',function(){S.missed=[];startLevel()});
   $('#mn').addEventListener('click',startScreen);
 }
