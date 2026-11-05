@@ -2209,7 +2209,7 @@ function shopScreen(back,tab){
     });
     h+='</div>';
   }else{
-    h+='<p class="sintro">Decorations for your bridge. Chomp can destroy them.</p><div class="shop">';
+    h+='<p class="sintro">Decorations show in every level, on the bridge and on the quays. Chomp can destroy them.</p><div class="shop">';
     DECOR.forEach(function(d){
       var own=S.decor.indexOf(d.id)>=0;
       h+='<div class="sstep'+(own?' done':'')+'"><span class="snum">'+(own?'\u2713':'+')+'</span><span class="sname">'+d.n+'<em>'+d.fr+'</em></span>'+(own?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=d.c?' solid':'')+'" data-b="'+d.id+'"'+(S.coins>=d.c?'':' disabled')+'>'+d.c+' coins</button>')+'</div>';
