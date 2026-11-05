@@ -35,7 +35,7 @@ header{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .btn:disabled{opacity:.35;cursor:default}
 .btn.solid{background:var(--gold);color:var(--navy)}
 .scene{position:relative;background:#0a1530;border:1px solid rgba(201,162,39,.45);border-radius:12px;overflow:hidden;line-height:0}
-#cv{display:block;width:100%;height:auto;aspect-ratio:320/180;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:manipulation;cursor:pointer}
+#cv{display:block;width:100%;height:auto;aspect-ratio:320/180;touch-action:manipulation;cursor:pointer}
 .scene.shake{animation:shake .38s}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
 .toast{position:absolute;left:0;right:0;top:8px;text-align:center;pointer-events:none;opacity:0;transition:opacity .25s;padding:0 10px;line-height:1.3}
@@ -110,7 +110,7 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .big{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:15px}
 .credit{font-family:'JetBrains Mono',monospace;font-size:11px;color:#7f8bab;letter-spacing:.5px;margin-top:6px}
-.banner{display:block;width:100%;max-width:420px;margin:8px auto;border:1px solid #c9a22766;border-radius:12px;image-rendering:pixelated}
+.banner{display:block;width:100%;max-width:420px;margin:8px auto;border:1px solid #c9a22766;border-radius:12px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
 .chip{font-family:'Source Serif 4',Georgia,serif;font-size:15px;font-weight:600;color:var(--muted);background:transparent;border:1px solid rgba(245,238,220,.3);border-radius:20px;padding:8px 14px;cursor:pointer;touch-action:manipulation}
 .chip.on{background:var(--gold);color:var(--navy);border-color:var(--gold)}
@@ -186,7 +186,7 @@ footer{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;c
     <div class="tbtns"><button class="btn solid" id="shopBtn">Shop</button><button class="btn" id="decBtn">Decorate</button><button class="btn" id="advBtn">Advent</button><button class="btn" id="menuBtn">Menu</button></div>
   </div>
   <div class="scene" id="scene">
-    <canvas id="cv" width="320" height="180" role="img" aria-label="A snowy Christmas village at night"></canvas>
+    <canvas id="cv" width="960" height="540" role="img" aria-label="A snowy Christmas village at night"></canvas>
     <div class="toast" id="toast"></div>
   </div>
   <div class="letter" id="letter"></div>
