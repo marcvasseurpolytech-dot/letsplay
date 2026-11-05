@@ -230,7 +230,7 @@ function emptyStats(){return {byCat:{},answered:0,correct:0,levelsCleared:0,maxL
 var S={cats:{},level:1,score:0,lives:MAXL,N:10,placed:0,bitten:[],q:null,gq:null,view:'main',busy:false,ended:true,active:false,
   deck:[],hdeck:[],missed:[],best:0,qCount:0,okCount:0,sinceGift:0,nextGift:4+rnd(3),gift:null,biteN:rnd(ATTACKS.length),
   stats:emptyStats(),levelDone:true,nextLevel:0,gen:0,planks:[],ghosts:[],
-  coins:0,decor:[],fish:{},streak:0,skyP:0,era:1,upg:1,mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
+  coins:0,decor:[],fish:{},threat:false,streak:0,skyP:0,era:1,upg:1,mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
 function levelN(l){return Math.min(20,10+2*(l-1))}
 try{S.best=parseInt(localStorage.getItem('wordBridgeBest')||'0',10)||0}catch(e){}
 
@@ -880,51 +880,53 @@ function startSwim(){
   }
   requestAnimationFrame(loop);
 }
-function awardFish(){
-  var tier=Math.min(5,Math.floor(S.streak/3)),id;
-  if(tier<=1)id=Math.random()<.6?'minnow':'perch';
-  else id=['','','trout','salmon','pike','carp'][tier];
-  S.fish[id]=(S.fish[id]|0)+1;
-  return FISH.filter(function(x){return x.id===id})[0];
-}
-/* the fish leaps out of the river (big, with a splash), then Chomp peeks out: he shows up after every 3 correct answers in a row */
-async function catchShow(f){
-  var gen=S.gen,wy=S.mode==='liberty'?206:(S.mode==='eiffel'?214:208);
-  var x0=70+rnd(380),sz=f.sz*1.7;
-  toast('catch \u00b7 caught \u00b7 caught','You caught a '+f.n.toLowerCase()+'! Chomp is watching you...',true,3000);
-  var g=el('g',{},layers.fish);
-  el('polygon',{points:(-sz)+',0 '+(-sz*1.6)+',-'+(sz*.6)+' '+(-sz*1.6)+','+(sz*.6),fill:f.col,stroke:'#0d1b3a','stroke-width':1},g);
-  el('ellipse',{cx:0,cy:0,rx:sz,ry:sz*.5,fill:f.col,stroke:'#0d1b3a','stroke-width':1},g);
-  el('circle',{cx:sz*.55,cy:-sz*.1,r:Math.max(1.5,sz*.12),fill:'#0d1b3a'},g);
-  function ring(x){
-    var r=el('ellipse',{cx:x,cy:wy+4,rx:4,ry:1.5,fill:'none',stroke:'#f5eedc','stroke-width':1.6,opacity:.9},layers.fish);
-    tw(500,function(u){r.setAttribute('rx',(4+22*u).toFixed(1));r.setAttribute('ry',(1.5+5*u).toFixed(1));r.setAttribute('opacity',(.9*(1-u)).toFixed(2))}).then(function(){if(r.parentNode)r.parentNode.removeChild(r)});
-  }
-  ring(x0);
-  var dx=60+rnd(40);
-  await tw(900,function(u){
+/* ---------- bonus plane + Chomp challenge (every 3 correct answers in a row) ---------- */
+function flyPlane(bonus){
+  if(!layers.birds)return;
+  var gen=S.gen,y=70+rnd(14),g=el('g',{},layers.birds);
+  el('line',{x1:-4,y1:0,x2:-34,y2:2,stroke:'#f5eedc','stroke-width':1},g);
+  var bn=el('g',{transform:'translate(-34,-9)'},g);
+  el('rect',{x:-118,y:0,width:118,height:22,rx:3,fill:'#f2c230',stroke:'#0d1b3a','stroke-width':1.2},bn);
+  var tx=el('text',{x:-59,y:15,'text-anchor':'middle','font-size':11,'font-weight':800,fill:'#0d1b3a'},bn);tx.textContent='3 IN A ROW  +'+bonus;
+  el('path',{d:'M-14 -2 L-22 -12 L-8 -4 Z',fill:'#e0584f'},g);
+  el('ellipse',{cx:6,cy:0,rx:17,ry:6,fill:'#e8eef7',stroke:'#0d1b3a','stroke-width':1.2},g);
+  el('path',{d:'M2 -2 L-6 -16 L8 -2 Z',fill:'#5b6a8f'},g);
+  el('path',{d:'M2 3 L-4 13 L9 3 Z',fill:'#5b6a8f'},g);
+  el('circle',{cx:13,cy:-2,r:2.6,fill:'#7fb8e6'},g);
+  var pr=el('ellipse',{cx:24,cy:0,rx:1.5,ry:9,fill:'#0d1b3a',opacity:.7},g);
+  tw(6200,function(u){
     if(gen!==S.gen)return;
-    var x=x0+dx*u,y=wy+8-Math.sin(u*Math.PI)*70,ang=(u-.5)*-100;
-    g.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+') rotate('+ang.toFixed(0)+')');
-  });
-  if(gen!==S.gen)return;
-  ring(x0+dx);
-  if(g.parentNode)g.parentNode.removeChild(g);
-  addSwimmer(f.id);
-  var sw=S.swim[S.swim.length-1];if(sw){sw.x=x0+dx;sw.y=224}
-  await wait(250);
-  if(gen!==S.gen)return;
-  /* Chomp peeks out of the water, grins and goes back down (harmless) */
-  var cx=Math.max(40,Math.min(480,x0+dx+(Math.random()<.5?-90:90))),TY=wy-38;
+    g.setAttribute('transform','translate('+(-30+u*(520+190)).toFixed(1)+','+(y+Math.sin(u*9)*3).toFixed(1)+') scale(1.15)');
+    pr.setAttribute('ry',(9*Math.abs(Math.sin(u*400))+1).toFixed(1));
+  }).then(function(){if(g.parentNode)g.parentNode.removeChild(g)});
+}
+function threatPos(){
+  var ef=S.mode!=='bridge';
+  return {cx:ef?efBiteX():(S.placed>0?plankX(S.placed)+slotW()/2:X0+8),ty:(ef?(S.mode==='liberty'?188:176):138)+30};
+}
+async function chompThreat(){
+  var gen=S.gen,p=threatPos(),cx=Math.max(40,Math.min(480,p.cx)),TY=p.ty;
+  S.threat=true;
+  toast('Chomp challenge','Chomp is lurking under the bridge! Answer correctly and he backs off. Get it wrong and he bites.',false,3600);
   layers.chomp.setAttribute('visibility','visible');
   setChomp(cx,300,0);
-  await tw(380,function(u){setChomp(cx,300+(TY-300)*u,-20*u)},easeOut);
+  await tw(420,function(u){setChomp(cx,300+(TY-300)*u,-10*u)},easeOut);
   if(gen!==S.gen)return;
-  await tw(260,function(u){setChomp(cx,TY,-20+26*Math.sin(u*Math.PI*2))});
-  await wait(350);
-  if(gen!==S.gen)return;
-  await tw(330,function(u){setChomp(cx,TY+(300-TY)*u,0)},easeIn);
-  layers.chomp.setAttribute('visibility','hidden');
+  var t0=performance.now();
+  (function loop(now){
+    if(gen!==S.gen||!S.threat)return;
+    var k=(now-t0)/260;
+    setChomp(cx,TY+Math.sin(k)*3,-10+Math.sin(k*1.7)*12);
+    requestAnimationFrame(loop);
+  })(t0);
+}
+async function chompBackOff(){
+  var gen=S.gen,m=layers.chomp&&layers.chomp.getAttribute('transform'),mm=m&&/translate\(([-\d.]+),([-\d.]+)\)/.exec(m);
+  S.threat=false;
+  if(!mm)return;
+  var cx=+mm[1],y0=+mm[2];
+  await tw(350,function(u){setChomp(cx,y0+(300-y0)*u,0)},easeIn);
+  if(gen===S.gen)layers.chomp.setAttribute('visibility','hidden');
 }
 
 /* ---------- birds ---------- */
@@ -1133,18 +1135,19 @@ async function mainResult(ok){
   var gen=S.gen;
   S.busy=true;S.qCount++;if(ok)S.okCount++;
     if(ok){
+    var backed=S.threat;
+    if(backed){S.coins+=2;toast('Chomp backs off','Well done! +2 coins',true,2400);chompBackOff()}
     S.score+=10;S.coins++;S.streak++;S.placed++;markNext();
     drawPlank(S.placed-1,true);skyTo(S.placed/S.N);
-    var cf=(S.streak%3===0)?awardFish():null;
+    var three=(S.streak%3===0),bonus=Math.min(8,2+S.streak/3);
+    if(three&&S.placed<S.N){S.coins+=bonus;flyPlane(bonus)}
     hud();scheduleSave();showPanel();
     await wait(450);
     if(gen!==S.gen)return;
-    if(cf&&S.placed<S.N){await catchShow(cf);if(gen!==S.gen)return}
-    else if(cf)addSwimmer(cf.id);
-    if(gen!==S.gen)return;
+    if(three&&S.placed<S.N){await wait(300);if(gen!==S.gen)return;await chompThreat();if(gen!==S.gen)return}
     if(S.placed>=S.N){await levelComplete();return}
   }else{
-    S.lives--;S.streak=0;hud();scheduleSave();showPanel();
+    S.threat=false;S.lives--;S.streak=0;hud();scheduleSave();showPanel();
     await bite();
     if(S.rebuilt){S.rebuilt=false;gen=S.gen}
     if(gen!==S.gen)return;
@@ -1332,7 +1335,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row to catch a fish (it leaps out of the river!); longer streaks catch bigger fish. Chomp peeks out of the water every time, so you know he is near.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop, even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more). Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop, even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1374,7 +1377,7 @@ function startLevel(saved){
   S.placed=res?Math.min(S.N-1,saved.placed|0):0;
   S.bitten=res&&Array.isArray(saved.bitten)?saved.bitten.filter(function(i){return i<S.placed}):[];
   S.q=null;S.gq=null;S.view='main';S.busy=false;S.ended=false;S.levelDone=false;S.nextLevel=0;S.active=true;
-  S.sinceGift=0;S.nextGift=(!res&&S.level===1)?2+rnd(2):4+rnd(3);S.streak=0;S.paused=false;S.era=Math.min(Math.max(S.upg|0,1),6);
+  S.sinceGift=0;S.nextGift=(!res&&S.level===1)?2+rnd(2):4+rnd(3);S.streak=0;S.threat=false;S.paused=false;S.era=Math.min(Math.max(S.upg|0,1),6);
   var wm=saved?saved.mode:S.nextMode;S.mode=MON[wm]?wm:'bridge';S.nextMode='';
   S.stats.maxLevel=Math.max(S.stats.maxLevel,S.level);
   buildScene();hud();hideScreen();
@@ -1417,12 +1420,7 @@ function shopScreen(back){
     h+='<div class="shopi"><span>'+d.n+' <em>('+d.fr+')</em></span>'+
       (own?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=d.c?' solid':'')+'" data-b="'+d.id+'"'+(S.coins>=d.c?'':' disabled')+'>Buy &middot; '+d.c+'</button>')+'</div>';
   });
-  h+='</div><p class="big">Fish album</p><div class="shop">';
-  FISH.forEach(function(f){
-    var n=S.fish[f.id]|0;
-    h+='<div class="shopi"><span>'+(n?f.n+' <em>('+f.fr+')</em>':'? ? ?')+'</span><span>'+(n?'x'+n:'not caught yet')+'</span></div>';
-  });
-  h+='</div><p>Catch a fish every 3 correct answers in a row. The longer the streak, the bigger the fish.</p><div class="row"><button class="btn solid" id="bk">Back</button></div>';
+  h+='</div><p>Answer 3 questions in a row: a plane flies by with bonus coins, but Chomp comes to challenge you!</p><div class="row"><button class="btn solid" id="bk">Back</button></div>';
   screen(h);
   Array.prototype.forEach.call(document.querySelectorAll('[data-b]'),function(b){
     b.addEventListener('click',function(){
