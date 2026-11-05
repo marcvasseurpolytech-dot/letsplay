@@ -222,7 +222,7 @@ function emptyStats(){return {byCat:{},answered:0,correct:0,levelsCleared:0,maxL
 var S={cats:{},level:1,score:0,lives:MAXL,N:10,placed:0,bitten:[],q:null,gq:null,view:'main',busy:false,ended:true,active:false,
   deck:[],hdeck:[],missed:[],best:0,qCount:0,okCount:0,sinceGift:0,nextGift:4+rnd(3),gift:null,biteN:rnd(ATTACKS.length),
   stats:emptyStats(),levelDone:true,nextLevel:0,gen:0,planks:[],ghosts:[],
-  coins:0,decor:[],fish:{},streak:0,skyP:0,era:1,ref:{},cab:null,swim:[]};
+  coins:0,decor:[],fish:{},streak:0,skyP:0,era:1,upg:1,ref:{},cab:null,swim:[]};
 function levelN(l){return Math.min(20,10+2*(l-1))}
 try{S.best=parseInt(localStorage.getItem('wordBridgeBest')||'0',10)||0}catch(e){}
 
@@ -407,12 +407,12 @@ function toast(v,m,good,ms){
 /* ---------- SCENE ---------- */
 var X0=50,X1=470,DECK=150;
 var ERAS=[
- {n:'Rope bridge',w:'rope (corde) · anchor (ancrage) · plank (planche)'},
- {n:'Timber bridge',w:'pile (pieu) · beam (poutre) · brace (contreventement)'},
- {n:'Stone arch bridge',w:'arch (arche) · keystone (clé de voûte) · pier (pile)'},
- {n:'Suspension bridge',w:'tower (tour) · cable (câble) · hanger (suspente)'},
- {n:'Cable-stayed bridge',w:'pylon (pylône) · stay (hauban) · deck (tablier)'},
- {n:'Great suspension bridge',w:"span (portée) · anchorage (massif d'ancrage) · truss (treillis)"}
+ {n:'Rope bridge',fr:'pont de corde',c:0,w:'rope (corde) \u00b7 anchor (ancrage) \u00b7 plank (planche)'},
+ {n:'Timber bridge',fr:'pont en bois',c:25,w:'pile (pieu) \u00b7 beam (poutre) \u00b7 brace (contreventement)'},
+ {n:'Stone arch bridge',fr:'pont en arc de pierre',c:50,w:'arch (arche) \u00b7 keystone (cl\u00e9 de vo\u00fbte) \u00b7 pier (pile)'},
+ {n:'Suspension bridge',fr:'pont suspendu',c:90,w:'tower (tour) \u00b7 cable (c\u00e2ble) \u00b7 hanger (suspente)'},
+ {n:'Cable-stayed bridge',fr:'pont \u00e0 haubans',c:140,w:'pylon (pyl\u00f4ne) \u00b7 stay (hauban) \u00b7 deck (tablier)'},
+ {n:'Pont de Normandie',fr:'pont de Normandie',c:220,w:'span (port\u00e9e) \u00b7 estuary (estuaire) \u00b7 fan of stays (nappe de haubans)'}
 ];
 var DECOR=[
  {id:'lantern',n:'Lantern',fr:'lanterne',c:8},{id:'railing',n:'Railing',fr:'garde-corps',c:10},
@@ -425,8 +425,7 @@ var FISH=[
  {id:'trout',n:'Trout',fr:'truite',col:'#7fc8a9',sz:11},{id:'salmon',n:'Salmon',fr:'saumon',col:'#f08a7b',sz:13},
  {id:'pike',n:'Pike',fr:'brochet',col:'#5fa86a',sz:16},{id:'carp',n:'Golden carp',fr:'carpe dorée',col:'#f2c230',sz:14}
 ];
-var CABS={4:{x0:90,x1:430,yT:70,yC:140},6:{x0:80,x1:440,yT:42,yC:130}};
-function eraOf(l){return Math.min(Math.max(l,1),6)}
+var CABS={4:{x0:90,x1:430,yT:70,yC:140}};
 function slotW(){return (X1-X0)/S.N}
 function plankX(i){return X0+i*slotW()}
 function cableY(x){var c=S.cab;if(!c)return 100;var t=(x-c.x0)/(c.x1-c.x0);return c.yT+2*(c.yC-c.yT)*t*(1-t)}
@@ -486,11 +485,18 @@ function drawEra(svg,era){
   }else if(era===5){
     pylonA(svg,260,50);
   }else{
-    tower(svg,80,38,{hT:10,hB:14,t:4.4,beams:[60,86,112],cap:2,light:1,deco:1});tower(svg,440,38,{hT:10,hB:14,t:4.4,beams:[60,86,112],cap:2,light:1,deco:1});
-    ink(el('line',{x1:10,y1:148,x2:80,y2:42,'stroke-width':1.6},svg));ink(el('line',{x1:440,y1:42,x2:510,y2:148,'stroke-width':1.6},svg));
-    ink(el('path',{d:'M80 42 Q260 130 440 42',fill:'none','stroke-width':1.6},svg));
-    ink(el('path',{d:'M80 50 Q260 138 440 50',fill:'none','stroke-width':1.2,opacity:.7},svg));
+    normPylon(svg,120);normPylon(svg,400);
   }
+}
+function normPylon(svg,cx){
+  var R=S.ref,fill=function(e){R.steel.push(e);return e};
+  [-1,1].forEach(function(d){
+    var e=el('polygon',{points:(cx+d*30)+',210 '+(cx+d*22)+',210 '+(cx+d*1)+',152 '+(cx+d*6.5)+',152'},svg);R.pier.push(e);
+  });
+  R.pier.push(el('rect',{x:cx-14,y:176,width:28,height:3.2},svg));
+  fill(el('polygon',{points:(cx-5)+',152 '+(cx+5)+',152 '+(cx+2.4)+',34 '+(cx-2.4)+',34'},svg));
+  fill(el('rect',{x:cx-3.4,y:30,width:6.8,height:5,rx:1},svg));
+  lamp(svg,cx,27);
 }
 function pier(svg,x,w){var e=el('rect',{x:x,y:150,width:w,height:58,rx:2},svg);S.ref.pier.push(e);return e}
 function lamp(svg,x,y){
@@ -535,8 +541,11 @@ function pylonA(svg,cx,yT){
 }
 function plankExtras(i,cx,g){
   var e=S.era;
-  if(e===4||e===6){
-    if((e===4&&i%3===1)||(e===6&&i%2===1)){var c=S.cab;if(cx>c.x0+8&&cx<c.x1-8)ink(el('line',{x1:cx,y1:cableY(cx),x2:cx,y2:149,'stroke-width':.8,opacity:.6},g))}
+  if(e===4){
+    if(i%3===1){var c=S.cab;if(cx>c.x0+8&&cx<c.x1-8)ink(el('line',{x1:cx,y1:cableY(cx),x2:cx,y2:149,'stroke-width':.8,opacity:.6},g))}
+  }else if(e===6){
+    var px=cx<260?120:400,d=Math.abs(cx-px);
+    if(d>9)ink(el('line',{x1:px,y1:Math.max(42,112-d*.46),x2:cx,y2:149,'stroke-width':.8,opacity:.75},g));
   }else if(e===5){
     if(i%2===0)ink(el('line',{x1:260,y1:58,x2:cx,y2:149,'stroke-width':.8,opacity:.7},g));
   }else if(e===1){
@@ -642,7 +651,7 @@ function drawDecor(id){
     });
   }else if(id==='bunting'){
     var c=S.cab,x0=c?c.x0+8:60,x1=c?c.x1-8:460,n=0;
-    var yAt=function(x){return c?cableY(x)+3:108+18*Math.sin(Math.PI*(x-50)/420)};
+    var yAt=function(x){return c?cableY(x)+3:130+6*Math.sin(Math.PI*(x-50)/420)};
     for(var x=x0;x<=x1;x+=18){var y=yAt(x);el('polygon',{points:(x-5)+','+y.toFixed(1)+' '+(x+5)+','+y.toFixed(1)+' '+x+','+(y+9).toFixed(1),fill:cols[n%5]},D);n++}
   }else if(id==='statue'){
     el('rect',{x:483,y:139,width:18,height:9,fill:'#8892a8'},D);
@@ -888,7 +897,7 @@ function post(action,body){
 function snapshot(){
   var inLevel=!S.levelDone&&S.active;
   return {level:S.levelDone?(S.nextLevel||S.level):S.level,score:S.score,best:S.best,lives:S.lives,placed:inLevel?S.placed:0,inLevel:inLevel,
-    bitten:inLevel?S.bitten.slice():[],coins:S.coins,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
+    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
 }
 function scheduleSave(){
   if(!S.active)return;
@@ -912,6 +921,7 @@ function flush(){
 function adopt(pr){
   P.progress=pr||null;
   S.coins=Math.max(0,(pr&&pr.coins)|0);
+  S.upg=Math.min(6,Math.max(1,(pr&&pr.upg)|0||1));
   S.decor=pr&&Array.isArray(pr.decor)?pr.decor.filter(function(id){return DECOR.some(function(d){return d.id===id})}):[];
   S.fish={};FISH.forEach(function(f){var n=pr&&pr.fish&&pr.fish[f.id];if(n>0)S.fish[f.id]=n|0});
   S.stats=normStats(pr&&pr.stats);
@@ -1039,7 +1049,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop on decorations for your bridge. Answer 3 questions in a row to catch a fish; longer streaks catch bigger fish.</li><li>The sun rises as you build. Every bridge is longer and harder than the last one, and it changes: rope, timber, stone arch, suspension, cable-stayed, then great suspension. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row to catch a fish; longer streaks catch bigger fish.</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1081,10 +1091,10 @@ function startLevel(saved){
   S.placed=res?Math.min(S.N-1,saved.placed|0):0;
   S.bitten=res&&Array.isArray(saved.bitten)?saved.bitten.filter(function(i){return i<S.placed}):[];
   S.q=null;S.gq=null;S.view='main';S.busy=false;S.ended=false;S.levelDone=false;S.nextLevel=0;S.active=true;
-  S.sinceGift=0;S.nextGift=4+rnd(3);S.streak=0;S.era=eraOf(S.level);
+  S.sinceGift=0;S.nextGift=4+rnd(3);S.streak=0;S.era=Math.min(Math.max(S.upg|0,1),6);
   S.stats.maxLevel=Math.max(S.stats.maxLevel,S.level);
   buildScene();hud();hideScreen();
-  if(!res||S.placed===0){var E=ERAS[S.era-1];toast('Bridge '+S.level+': '+E.n,E.w,true,4200)}
+  if(!res||S.placed===0){var E=ERAS[S.era-1];toast(E.n,E.w,true,4200)}
   nextQuestion();scheduleSave();
 }
 function saveBest(){
@@ -1108,7 +1118,14 @@ function levelDoneScreen(bonus,cb){
   $('#mn').addEventListener('click',startScreen);
 }
 function shopScreen(back){
-  var h='<h2>Shop and album</h2><p>You have <b class="big">'+S.coins+'</b> coins. Earn 1 coin per correct answer, 5 per gift, and 3 per life left at the end of a bridge.</p><div class="shop">';
+  var h='<h2>Shop and album</h2><p>You have <b class="big">'+S.coins+'</b> coins. Earn 1 coin per correct answer, 5 per gift, and 3 per life left at the end of a bridge.</p>';
+  h+='<p class="big">Bridge upgrades</p><p>Start from a rope bridge and work your way up to the Pont de Normandie. Your upgrade appears on the next bridge you build.</p><div class="shop">';
+  ERAS.forEach(function(er,i){
+    var lv=i+1,cur=S.upg===lv,own=S.upg>lv,next=S.upg+1===lv;
+    h+='<div class="shopi"><span>'+lv+'. '+er.n+' <em>('+er.fr+')</em></span>'+
+      (cur?'<span class="ok">Current</span>':own?'<span class="ok">Owned</span>':next?'<button class="btn'+(S.coins>=er.c?' solid':'')+'" data-u="'+lv+'"'+(S.coins>=er.c?'':' disabled')+'>Upgrade &middot; '+er.c+'</button>':'<span><em>Locked &middot; '+er.c+'</em></span>')+'</div>';
+  });
+  h+='</div><p class="big">Decorations</p><div class="shop">';
   DECOR.forEach(function(d){
     var own=S.decor.indexOf(d.id)>=0;
     h+='<div class="shopi"><span>'+d.n+' <em>('+d.fr+')</em></span>'+
@@ -1128,7 +1145,19 @@ function shopScreen(back){
       S.coins-=d.c;S.decor.push(d.id);hud();
       if(layers.decor&&S.ref&&S.ref.glow)drawDecor(d.id);
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      P.progress=base;lsSet(progKey(),JSON.stringify(base));
+      if(P.user){P.dirty=true;flush()}
+      shopScreen(back);
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-u]'),function(b){
+    b.addEventListener('click',function(){
+      var lv=+b.getAttribute('data-u'),er=ERAS[lv-1];
+      if(!er||lv!==S.upg+1||S.coins<er.c)return;
+      S.coins-=er.c;S.upg=lv;hud();
+      var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
+      base.coins=S.coins;base.upg=S.upg;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
