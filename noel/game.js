@@ -474,7 +474,7 @@ function itemState(it){
 }
 function shopHTML(){
   var tabs='';C.TABS.forEach(function(t){
-    var n='';if(ITEM&&['house','village','trees','folk','animals','decor','sky'].indexOf(t[0])>=0){var all=C.ITEMS.filter(function(i){return i.tab===t[0]});n='<i>'+all.filter(function(i){return own(i.id)}).length+'/'+all.length+'</i>'}
+    var n='';if(ITEM&&['house','village','trees','gifts','folk','animals','decor','sky'].indexOf(t[0])>=0){var all=C.ITEMS.filter(function(i){return i.tab===t[0]});n='<i>'+all.filter(function(i){return own(i.id)}).length+'/'+all.length+'</i>'}
     tabs+='<button class="stab'+(S.shopTab===t[0]?' on':'')+'" data-tab="'+t[0]+'">'+t[1]+n+'</button>'});
   var st=C.STAGES[S.stg-1],nx=C.STAGES[S.stg],cnt=Object.keys(S.own).length;
   var h=sheetHead('Shop')+'<p class="sintro"><b>Stage '+st.n+': '+st.name+'</b> | '+cnt+' items'+(nx?' | Next stage at '+nx.need+' items':' | Final stage reached')+'</p>'+

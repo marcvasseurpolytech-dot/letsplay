@@ -5,10 +5,10 @@
 /* Stages unlock as you own more items. Each stage gives a coin bonus. */
 var STAGES=[
  {n:1,name:'Snowy Plain',need:0,bonus:0,words:'A quiet, snowy night. Answer questions to earn coins and bring Christmas to life.'},
- {n:2,name:'Quiet Village',need:5,bonus:60,words:'Smoke rises from the first chimneys. People are moving in.'},
- {n:3,name:"Santa's House",need:12,bonus:120,words:'Santa is coming to town. Prepare his house, his sleigh and his reindeer.'},
- {n:4,name:"Elves' Workshop",need:22,bonus:200,words:'The workshop hums day and night. The sky is full of lights.'},
- {n:5,name:'Christmas Eve',need:34,bonus:350,words:'Everything is ready. Time for the big take-off!'}
+ {n:2,name:'Quiet Village',need:6,bonus:60,words:'Smoke rises from the first chimneys. People are moving in.'},
+ {n:3,name:"Santa's House",need:14,bonus:120,words:'Santa is coming to town. Prepare his house, his sleigh and his reindeer.'},
+ {n:4,name:"Elves' Workshop",need:26,bonus:200,words:'The workshop hums day and night. The sky is full of lights.'},
+ {n:5,name:'Christmas Eve',need:44,bonus:350,words:'Everything is ready. Time for the big take-off!'}
 ];
 
 /* Shop items. tab: where it appears. st: stage needed. chain: must own the previous tier first. */
@@ -74,9 +74,25 @@ var ITEMS=[
  {id:'s_star',tab:'sky',name:'Christmas star',desc:'A big bright star above the village.',price:180,st:3},
  {id:'s_aur',tab:'sky',name:'Northern lights',desc:'Colourful waves of light. Pick the colour.',price:250,st:3},
  {id:'s_fw',tab:'sky',name:'Fireworks',desc:'Bursts of colour above the roofs.',price:150,st:4},
- {id:'s_fly',tab:'sky',name:'Santa flies by',desc:'His sleigh crosses the sky now and then.',price:220,st:4}
+ {id:'s_fly',tab:'sky',name:'Santa flies by',desc:'His sleigh crosses the sky now and then.',price:220,st:4},
+ {id:'t_white',tab:'trees',name:'Frosted white tree',desc:'A silvery tree covered in frost and icy ornaments.',price:70,st:2},
+ {id:'t_mini',tab:'trees',name:'Three mini trees',desc:'A row of tiny decorated trees on the village green.',price:60,st:2},
+ {id:'t_gold',tab:'trees',name:'Golden tree',desc:'A shimmering golden tree with a star.',price:170,st:4,chain:'t_big'},
+ {id:'d_pile',tab:'gifts',name:'Mountain of gifts',desc:'A huge pile of wrapped presents for the whole village.',price:90,st:2},
+ {id:'d_sack',tab:'gifts',name:"Santa's sack",desc:'A big red sack, full to the top.',price:45,st:3,chain:'c_santa'},
+ {id:'d_stock',tab:'gifts',name:'Christmas stockings',desc:'Five stockings hung up, waiting to be filled.',price:45,st:2},
+ {id:'d_tower',tab:'gifts',name:'Tower of gifts',desc:'Four gifts stacked high with a bouncing bow.',price:120,st:3},
+ {id:'d_ginger',tab:'gifts',name:'Gingerbread house',desc:'Icing roof, gumdrops and a candy door.',price:130,st:3},
+ {id:'d_nut',tab:'decor',name:'Giant nutcracker',desc:'A soldier who guards the village square.',price:100,st:3},
+ {id:'d_cocoa',tab:'decor',name:'Hot chocolate stand',desc:'Warm mugs and rising steam.',price:80,st:2},
+ {id:'d_train',tab:'decor',name:'Toy train',desc:'A little train puffing along its track.',price:220,st:4},
+ {id:'c_elf3',tab:'folk',name:'Elf Pip the baker',desc:'Carries a tray of fresh cookies.',price:80,st:3},
+ {id:'c_elf4',tab:'folk',name:'Elf Jingle on a ladder',desc:'Hangs the lights on the big tree.',price:110,st:3,chain:'t_big'},
+ {id:'c_elf5',tab:'folk',name:'Elf Toot the trumpeter',desc:'Plays carols with notes in the air.',price:90,st:3},
+ {id:'c_mrs',tab:'folk',name:'Mrs Claus',desc:'Waves from beside Santa.',price:180,st:4,chain:'c_santa'},
+ {id:'s_balloon',tab:'sky',name:'Hot-air balloon',desc:'A striped balloon drifts across the sky.',price:200,st:4}
 ];
-var TABS=[['house','House'],['village','Village'],['trees','Trees'],['folk','Folk'],['animals','Animals'],['decor','Decor'],['sky','Sky'],['boost','Boosts'],['perk','Perks'],['grumbo','Grumbo'],['chest','Chests']];
+var TABS=[['house','House'],['village','Village'],['trees','Trees'],['gifts','Gifts'],['folk','Folk'],['animals','Animals'],['decor','Decor'],['sky','Sky'],['boost','Boosts'],['perk','Perks'],['grumbo','Grumbo'],['chest','Chests']];
 
 /* Consumables, permanent perks, Grumbo costumes */
 var BOOSTS=[
@@ -178,6 +194,9 @@ var LETTERS=[
  {t:'Own 3 reindeer.',k:'rd3',n:3,r:100},
  {t:'Reach Stage 4: the Elves’ Workshop.',k:'stage',n:4,r:150},
  {t:'Answer 100 questions correctly.',k:'correct',n:100,r:150},
+ {t:'Buy the Golden tree.',k:'own',n:'t_gold',r:150},
+ {t:'Bring Mrs Claus to the village.',k:'own',n:'c_mrs',r:150},
+ {t:'Buy the Mountain of gifts.',k:'own',n:'d_pile',r:80},
  {t:'Own the Christmas castle.',k:'own',n:'h5',r:300},
  {t:'Reach Stage 5: Christmas Eve.',k:'stage',n:5,r:250},
  {t:'Take off on Christmas Eve! Open the Menu and press the take-off button.',k:'takeoffs',n:1,r:300}
