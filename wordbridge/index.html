@@ -434,7 +434,7 @@ setInterval(function(){
   var now=performance.now(),dt=Math.min(now-lastTick,500);lastTick=now;
   var q=curQ();
   if(!q||q.answered||S.ended||S.paused||(S.busy&&S.view==='main')||document.visibilityState!=='visible')return;
-  q.left-=dt;
+  q.left-=dt;q.spent=(q.spent||0)+dt;
   var b=$('#tbar');
   if(b){b.style.width=Math.max(0,100*q.left/q.limit).toFixed(1)+'%';b.classList.toggle('low',q.left<5000)}
   if(q.left<=0)timeUp(q);
@@ -447,7 +447,7 @@ function countStat(q){
 function resolve(q){
   countStat(q);
   if(S.view==='gift'){giftResult(q);return}
-  mainResult(q.ok);
+  mainResult(q.ok,q.ok&&(q.spent||0)<=5000);
 }
 
 /* ---------- HUD ---------- */
@@ -1354,6 +1354,44 @@ function fishJump(sw,tx,ty){
     if(best)fishJump(best,x,y);
   });
 })();
+/* quick answer (5 seconds or less): +1 coin and a shooting star or a rocket taking off */
+function quickBonus(){
+  if(!layers.birds)return;
+  var gen=S.gen,g=el('g',{},layers.birds),lbl=el('text',{'text-anchor':'middle','font-size':12,'font-weight':800,fill:'#f2c230',stroke:'#0d1b3a','stroke-width':3,'paint-order':'stroke'},g);
+  lbl.textContent='QUICK! +1 coin';
+  if(Math.random()<.55){
+    var x0=40+rnd(220),y0=20+rnd(40),dx=190,dy=90,hd=el('circle',{r:3.2,fill:'#fff6b0'},g);
+    var tail=el('polygon',{fill:'#fff6b0',opacity:.7},g);
+    tw(1100,function(u){
+      if(gen!==S.gen)return;
+      var x=x0+dx*u,y=y0+dy*u;
+      hd.setAttribute('cx',x.toFixed(1));hd.setAttribute('cy',y.toFixed(1));
+      var tx=x-dx*.28*Math.min(1,u*3),ty2=y-dy*.28*Math.min(1,u*3);
+      tail.setAttribute('points',x.toFixed(1)+','+(y-2).toFixed(1)+' '+x.toFixed(1)+','+(y+2).toFixed(1)+' '+tx.toFixed(1)+','+ty2.toFixed(1));
+      tail.setAttribute('opacity',(.8*(1-u*.6)).toFixed(2));hd.setAttribute('opacity',(1-Math.max(0,u-.7)/.3).toFixed(2));
+      lbl.setAttribute('x',(x0+dx*.45).toFixed(1));lbl.setAttribute('y',(y0+dy*.45-10).toFixed(1));
+      lbl.setAttribute('opacity',Math.min(1,u*4,(1-u)*3).toFixed(2));
+    }).then(function(){if(g.parentNode)g.parentNode.removeChild(g)});
+  }else{
+    var rx=40+rnd(440),ry=S.mode==='bridge'?148:196,rk=el('g',{},g),sm=[];
+    for(var k=0;k<7;k++)sm.push(el('circle',{r:1,fill:'#f5eedc',opacity:0},g));
+    g.insertBefore(rk,lbl);
+    el('ellipse',{cx:0,cy:12,rx:4.2,ry:9,fill:'#ff9a3c',class:'flame'},rk);
+    el('polygon',{points:'-5,6 -10,16 -5,12',fill:'#2b3550'},rk);el('polygon',{points:'5,6 10,16 5,12',fill:'#2b3550'},rk);
+    el('rect',{x:-5,y:-16,width:10,height:24,rx:2,fill:'#f5f5f5',stroke:'#16294f','stroke-width':.8},rk);
+    el('rect',{x:-5,y:-2,width:10,height:3,fill:'#16294f'},rk);
+    el('path',{d:'M-5 -16 Q0 -28 5 -16Z',fill:'#f5f5f5',stroke:'#16294f','stroke-width':.8},rk);
+    el('circle',{cx:0,cy:-9,r:1.8,fill:'#7fc8ff',stroke:'#16294f','stroke-width':.5},rk);
+    var path=ry+30;
+    tw(2300,function(u){
+      if(gen!==S.gen)return;
+      var y=ry-(path+40)*u*u,sh=u<.1?(Math.random()-.5)*1.2:0;
+      rk.setAttribute('transform','translate('+(rx+sh).toFixed(1)+','+y.toFixed(1)+')');
+      sm.forEach(function(c,k){var uu=Math.max(0,u-k*.035);var yy=ry-(path+40)*uu*uu+16;c.setAttribute('cx',(rx+(k%2?3:-3)*(k*.4)).toFixed(1));c.setAttribute('cy',yy.toFixed(1));c.setAttribute('r',(2+k*.9).toFixed(1));c.setAttribute('opacity',(u>k*.035?Math.max(0,.55-k*.07)*(1-u*.4):0).toFixed(2))});
+      lbl.setAttribute('x',Math.max(60,Math.min(460,rx)).toFixed(1));lbl.setAttribute('y',(Math.max(24,y-26)).toFixed(1));lbl.setAttribute('opacity',Math.min(1,u*5,(1-u)*2).toFixed(2));
+    },easeIn).then(function(){if(g.parentNode)g.parentNode.removeChild(g)});
+  }
+}
 function flyPlane(bonus){
   if(!layers.birds)return;
   var gen=S.gen,y=70+rnd(14),g=el('g',{},layers.birds);
@@ -1643,7 +1681,7 @@ function maybeGift(){
 }
 
 /* ---------- MAIN FLOW ---------- */
-async function mainResult(ok){
+async function mainResult(ok,fast){
   var gen=S.gen;
   S.busy=true;S.qCount++;if(ok)S.okCount++;
     if(ok){
@@ -1651,6 +1689,7 @@ async function mainResult(ok){
     if(backed){S.coins+=2;toast('Chomp backs off','Well done! +2 coins',true,2400);chompBackOff()}
     S.score+=10;S.coins++;S.streak++;S.placed++;markNext();
     drawPlank(S.placed-1,true);skyTo(S.placed/S.N);
+    if(fast){S.coins++;quickBonus()}
     var three=(S.streak%3===0),bonus=Math.min(8,2+S.streak/3);
     if(three&&S.placed<S.N){S.coins+=bonus;flyPlane(bonus);awardFish()}
     hud();scheduleSave();showPanel();
@@ -1859,7 +1898,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower, your Louvre Pyramid and your Statue of Liberty, dress up the gallery of your cartoon Mona Lisa, buy boosts (shield against Chomp, 50/50, +10 seconds), buy a fireworks show and choose the color of the sparkles, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then the glass Louvre Pyramid, then a cartoon Mona Lisa painted block by block in the Louvre, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower, your Louvre Pyramid and your Statue of Liberty, dress up the gallery of your cartoon Mona Lisa, buy boosts (shield against Chomp, 50/50, +10 seconds), buy a fireworks show and choose the color of the sparkles, and add decorations. Answer in 5 seconds or less and you get +1 coin and a bonus animation (a shooting star or a rocket taking off). Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then the glass Louvre Pyramid, then a cartoon Mona Lisa painted block by block in the Louvre, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
