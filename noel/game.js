@@ -510,7 +510,6 @@ function shopHTML(){
   }
   h+='</div>';
   $('#sheet').innerHTML=h;wireSheet();
-  var tb=document.querySelector('.stabs'),ta=document.querySelector('.stab.on');if(tb&&ta)tb.scrollLeft=Math.max(0,ta.offsetLeft-tb.clientWidth/2+ta.offsetWidth/2);
   Array.prototype.forEach.call(document.querySelectorAll('[data-tab]'),function(b){b.addEventListener('click',function(){S.shopTab=b.getAttribute('data-tab');S.chestMsg='';renderSheet()})});
   Array.prototype.forEach.call(document.querySelectorAll('[data-buy]'),function(b){b.addEventListener('click',function(){buyItem(b.getAttribute('data-buy'))})});
   Array.prototype.forEach.call(document.querySelectorAll('[data-boost]'),function(b){b.addEventListener('click',function(){var o=C.BOOSTS.filter(function(x){return x.id===b.getAttribute('data-boost')})[0];if(S.coins<o.price)return;S.coins-=o.price;S.inv[o.id]++;toast('Bought',o.name,true,1500);sold()})});

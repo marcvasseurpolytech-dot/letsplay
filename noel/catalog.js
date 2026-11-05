@@ -92,7 +92,7 @@ var ITEMS=[
  {id:'c_mrs',tab:'folk',name:'Mrs Claus',desc:'Waves from beside Santa.',price:180,st:4,chain:'c_santa'},
  {id:'s_balloon',tab:'sky',name:'Hot-air balloon',desc:'A striped balloon drifts across the sky.',price:200,st:4}
 ];
-var TABS=[['house','House'],['village','Village'],['trees','Trees'],['gifts','Gifts'],['folk','Folk'],['animals','Animals'],['decor','Decor'],['sky','Sky'],['boost','Boosts'],['perk','Perks'],['grumbo','Grumbo'],['chest','Chests']];
+var TABS=[['house','House'],['village','Village'],['trees','Trees (sapins)'],['gifts','Gifts'],['folk','Folk'],['animals','Animals'],['decor','Decor'],['sky','Sky'],['boost','Boosts'],['perk','Perks'],['grumbo','Grumbo'],['chest','Chests']];
 
 /* Consumables, permanent perks, Grumbo costumes */
 var BOOSTS=[
