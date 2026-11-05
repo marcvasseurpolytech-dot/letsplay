@@ -142,7 +142,8 @@ function cleanProgress(p) {
   FISH_IDS.forEach(id => { const n = int(p.fish && p.fish[id], 0, 1e5, 0); if (n > 0) fish[id] = n; });
   return {
     coins: int(p.coins, 0, 1e6, 0), upg: int(p.upg, 1, 6, 1), eup: int(p.eup, 1, 4, 1), lup: int(p.lup, 1, 4, 1), sup: int(p.sup, 1, 4, 1),
-    mi: Array.isArray(p.mi) ? ['frame', 'easel', 'tapestry', 'curtain', 'spot', 'rope', 'plaque', 'glass', 'bench', 'vase', 'lustre'].filter(id => p.mi.indexOf(id) >= 0) : [],
+    inv: { shield: int(p.inv && p.inv.shield, 0, 99, 0), half: int(p.inv && p.inv.half, 0, 99, 0), freeze: int(p.inv && p.inv.freeze, 0, 99, 0) },
+    mi: Array.isArray(p.mi) ? ['frame', 'easel', 'tapestry', 'curtain', 'spot', 'rope', 'plaque', 'glass', 'bench', 'vase', 'lustre', 'clock', 'camera', 'carpet', 'art2', 'guard'].filter(id => p.mi.indexOf(id) >= 0) : [],
     fx: Array.isArray(p.fx) ? ['fw', 'c_blue', 'c_rose', 'c_green', 'c_rainbow'].filter(id => p.fx.indexOf(id) >= 0) : [],
     lc: ['gold', 'blue', 'rose', 'green', 'rainbow'].indexOf(p.lc) >= 0 ? p.lc : 'gold',
     mode: ['eiffel', 'louvre', 'mona', 'liberty'].indexOf(p.mode) >= 0 ? p.mode : 'bridge', decor, fish,

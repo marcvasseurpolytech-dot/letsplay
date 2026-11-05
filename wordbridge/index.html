@@ -159,6 +159,11 @@ select.fld{appearance:auto}
 @keyframes flick{from{transform:scale(1,1)}to{transform:scale(1.12,.92)}}
 .bird .wing{transform-box:fill-box;transform-origin:center;animation:flap .3s ease-in-out infinite alternate}
 @keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(-.45)}}
+.boosts{display:flex;gap:6px;flex-wrap:wrap}
+.bst{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--gold);background:transparent;border:1px solid var(--gold);border-radius:999px;padding:4px 10px;cursor:pointer;touch-action:manipulation}
+.bst b{color:var(--cream)}
+.bst.on{cursor:default;border-style:dashed;color:#7fc8ff;border-color:#7fc8ff}
+.opt.gone{visibility:hidden}
 .shophead{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .shophead h2{margin:0}
 .coinchip{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--navy);background:var(--gold);border-radius:999px;padding:4px 12px}
@@ -261,7 +266,7 @@ function emptyStats(){return {byCat:{},answered:0,correct:0,levelsCleared:0,maxL
 var S={cats:{},level:1,score:0,lives:MAXL,N:10,placed:0,bitten:[],q:null,gq:null,view:'main',busy:false,ended:true,active:false,
   deck:[],hdeck:[],missed:[],best:0,qCount:0,okCount:0,sinceGift:0,nextGift:4+rnd(3),gift:null,biteN:rnd(ATTACKS.length),
   stats:emptyStats(),levelDone:true,nextLevel:0,gen:0,planks:[],ghosts:[],
-  coins:0,decor:[],fish:{},threat:false,streak:0,skyP:0,era:1,upg:1,eup:1,lup:1,sup:1,mi:[],fx:[],lc:'gold',mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
+  coins:0,decor:[],fish:{},threat:false,streak:0,skyP:0,era:1,upg:1,eup:1,lup:1,sup:1,mi:[],inv:{shield:0,half:0,freeze:0},fx:[],lc:'gold',mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
 function levelN(l){return Math.min(20,10+2*(l-1))}
 try{S.best=parseInt(localStorage.getItem('wordBridgeBest')||'0',10)||0}catch(e){}
 
@@ -329,17 +334,34 @@ function tagText(q){
   var base=MODE_LABEL[q.item.t];
   return S.view==='gift'?'Gift question | '+base:base;
 }
+function boostsHTML(q){
+  if(q.answered)return '';
+  var i=S.inv,h='';
+  if(i.half>0&&q.type==='mc'&&!q.hid)h+='<button class="bst" data-bo="half">50/50 <b>x'+i.half+'</b></button>';
+  if(i.freeze>0)h+='<button class="bst" data-bo="freeze">+10s <b>x'+i.freeze+'</b></button>';
+  if(i.shield>0)h+='<span class="bst on">Shield <b>x'+i.shield+'</b></span>';
+  return h?'<div class="boosts">'+h+'</div>':'';
+}
+function useBoost(id){
+  var q=curQ();if(!q||q.answered||S.inv[id]<1)return;
+  if(id==='half'){
+    if(q.type!=='mc'||q.hid)return;
+    var w=[];q.opts.forEach(function(o,k){if(!o.ok)w.push(k)});w=shuffle(w).slice(0,2);q.hid=w;
+  }else if(id==='freeze'){q.left+=10000;q.limit=Math.max(q.limit,q.left)}
+  S.inv[id]--;scheduleSave();showPanel();
+}
 function showPanel(){
   var q=curQ();
   if(!q){idle('Get ready to build the bridge.');return}
-  var it=q.item,h=(q.answered?'':'<div class="timer"><b id="tbar" style="width:'+Math.max(0,Math.round(100*q.left/q.limit))+'%"'+(q.left<5000?' class="low"':'')+'></b></div>')+'<div class="tag">'+tagText(q)+'</div>';
+  var it=q.item,h=(q.answered?'':'<div class="timer"><b id="tbar" style="width:'+Math.max(0,Math.round(100*q.left/q.limit))+'%"'+(q.left<5000?' class="low"':'')+'></b></div>')+'<div class="tag">'+tagText(q)+'</div>'+boostsHTML(q);
   if(q.type==='mc'){
     if(it.t==='e')h+='<div class="sentence">Which part is <b>wrong</b>?<br>'+segHTML(q)+'</div><div class="opts letters">';
     else h+='<div class="sentence">'+sentenceHTML(it,q.answered?it.o[0]:null,q.answered?(q.ok?'ok':'ko'):'')+'</div><div class="opts">';
     q.opts.forEach(function(o,i){
       var c='opt';
+      if(q.hid&&q.hid.indexOf(i)>=0)c+=' gone';
       if(q.answered){if(o.ok)c+=' good';else if(i===q.picked)c+=' bad'}
-      h+='<button class="'+c+'" data-i="'+i+'"'+(q.answered?' disabled':'')+'>'+esc(o.t)+'</button>';
+      h+='<button class="'+c+'" data-i="'+i+'"'+(q.answered||(q.hid&&q.hid.indexOf(i)>=0)?' disabled':'')+'>'+esc(o.t)+'</button>';
     });
     h+='</div>';
   }else{
@@ -373,6 +395,7 @@ function showPanel(){
     var u=$('#undo');if(u)u.addEventListener('click',function(){if(!q.answered){q.built.pop();showPanel()}});
     var c=$('#check');if(c)c.addEventListener('click',checkWord);
   }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bo]'),function(b){b.addEventListener('click',function(){useBoost(b.getAttribute('data-bo'))})});
   var nb=$('#nextB');if(nb)nb.addEventListener('click',nextQuestion);
   var bb=$('#backB');if(bb)bb.addEventListener('click',backToBridge);
   var cb=$('#cancelB');if(cb)cb.addEventListener('click',backToBridge);
@@ -489,7 +512,14 @@ var MI=[
  {id:'spot',n:'Spotlights',fr:'projecteurs',c:15},{id:'rope',n:'Velvet rope',fr:'cordon de velours',c:10},
  {id:'plaque',n:'Name plaque',fr:'cartel',c:6},{id:'glass',n:'Glass case',fr:'vitrine de protection',c:20},
  {id:'bench',n:'Museum bench',fr:'banc de mus\u00e9e',c:8},{id:'vase',n:'Flower vase',fr:'vase de fleurs',c:8},
- {id:'lustre',n:'Chandelier',fr:'lustre',c:25}
+ {id:'lustre',n:'Chandelier',fr:'lustre',c:25},
+ {id:'clock',n:'Museum clock',fr:'horloge de mus\u00e9e',c:10},{id:'camera',n:'Security camera',fr:'cam\u00e9ra de surveillance',c:10},
+ {id:'carpet',n:'Red carpet',fr:'tapis rouge',c:14},{id:'art2',n:'Second painting',fr:'autre tableau',c:8},{id:'guard',n:'Sleepy guard',fr:'gardien endormi',c:12}
+];
+var BOOSTS=[
+ {id:'shield',n:'Shield',fr:'bouclier',c:40,d:'Blocks the next Chomp bite. No life lost.'},
+ {id:'half',n:'50/50',fr:'50/50',c:15,d:'Removes two wrong answers on a question.'},
+ {id:'freeze',n:'+10 seconds',fr:'+10 secondes',c:15,d:'Adds 10 seconds to the timer.'}
 ];
 var FXC=[
  {id:'gold',n:'Gold',fr:'or',c:0,col:'#ffd45a'},{id:'blue',n:'Blue',fr:'bleu',c:8,col:'#7fc8ff'},
@@ -852,6 +882,38 @@ function drawMuseumItem(id){
       el('line',{x1:424,y1:194,x2:f[0]+3,y2:f[1]+4,stroke:'#3f8f55','stroke-width':1.4},g);el('circle',{cx:f[0]+3,cy:f[1],r:5,fill:f[2]},g);el('circle',{cx:f[0]+3,cy:f[1],r:1.5,fill:'#8a5a2b'},g);
     });
     el('path',{d:'M414 194 H434 Q438 206 432 212 H416 Q410 206 414 194Z',fill:'#3f78c4',stroke:'#16294f','stroke-width':.8},g);
+  }else if(id==='clock'){
+    g=el('g',{},L);
+    el('circle',{cx:392,cy:62,r:13,fill:'#f5eedc',stroke:'#8a6d12','stroke-width':2.4},g);
+    for(var h12=0;h12<12;h12++){var an=h12/12*6.283;el('line',{x1:(392+Math.sin(an)*10).toFixed(1),y1:(62-Math.cos(an)*10).toFixed(1),x2:(392+Math.sin(an)*12).toFixed(1),y2:(62-Math.cos(an)*12).toFixed(1),stroke:'#2b1d12','stroke-width':1},g)}
+    var d=new Date(),mh=d.getMinutes()/60*6.283,hh=((d.getHours()%12)+d.getMinutes()/60)/12*6.283;
+    el('line',{x1:392,y1:62,x2:(392+Math.sin(mh)*10).toFixed(1),y2:(62-Math.cos(mh)*10).toFixed(1),stroke:'#2b1d12','stroke-width':1.3,'stroke-linecap':'round'},g);
+    el('line',{x1:392,y1:62,x2:(392+Math.sin(hh)*7).toFixed(1),y2:(62-Math.cos(hh)*7).toFixed(1),stroke:'#2b1d12','stroke-width':2,'stroke-linecap':'round'},g);
+  }else if(id==='camera'){
+    g=el('g',{},L);
+    el('rect',{x:486,y:24,width:6,height:10,fill:'#5b6a8f'},g);
+    el('rect',{x:470,y:30,width:28,height:11,rx:3,fill:'#8a94ad',stroke:'#2b3550','stroke-width':1,transform:'rotate(14 484 36)'},g);
+    el('circle',{cx:472,cy:38,r:3,fill:'#16294f'},g);
+    el('circle',{cx:493,cy:32,r:2,fill:'#ff3b30',class:'beacon'},g);
+  }else if(id==='carpet'){
+    g=el('g',{},B);
+    el('polygon',{points:'186,201 338,201 352,213 172,213',fill:'#a3202b',stroke:'#c9a227','stroke-width':1.2},g);
+    el('line',{x1:190,y1:207,x2:334,y2:207,stroke:'#c9a227','stroke-width':.8,'stroke-dasharray':'4 3'},g);
+  }else if(id==='art2'){
+    g=el('g',{},L);
+    el('rect',{x:112,y:58,width:54,height:40,fill:'#9fc6d8',stroke:'#8a6d12','stroke-width':3},g);
+    el('polygon',{points:'112,98 112,82 128,70 142,84 154,74 166,86 166,98',fill:'#6f9a5e'},g);
+    el('circle',{cx:150,cy:68,r:5,fill:'#ffe27a'},g);
+    el('path',{d:'M126 92 q8 -8 16 0 t18 0',fill:'none',stroke:'#e4dcae','stroke-width':2},g);
+  }else if(id==='guard'){
+    g=el('g',{},L);
+    el('rect',{x:344,y:196,width:28,height:5,rx:1.5,fill:'#6b3a1c'},g);el('rect',{x:344,y:176,width:4,height:25,fill:'#6b3a1c'},g);
+    [346,368].forEach(function(x){el('rect',{x:x-1,y:201,width:3,height:11,fill:'#4a2a14'},g)});
+    el('rect',{x:349,y:178,width:19,height:19,rx:3,fill:'#2a4fa3',stroke:'#16294f','stroke-width':.8},g);
+    el('circle',{cx:360,cy:172,r:7,fill:'#f0d2a8',stroke:'#2b1d12','stroke-width':.7},g);
+    el('rect',{x:352,y:162,width:16,height:5,rx:2,fill:'#16294f'},g);
+    el('path',{d:'M356 173 q3 2 6 0',fill:'none',stroke:'#2b1d12','stroke-width':.8},g);
+    ['z','Z'].forEach(function(z,k){var t=el('text',{x:372+k*7,y:166-k*9,'font-size':8+k*3,'font-weight':700,fill:'#f5eedc',class:'bulb'},g);t.textContent=z;t.style.animationDelay=(k*.7)+'s'});
   }else if(id==='lustre'){
     g=el('g',{},L);
     el('line',{x1:cx,y1:0,x2:cx,y2:16,stroke:'#c9a227','stroke-width':1.2},g);
@@ -1331,6 +1393,20 @@ async function chompThreat(){
     requestAnimationFrame(loop);
   })(t0);
 }
+async function shieldBlock(){
+  var gen=S.gen,p=threatPos(),cx=Math.max(40,Math.min(480,p.cx)),TY=p.ty;
+  layers.chomp.setAttribute('visibility','visible');
+  setChomp(cx,300,0);
+  await tw(300,function(u){setChomp(cx,300+(TY-300)*u,-24*u)},easeOut);
+  if(gen!==S.gen)return;
+  var sh=el('circle',{cx:cx+10,cy:TY-6,r:6,fill:'#7fc8ff','fill-opacity':.28,stroke:'#dff3ff','stroke-width':2},layers.truck);
+  toast('Shield','Your shield blocked Chomp! No bite, no life lost.',true,2600);
+  await tw(520,function(u){if(gen!==S.gen)return;sh.setAttribute('r',(6+34*u).toFixed(1));sh.setAttribute('opacity',(1-u*.9).toFixed(2));setChomp(cx,TY+u*10,-24*(1-u)+14*u)});
+  if(sh.parentNode)sh.parentNode.removeChild(sh);
+  if(gen!==S.gen)return;
+  await tw(330,function(u){setChomp(cx,TY+10+(300-TY-10)*u,0)},easeIn);
+  layers.chomp.setAttribute('visibility','hidden');
+}
 async function chompBackOff(){
   var gen=S.gen,m=layers.chomp&&layers.chomp.getAttribute('transform'),mm=m&&/translate\(([-\d.]+),([-\d.]+)\)/.exec(m);
   S.threat=false;
@@ -1582,6 +1658,11 @@ async function mainResult(ok){
     if(gen!==S.gen)return;
     if(three&&S.placed<S.N){await wait(300);if(gen!==S.gen)return;await chompThreat();if(gen!==S.gen)return}
     if(S.placed>=S.N){await levelComplete();return}
+  }else if(S.inv.shield>0){
+    S.inv.shield--;S.threat=false;S.streak=0;hud();scheduleSave();showPanel();
+    await shieldBlock();
+    if(S.rebuilt){S.rebuilt=false;gen=S.gen}
+    if(gen!==S.gen)return;
   }else{
     S.threat=false;S.lives--;S.streak=0;hud();scheduleSave();showPanel();
     await bite();
@@ -1619,7 +1700,7 @@ function post(action,body){
 function snapshot(){
   var inLevel=!S.levelDone&&S.active;
   return {level:S.levelDone?(S.nextLevel||S.level):S.level,score:S.score,best:S.best,lives:S.lives,placed:inLevel?S.placed:0,inLevel:inLevel,
-    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,eup:S.eup,lup:S.lup,sup:S.sup,mi:S.mi.slice(),fx:S.fx.slice(),lc:S.lc,mode:S.levelDone?(S.nextMode||S.mode):S.mode,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
+    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,eup:S.eup,lup:S.lup,sup:S.sup,mi:S.mi.slice(),inv:Object.assign({},S.inv),fx:S.fx.slice(),lc:S.lc,mode:S.levelDone?(S.nextMode||S.mode):S.mode,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
 }
 function scheduleSave(){
   if(!S.active)return;
@@ -1647,6 +1728,7 @@ function adopt(pr){
   S.eup=Math.min(4,Math.max(1,(pr&&pr.eup)|0||1));
   S.lup=Math.min(4,Math.max(1,(pr&&pr.lup)|0||1));
   S.sup=Math.min(4,Math.max(1,(pr&&pr.sup)|0||1));
+  S.inv={shield:Math.min(99,Math.max(0,(pr&&pr.inv&&pr.inv.shield)|0)),half:Math.min(99,Math.max(0,(pr&&pr.inv&&pr.inv.half)|0)),freeze:Math.min(99,Math.max(0,(pr&&pr.inv&&pr.inv.freeze)|0))};
   S.mi=pr&&Array.isArray(pr.mi)?MI.map(function(x){return x.id}).filter(function(id){return pr.mi.indexOf(id)>=0}):[];
   S.fx=pr&&Array.isArray(pr.fx)?FX_IDS.filter(function(id){return pr.fx.indexOf(id)>=0}):[];
   S.lc=FXC.some(function(c){return c.id===(pr&&pr.lc)})?pr.lc:'gold';
@@ -1777,7 +1859,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower, your Louvre Pyramid and your Statue of Liberty, dress up the gallery of your cartoon Mona Lisa, buy a fireworks show and choose the color of the sparkles, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then the glass Louvre Pyramid, then a cartoon Mona Lisa painted block by block in the Louvre, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower, your Louvre Pyramid and your Statue of Liberty, dress up the gallery of your cartoon Mona Lisa, buy boosts (shield against Chomp, 50/50, +10 seconds), buy a fireworks show and choose the color of the sparkles, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then the glass Louvre Pyramid, then a cartoon Mona Lisa painted block by block in the Louvre, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1848,7 +1930,7 @@ function levelDoneScreen(bonus,cb){
   $('#nx').addEventListener('click',function(){S.level++;S.missed=[];startLevel()});
   $('#mn').addEventListener('click',startScreen);
 }
-var SHOP_TABS=[['bridge','Bridge'],['eiffel','Eiffel'],['louvre','Louvre'],['liberty','Liberty'],['mona','Mona Lisa'],['show','Light show'],['decor','Decor']];
+var SHOP_TABS=[['bridge','Bridge'],['eiffel','Eiffel'],['louvre','Louvre'],['liberty','Liberty'],['mona','Mona Lisa'],['boost','Boosts'],['show','Light show'],['decor','Decor']];
 function shopSteps(list,cur,attr,intro){
   var h='<p class="sintro">'+intro+'</p><div class="sbar"><b style="width:'+Math.round((cur-1)/(list.length-1)*100)+'%"></b></div><div class="shop">';
   list.forEach(function(er,i){
@@ -1863,14 +1945,20 @@ function shopScreen(back,tab){
   if(tab)S.shopTab=tab;
   if(!S.shopTab||!SHOP_TABS.some(function(t){return t[0]===S.shopTab}))S.shopTab=modeTab;
   var cur=S.shopTab;
-  var badge={bridge:S.upg+'/'+ERAS.length,eiffel:S.eup+'/'+EUP.length,louvre:S.lup+'/'+LUP.length,liberty:S.sup+'/'+SUP.length,mona:S.mi.length+'/'+MI.length,show:(S.fx.length+1)+'/'+(FX_IDS.length+1),decor:S.decor.length+'/'+DECOR.length};
+  var badge={bridge:S.upg+'/'+ERAS.length,eiffel:S.eup+'/'+EUP.length,louvre:S.lup+'/'+LUP.length,liberty:S.sup+'/'+SUP.length,mona:S.mi.length+'/'+MI.length,boost:'x'+(S.inv.shield+S.inv.half+S.inv.freeze),show:(S.fx.length+1)+'/'+(FX_IDS.length+1),decor:S.decor.length+'/'+DECOR.length};
   var h='<div class="shophead"><h2>Shop</h2><span class="coinchip"><b>'+S.coins+'</b> coins</span></div>';
   h+='<div class="stabs">'+SHOP_TABS.map(function(t){return '<button class="stab'+(t[0]===cur?' on':'')+'" data-tab="'+t[0]+'">'+t[1]+'<i>'+badge[t[0]]+'</i></button>'}).join('')+'</div>';
   if(cur==='bridge')h+=shopSteps(ERAS,S.upg,'u','From a rope bridge up to the Pont de Normandie. It shows on your bridge when you go back to the game.');
   else if(cur==='eiffel')h+=shopSteps(EUP,S.eup,'e','Light up the tower you build in Paris. Chomp can wreck these.');
   else if(cur==='louvre')h+=shopSteps(LUP,S.lup,'l','Make the glass pyramid shine. Chomp can wreck these.');
   else if(cur==='liberty')h+=shopSteps(SUP,S.sup,'s','Make Lady Liberty shine over New York harbor. Chomp can wreck these.');
-  else if(cur==='mona'){
+  else if(cur==='boost'){
+    h+='<p class="sintro">Use them in any level. 50/50 and +10s appear above the question. The shield works by itself when you get a question wrong.</p><div class="shop">';
+    BOOSTS.forEach(function(b){
+      h+='<div class="sstep"><span class="snum">x'+S.inv[b.id]+'</span><span class="sname">'+b.n+'<em>'+b.fr+' \u00b7 '+b.d+'</em></span><button class="btn'+(S.coins>=b.c?' solid':'')+'" data-buy="'+b.id+'"'+(S.coins>=b.c?'':' disabled')+'>'+b.c+' coins</button></div>';
+    });
+    h+='</div>';
+  }else if(cur==='mona'){
     h+='<p class="sintro">Dress up the gallery around your cartoon Mona Lisa. Buy in any order. Chomp can destroy them.</p><div class="shop">';
     MI.forEach(function(d){
       var own=S.mi.indexOf(d.id)>=0;
@@ -1904,7 +1992,7 @@ function shopScreen(back,tab){
       S.coins-=d.c;S.decor.push(d.id);S.shopDirty=true;hud();
       if(S.mode==='bridge'&&layers.decor&&S.ref&&S.ref.glow)drawDecor(d.id);
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.inv=Object.assign({},S.inv);base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
@@ -1916,7 +2004,7 @@ function shopScreen(back,tab){
       if(!er||lv!==S.upg+1||S.coins<er.c)return;
       S.coins-=er.c;S.upg=lv;S.shopDirty=true;hud();
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.inv=Object.assign({},S.inv);base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
@@ -1924,7 +2012,7 @@ function shopScreen(back,tab){
   });
   function persistShop(){
     var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-    base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+    base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.inv=Object.assign({},S.inv);base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
     P.progress=base;lsSet(progKey(),JSON.stringify(base));
     if(P.user){P.dirty=true;flush()}
     S.shopDirty=true;hud();shopScreen(back);
@@ -1934,6 +2022,13 @@ function shopScreen(back,tab){
       var lv=+b.getAttribute('data-l'),er=LUP[lv-1];
       if(!er||lv!==S.lup+1||S.coins<er.c)return;
       S.coins-=er.c;S.lup=lv;persistShop();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-buy]'),function(b){
+    b.addEventListener('click',function(){
+      var id=b.getAttribute('data-buy'),d=BOOSTS.filter(function(x){return x.id===id})[0];
+      if(!d||S.coins<d.c||S.inv[id]>=99)return;
+      S.coins-=d.c;S.inv[id]++;persistShop();
     });
   });
   Array.prototype.forEach.call(document.querySelectorAll('[data-m]'),function(b){
@@ -1971,7 +2066,7 @@ function shopScreen(back,tab){
       if(!er||lv!==S.eup+1||S.coins<er.c)return;
       S.coins-=er.c;S.eup=lv;S.shopDirty=true;hud();
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.inv=Object.assign({},S.inv);base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
@@ -1995,6 +2090,7 @@ function rebuildScene(){
 function closeGameShop(){
   hideScreen();S.paused=false;
   if(S.shopDirty){S.shopDirty=false;rebuildScene()}
+  if(S.active&&curQ())showPanel();
 }
 function openGameShop(){
   if(!S.active||S.ended||S.busy||S.view!=='main'){toast('','Answer or finish the current step first.');return}
