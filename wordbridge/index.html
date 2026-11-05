@@ -228,11 +228,13 @@ function scramble(word){
   do{out=shuffle(letters);tries++}while(out.join('')===word&&tries<30);
   return out.map(function(ch,i){return {ch:ch,id:i}});
 }
+function limitOf(it){return it.t==='e'?30000:it.t==='w'?40000:20000}
 function makeQ(item){
-  if(item.t==='w')return {item:item,type:'w',tiles:scramble(item.w),built:[],answered:false};
-  if(item.t==='e')return {item:item,type:'mc',opts:item.o.map(function(t,i){return {t:t,ok:i===item.k}}),answered:false};
+  var lim=limitOf(item);
+  if(item.t==='w')return {item:item,type:'w',tiles:scramble(item.w),built:[],answered:false,limit:lim,left:lim};
+  if(item.t==='e')return {item:item,type:'mc',opts:item.o.map(function(t,i){return {t:t,ok:i===item.k}}),answered:false,limit:lim,left:lim};
   var opts=shuffle(item.o.map(function(t,i){return {t:t,ok:i===0}}));
-  return {item:item,type:'mc',opts:opts,answered:false};
+  return {item:item,type:'mc',opts:opts,answered:false,limit:lim,left:lim};
 }
 function nextItem(){
   var hard=S.level>=3&&Math.random()<0.25;
@@ -262,7 +264,7 @@ function fullSentence(item){
   return esc(item.s.replace('___',item.o[0]).replace(/\s*\([a-z]+\)\s*$/,'').replace(/\*/g,''));
 }
 function feedbackHTML(q,ok){
-  var it=q.item,h=(ok?'<span class="ok">Correct.</span> ':'<span class="ko">Wrong.</span> ');
+  var it=q.item,h=(ok?'<span class="ok">Correct.</span> ':(q.timedOut?'<span class="ko">Time is up.</span> ':'<span class="ko">Wrong.</span> '));
   if(it.t==='e'){
     var seg=it.segs[it.k];
     return h+'The error is in <b>('+'ABCD'.charAt(it.k)+')</b>: <s>'+esc(seg)+'</s> '+(it.fix?'&rarr; <b>'+esc(it.fix)+'</b>':'(delete it)')+
@@ -282,7 +284,7 @@ function tagText(q){
 function showPanel(){
   var q=curQ();
   if(!q){idle('Get ready to build the bridge.');return}
-  var it=q.item,h='<div class="tag">'+tagText(q)+'</div>';
+  var it=q.item,h=(q.answered?'':'<div class="timer"><b id="tbar" style="width:'+Math.max(0,Math.round(100*q.left/q.limit))+'%"'+(q.left<5000?' class="low"':'')+'></b></div>')+'<div class="tag">'+tagText(q)+'</div>';
   if(q.type==='mc'){
     if(it.t==='e')h+='<div class="sentence">Which part is <b>wrong</b>?<br>'+segHTML(q)+'</div><div class="opts letters">';
     else h+='<div class="sentence">'+sentenceHTML(it,q.answered?it.o[0]:null,q.answered?(q.ok?'ok':'ko'):'')+'</div><div class="opts">';
@@ -350,6 +352,22 @@ function checkWord(){
   q.fb=feedbackHTML(q,q.ok);
   resolve(q);
 }
+function timeUp(q){
+  if(!q||q.answered)return;
+  q.answered=true;q.ok=false;q.timedOut=true;q.picked=-1;
+  q.fb=feedbackHTML(q,false);
+  resolve(q);
+}
+var lastTick=performance.now();
+setInterval(function(){
+  var now=performance.now(),dt=Math.min(now-lastTick,500);lastTick=now;
+  var q=curQ();
+  if(!q||q.answered||S.ended||(S.busy&&S.view==='main')||document.visibilityState!=='visible')return;
+  q.left-=dt;
+  var b=$('#tbar');
+  if(b){b.style.width=Math.max(0,100*q.left/q.limit).toFixed(1)+'%';b.classList.toggle('low',q.left<5000)}
+  if(q.left<=0)timeUp(q);
+},200);
 function countStat(q){
   var it=q.item,ct=it.t,cs=S.stats.byCat[ct]||(S.stats.byCat[ct]={n:0,ok:0});
   cs.n++;if(q.ok)cs.ok++;S.stats.answered++;if(q.ok)S.stats.correct++;
@@ -773,6 +791,7 @@ function startScreen(){
     '<ol class="rules"><li>Create a profile (your name and a 4-digit code) or log in to play. It is the same profile as in Arrow Escape.</li>'+
     '<li>Build the bridge across the river. Each correct answer lays one plank. Lay every plank to reach the other side.</li>'+
     '<li>Watch out for Chomp, the river monster. Every wrong answer makes him rise and bite your bridge, and you lose one life (&#9829;). Each bite also shows you an irregular verb: base form, past simple, past participle.</li>'+
+    '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
     '<li>Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
@@ -846,7 +865,7 @@ function gameOver(){
 $('#menuBtn').addEventListener('click',function(){scheduleSave();flush();startScreen()});
 window.addEventListener('pagehide',function(){scheduleSave();flush()});
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'){scheduleSave();flush()}});
-window.__wb={S:S,P:P,snapshot:snapshot,answerMC:answerMC,spawnGift:spawnGift,levelN:levelN,ATTACKS:ATTACKS,NORMAL:NORMAL,HARD:HARD,makeQ:makeQ};
+window.__wb={timeUp:timeUp,S:S,P:P,snapshot:snapshot,answerMC:answerMC,spawnGift:spawnGift,levelN:levelN,ATTACKS:ATTACKS,NORMAL:NORMAL,HARD:HARD,makeQ:makeQ};
 boot();
 startScreen();
 })();
