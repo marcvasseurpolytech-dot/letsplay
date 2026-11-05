@@ -822,5 +822,67 @@ add('v',[
 })();
 
 
+/* ---------- Spot the wrong segment (v5) : B2+ TOEIC / engineering ---------- */
+(function(){
+[
+ [["The committee has","announced that","the new regulations","will came into effect in May."],3,"will come into effect in May.","After a modal verb, use the base form: 'will come'.","Le comité a annoncé que la nouvelle réglementation entrerait en vigueur en mai."],
+ [["Despite of","the heavy rain,","the outdoor event","went ahead as planned."],0,"Despite","'Despite' is never followed by 'of'; 'in spite of' is the alternative.","Malgré la forte pluie, l'événement en plein air a eu lieu comme prévu."],
+ [["Each of","the engineers","have submitted","a detailed report."],2,"has submitted","'Each of' takes a singular verb.","Chacun des ingénieurs a remis un rapport détaillé."],
+ [["The number of","applicants have","increased steadily","over the past decade."],1,"applicants has","'The number of' takes a singular verb.","Le nombre de candidats augmente régulièrement depuis dix ans."],
+ [["If the supplier","would deliver","on time, we","would avoid these delays."],1,"delivered","In a second conditional, the if-clause takes the past simple, not 'would'.","Si le fournisseur livrait à temps, nous éviterions ces retards."],
+ [["She suggested","to postpone","the launch until","the following quarter."],1,"postponing","'Suggest' is followed by an -ing form (or a that-clause), not an infinitive.","Elle a proposé de reporter le lancement au trimestre suivant."],
+ [["We are looking","forward to hear","from you","as soon as possible."],1,"forward to hearing","In 'look forward to', 'to' is a preposition, so it takes an -ing form.","Nous attendons de vos nouvelles dès que possible."],
+ [["Neither the manager","nor his assistants","was available","to answer questions."],2,"were available","With 'neither ... nor', the verb agrees with the nearest subject ('assistants').","Ni le directeur ni ses assistants n'étaient disponibles pour répondre aux questions."],
+ [["I would rather","you not to","mention this","to the client."],1,"you didn't","'Would rather' + a different subject takes the past simple.","Je préférerais que vous n'en parliez pas au client."],
+ [["The bridge was","built in 1998","and it is","still using today."],3,"still in use today.","'Still using' is not passive; use 'still in use' or 'still being used'.","Le pont a été construit en 1998 et il est toujours utilisé aujourd'hui."],
+ [["Had we known","about the delay,","we would informed","our customers earlier."],2,"we would have informed","The third conditional needs 'would have' + past participle.","Si nous avions su pour le retard, nous aurions prévenu nos clients plus tôt."],
+ [["Our company has","been operating","since twenty years","in the energy sector."],2,"for twenty years","Use 'for' with a duration and 'since' with a starting point.","Notre entreprise opère dans le secteur de l'énergie depuis vingt ans."],
+ [["The new employees","are expected","to attending","the training session."],2,"to attend","'Expected to' is followed by the base form.","On attend des nouveaux employés qu'ils assistent à la session de formation."],
+ [["There is","a lot of","informations about","the product online."],2,"information about","'Information' is uncountable and has no plural.","Il y a beaucoup d'informations sur le produit en ligne."],
+ [["Fewer people","attended the seminar","than we had","expect."],3,"expected.","After 'had', use the past participle.","Moins de gens ont assisté au séminaire que nous l'avions prévu."],
+ [["I am not used","to work","on weekends,","so I am tired."],1,"to working","'Be used to' is followed by an -ing form.","Je n'ai pas l'habitude de travailler le week-end, donc je suis fatigué."],
+ [["The more","we invest in","research, the most","we will gain."],2,"research, the more","'The more ..., the more ...' uses the same comparative form twice.","Plus nous investissons dans la recherche, plus nous gagnerons."],
+ [["Unless you will","sign the contract,","we cannot begin","the work."],0,"Unless you","After 'unless', use the present simple, not 'will'.","À moins que vous ne signiez le contrat, nous ne pouvons pas commencer les travaux."],
+ [["As soon as","the results will be","available, we","will contact you."],1,"the results are","After 'as soon as', use the present simple for a future meaning.","Dès que les résultats seront disponibles, nous vous contacterons."],
+ [["The CEO made","a speech in","which she","emphasised on the need for change."],3,"emphasised the need for change.","'Emphasise' is transitive and takes no preposition.","La PDG a fait un discours dans lequel elle a insisté sur la nécessité du changement."],
+ [["We discussed","about the budget","during the","board meeting."],1,"the budget","'Discuss' is transitive and takes no preposition.","Nous avons discuté du budget lors de la réunion du conseil."],
+ [["He is one of","the most experienced","engineer in","the department."],2,"engineers in","After 'one of the', use a plural noun.","C'est l'un des ingénieurs les plus expérimentés du service."],
+ [["The goods were","delivered damaged","owing to the","carrier's negligent."],3,"carrier's negligence.","After a possessive, use the noun 'negligence', not the adjective.","Les marchandises ont été livrées endommagées en raison de la négligence du transporteur."],
+ [["Not only","the system is","faster, but it is","also more reliable."],1,"is the system","After 'Not only' at the start of a clause, the subject and auxiliary are inverted.","Non seulement le système est plus rapide, mais il est aussi plus fiable."],
+ [["I look forward","to meet you","at the conference","next week."],1,"to meeting you","'Look forward to' takes an -ing form.","J'ai hâte de vous rencontrer à la conférence la semaine prochaine."],
+ [["The factory","employs more than","two hundreds","people."],2,"two hundred","'Hundred' stays singular after a number.","L'usine emploie plus de deux cents personnes."],
+ [["By the time","we arrived,","the presentation","already started."],3,"had already started.","Use the past perfect for an action completed before another past action.","Quand nous sommes arrivés, la présentation avait déjà commencé."],
+ [["She is","responsible of","the maintenance","of the equipment."],1,"responsible for","'Responsible' is followed by 'for'.","Elle est responsable de la maintenance de l'équipement."],
+ [["The staff were","given a bonus","as a recognition","of their efforts."],2,"in recognition","The fixed phrase is 'in recognition of'.","Le personnel a reçu une prime en reconnaissance de ses efforts."],
+ [["It is essential","that every employee","wears a helmet","on the site."],2,"wear a helmet","After 'It is essential that', use the base form (subjunctive).","Il est essentiel que chaque employé porte un casque sur le chantier."],
+ [["Prices have","raised by","five percent","since January."],1,"risen by","'Rise' is intransitive; 'raise' needs an object.","Les prix ont augmenté de cinq pour cent depuis janvier."],
+ [["Thanks to","the new software,","we can complete","the task more quick."],3,"the task more quickly.","Use an adverb to modify the verb 'complete'.","Grâce au nouveau logiciel, nous pouvons terminer la tâche plus rapidement."],
+ [["Every employee","must to wear","an identity badge","at all times."],1,"must wear","After a modal verb, the base form is used without 'to'.","Chaque employé doit porter un badge d'identité en permanence."],
+ [["The bank","refused to lend","us the money,","what surprised everyone."],3,"which surprised everyone.","'Which' refers to a whole clause; 'what' cannot be used here.","La banque a refusé de nous prêter l'argent, ce qui a surpris tout le monde."],
+ [["I am interested","for joining","your engineering","team next year."],1,"in joining","'Interested' is followed by 'in'.","Je suis intéressé par l'idée de rejoindre votre équipe d'ingénieurs l'an prochain."],
+ [["The system was","so complex that","nobody could not","understand it."],2,"nobody could","A double negative is incorrect: 'nobody could understand'.","Le système était si complexe que personne ne pouvait le comprendre."],
+ [["The report","which was published","last week it","shows a decline."],2,"last week","The relative pronoun 'which' is already the subject, so 'it' is redundant.","Le rapport publié la semaine dernière montre un déclin."],
+ [["We apologise","for the inconvenience","caused by","the delaying."],3,"the delay.","Use the noun 'delay', not the gerund.","Nous nous excusons pour la gêne occasionnée par le retard."],
+ [["The warranty","covers the repair","of any defect","occurs within two years."],3,"that occurs within two years.","A relative pronoun is needed to link the clause to 'defect'.","La garantie couvre la réparation de tout défaut survenant dans les deux ans."],
+ [["Employees who","works night shifts","receive an extra","allowance."],1,"work night shifts","The verb must agree with the plural subject 'Employees'.","Les employés qui travaillent de nuit reçoivent une prime supplémentaire."],
+ [["She told me","that she has","finished the report","the day before."],1,"that she had","In reported speech, shift the present perfect to the past perfect.","Elle m'a dit qu'elle avait terminé le rapport la veille."],
+ [["Both the design","and the price","is very","competitive."],2,"are very","A compound subject with 'both ... and' takes a plural verb.","Le design et le prix sont tous deux très compétitifs."],
+ [["This model is","much more expensive","than the","others ones."],3,"other ones.","Do not use 'ones' after 'others'; use 'the others' or 'the other ones'.","Ce modèle est beaucoup plus cher que les autres."],
+ [["We would like","to thank you","for your","cooperating."],3,"cooperation.","After 'your', use a noun.","Nous tenons à vous remercier pour votre coopération."],
+ [["He denied","to have taken","the confidential","documents."],1,"having taken","'Deny' is followed by an -ing form.","Il a nié avoir pris les documents confidentiels."],
+ [["The lecture was","so boring that","most students","felt asleep."],3,"fell asleep.","The past simple of 'fall' is 'fell'.","Le cours était si ennuyeux que la plupart des étudiants se sont endormis."],
+ [["Please remind","me sending","the invoice","before Friday."],1,"me to send","'Remind' is followed by an object and a to-infinitive.","Veuillez me rappeler d'envoyer la facture avant vendredi."],
+ [["The workers have","been on strike","since three","weeks."],2,"for three","Use 'for' with a duration.","Les ouvriers sont en grève depuis trois semaines."],
+ [["A large amount","of customers","complained about","the delay."],0,"A large number","'Customers' is countable, so 'number' is needed, not 'amount'.","Un grand nombre de clients se sont plaints du retard."],
+ [["The architect","explained us","how the structure","would be reinforced."],1,"explained to us","'Explain' needs 'to' before the person.","L'architecte nous a expliqué comment la structure serait renforcée."],
+ [["Hardly","we had left","the building when","the alarm went off."],1,"had we left","After 'Hardly' at the start, the auxiliary comes before the subject.","À peine avions-nous quitté le bâtiment que l'alarme s'est déclenchée."],
+ [["I wish","I would have","more time to","finish the project."],1,"I had","After 'wish', use the past simple for a present regret.","J'aimerais avoir plus de temps pour terminer le projet."],
+ [["The cost of","living in big cities","are rising","faster than wages."],2,"is rising","The subject is 'cost', which is singular.","Le coût de la vie dans les grandes villes augmente plus vite que les salaires."],
+ [["The technician","checked everything","carefully, so there","isn't no problem."],3,"isn't any problem.","Avoid the double negative: use 'any' after a negative verb.","Le technicien a tout vérifié avec soin, donc il n'y a aucun problème."],
+ [["Applicants must","submit their CVs","until the end","of the month."],2,"by the end","'By' marks a deadline; 'until' marks the end of a continuing situation.","Les candidats doivent remettre leur CV d'ici la fin du mois."],
+ [["I'd like to","make an appointment","with Dr Martin","at the next Tuesday."],3,"on Tuesday.","Use 'on' with days; do not add 'the next' with a preposition.","Je voudrais prendre rendez-vous avec le docteur Martin mardi prochain."]
+].forEach(function(a){NORMAL.push({t:'e',s:a[0].join(' '),segs:a[0],k:a[1],fix:a[2],why:a[3],fr:a[4],o:['A','B','C','D']})});
+})();
+
 window.WB_BANK={NORMAL:NORMAL,HARD:HARD,CATS:CATS,MODE_LABEL:MODE_LABEL};
 })();
