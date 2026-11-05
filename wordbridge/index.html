@@ -152,6 +152,8 @@ select.fld{appearance:auto}
 #coins{color:#f2c230}
 .tbtns{display:flex;gap:6px}
 .giftlbl{pointer-events:none}
+.flame{transform-box:fill-box;transform-origin:50% 100%;animation:flick .45s ease-in-out infinite alternate}
+@keyframes flick{from{transform:scale(1,1)}to{transform:scale(1.12,.92)}}
 .bird .wing{transform-box:fill-box;transform-origin:center;animation:flap .3s ease-in-out infinite alternate}
 @keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(-.45)}}
 .shop{display:flex;flex-direction:column;gap:6px;margin:8px 0}
@@ -399,7 +401,7 @@ function hud(){
   $('#lvl').textContent=S.level;$('#score').textContent=S.score;
   var h='';for(var i=0;i<MAXL;i++)h+='<span class="'+(i<S.lives?'':'lost')+'">&#9829;&#xFE0E;</span>';
   $('#lives').innerHTML=h;
-  var pn=S.mode==='eiffel'?'Section ':'Plank ';
+  var pn=S.mode==='bridge'?'Plank ':'Piece ';
   $('#planks').textContent=pn+Math.min(S.placed+1,S.N)+' / '+S.N;
   if(S.ended&&S.levelDone)$('#planks').textContent=pn+'0 / '+S.N;
   $('#coins').textContent=S.coins;
@@ -460,6 +462,8 @@ function setSky(p){
   var ic=inkColor();r.ink.forEach(function(e){e.setAttribute('stroke',ic)});
   var sc=ramp('#a9b3c9','#9aa3b8','#6f7b98',p);r.steel.forEach(function(e){e.setAttribute('fill',sc)});
   var ic2=ramp('#c4b29a','#a98a68','#6e5238',p);(r.iron||[]).forEach(function(e){e.setAttribute('stroke',ic2)});(r.ironF||[]).forEach(function(e){e.setAttribute('fill',ic2)});
+  var sg=ramp('#4f8f86','#6bb5a3','#74c2ae',p),sl=ramp('#9ad3c6','#3d7b72','#2f6a60',p),st=ramp('#7b8499','#a4a4aa','#b4b4b9',p);
+  (r.stat||[]).forEach(function(e){e.setAttribute('fill',sg)});(r.statS||[]).forEach(function(e){e.setAttribute('stroke',sg)});(r.statLn||[]).forEach(function(e){e.setAttribute('stroke',sl)});(r.stone||[]).forEach(function(e){e.setAttribute('fill',st)});
   var gc=ramp('#1d3a3a','#4e6b44','#5d8a4f',p);(r.ground||[]).forEach(function(e){e.setAttribute('fill',gc)});
   var pc=ramp('#2a3a66','#4a5575','#8a96b0',p);r.pier.forEach(function(e){e.setAttribute('fill',pc)});
   var g=Math.max(0,1-p*1.4)*.6;r.glow.forEach(function(e){e.setAttribute('opacity',g.toFixed(2))});
@@ -562,11 +566,82 @@ function plankExtras(i,cx,g){
   }
 }
 
+/* ---------- monuments: Eiffel Tower (Paris) and Statue of Liberty (New York) ---------- */
+var MON={
+ eiffel:{title:'Eiffel Tower',place:'Paris',noun:'tower',words:'wrought iron (fer puddlé) · lattice (treillis) · rivet (rivet)',done:'The Eiffel Tower is finished. Fireworks over Paris!',base:'girder'},
+ liberty:{title:'Statue of Liberty',place:'New York',noun:'statue',words:'copper (cuivre) · pedestal (piédestal) · torch (flambeau)',done:'Lady Liberty is finished. Fireworks over New York!',base:'copper plate'}
+};
+var NEXTMODE={bridge:'eiffel',eiffel:'liberty',liberty:'bridge'};
+var EF_MS=[[0.18,'First floor','premier étage'],[0.355,'Second floor','deuxième étage'],[0.85,'Third floor','troisième étage (sommet)']];
+var LB={cx:262,yB:200,yT:14};
+var LB_MS=[[.37,'The pedestal','pedestal (piédestal) · granite (granit)'],[.64,'Robe and torso','robe (robe) · tablet (tablette)'],[.85,'Head and crown','crown (couronne) · rays (rayons)'],[1,'The torch','torch (flambeau) · flame (flamme)']];
+function lty(t){return LB.yB-(LB.yB-LB.yT)*t}
+function monBounds(N,mode){
+  var b=[0],k,m;
+  if(mode==='eiffel'){
+    var L=[.18,.175,.495,.15],c=L.map(function(l){return Math.max(1,Math.round(N*l))}),sum=0,j;
+    c.forEach(function(x){sum+=x});
+    while(sum>N){j=c.indexOf(Math.max.apply(null,c));c[j]--;sum--}
+    while(sum<N){c[2]++;sum++}
+    var e=[0,.18,.355,.85,1];
+    for(k=0;k<4;k++)for(m=1;m<=c[k];m++)b.push(e[k]+(e[k+1]-e[k])*m/c[k]);
+  }else{for(k=1;k<=N;k++)b.push(k/N)}
+  return b;
+}
+function buildNY(svg){
+  var R=S.ref,g=el('g',{},svg),bx=0,k=0;
+  while(bx<520){
+    var w=16+((k*5)%4)*7,h=24+((k*11)%6)*8;
+    if(bx>396&&bx<470)h=30+((k*3)%3)*6;
+    R.cliffs.push(el('rect',{x:bx,y:176-h,width:w-1.5,height:h},g));
+    for(var wy=176-h+5;wy<170;wy+=8)for(var wx=bx+3;wx<bx+w-4;wx+=6)R.glow.push(el('rect',{x:wx,y:wy,width:2,height:2.8,fill:'#f2c230',opacity:0},g));
+    bx+=w;k++;
+  }
+  var es=el('g',{},g);
+  R.cliffs.push(el('rect',{x:432,y:100,width:22,height:76},es));R.cliffs.push(el('rect',{x:438,y:84,width:10,height:16},es));
+  R.cliffs.push(el('rect',{x:441,y:70,width:4,height:14},es));el('line',{x1:443,y1:70,x2:443,y2:56,stroke:'#c4c8d6','stroke-width':1.2},es);
+  R.ground.push(el('ellipse',{cx:LB.cx,cy:203,rx:125,ry:9},svg));
+}
+function drawStatueParts(g){
+  var R=S.ref,cx=LB.cx;
+  var F=function(e){R.stat.push(e);return e},T=function(e){R.stone.push(e);return e},Ln=function(e){R.statLn.push(e);return e},St=function(e){R.statS.push(e);return e};
+  T(el('polygon',{points:(cx-74)+',203 '+(cx-66)+',194 '+(cx-60)+',186 '+(cx+60)+',186 '+(cx+66)+',194 '+(cx+74)+',203'},g));
+  Ln(el('line',{x1:cx-62,y1:194,x2:cx+62,y2:194,'stroke-width':.8},g));
+  T(el('polygon',{points:(cx-30)+',186 '+(cx+30)+',186 '+(cx+24)+',134 '+(cx-24)+',134'},g));
+  T(el('rect',{x:cx-34,y:181,width:68,height:5,rx:1},g));T(el('rect',{x:cx-29,y:129,width:58,height:6,rx:1},g));
+  [168,154,142].forEach(function(y){Ln(el('line',{x1:cx-26+(186-y)*.09,y1:y,x2:cx+26-(186-y)*.09,y2:y,'stroke-width':.7},g))});
+  Ln(el('path',{d:'M'+(cx-6)+' 186 L'+(cx-6)+' 176 Q'+cx+' 169 '+(cx+6)+' 176 L'+(cx+6)+' 186',fill:'none','stroke-width':.9},g));
+  F(el('polygon',{points:(cx-19)+',129 '+(cx+19)+',129 '+(cx+15)+',100 '+(cx+13)+',86 '+(cx-13)+',86 '+(cx-15)+',100'},g));
+  [-8,0,8].forEach(function(d){Ln(el('line',{x1:cx+d,y1:128,x2:cx+d*.7,y2:92,'stroke-width':.8},g))});
+  F(el('polygon',{points:(cx-13)+',86 '+(cx+13)+',86 '+(cx+10)+',64 '+(cx-10)+',64'},g));
+  St(el('line',{x1:cx-10,y1:66,x2:cx-17,y2:92,'stroke-width':5,'stroke-linecap':'round'},g));
+  F(el('rect',{x:cx-27,y:84,width:13,height:18,rx:1.5,transform:'rotate(-12 '+(cx-20)+' 93)'},g));
+  Ln(el('rect',{x:cx-27,y:84,width:13,height:18,rx:1.5,fill:'none','stroke-width':.7,transform:'rotate(-12 '+(cx-20)+' 93)'},g));
+  F(el('rect',{x:cx-3,y:57,width:6,height:9},g));F(el('circle',{cx:cx,cy:52,r:7},g));
+  F(el('rect',{x:cx-8,y:44,width:16,height:3,rx:1},g));
+  [-75,-50,-25,0,25,50,75].forEach(function(a){var r=a*Math.PI/180;St(el('line',{x1:cx,y1:46,x2:(cx+Math.sin(r)*14).toFixed(1),y2:(46-Math.cos(r)*14).toFixed(1),'stroke-width':1.7,'stroke-linecap':'round'},g))});
+  St(el('line',{x1:cx+9,y1:66,x2:cx+25,y2:35,'stroke-width':6,'stroke-linecap':'round'},g));
+  F(el('circle',{cx:cx+26,cy:32,r:3.4},g));F(el('rect',{x:cx+23.5,y:20,width:5,height:12},g));F(el('rect',{x:cx+20.5,y:17,width:11,height:3.4,rx:1},g));
+  el('path',{d:'M'+(cx+26)+' 3 Q'+(cx+33)+' 11 '+(cx+26)+' 17 Q'+(cx+19)+' 11 '+(cx+26)+' 3Z',fill:'#f2c230',stroke:'#e0884a','stroke-width':.8,class:'flame'},g);
+}
+function drawLibSection(i,animate){
+  var R=S.ref,N=S.N,t0=S.mb[i],t1=S.mb[i+1],id='lc'+i+'_'+S.gen;
+  var yTop=i===N-1?0:lty(t1),yBot=i===0?250:lty(t0);
+  var cp=el('clipPath',{id:id},R.defs);el('rect',{x:0,y:yTop.toFixed(1),width:520,height:(yBot-yTop+.4).toFixed(1)},cp);
+  var g=el('g',{class:'pl','clip-path':'url(#'+id+')'},layers.deck);
+  drawStatueParts(g);
+  S.planks[i]=g;setSky(S.skyP);
+  if(animate){
+    LB_MS.forEach(function(m){if(t1>=m[0]-1e-9&&t0<m[0]-1e-9)toast(m[1],m[2],true,2800)});
+    g.style.opacity='0';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){g.style.transition='opacity .5s';g.style.opacity='1'})});
+  }
+  return g;
+}
 /* ---------- PARIS: the Eiffel Tower level ---------- */
 var EF={cx:260,yB:198,yT:30,w0:74,wT:2.5};
 function hw(t){return EF.wT+(EF.w0-EF.wT)*Math.pow(1-t,2.35)}
 function ty(t){return EF.yB-(EF.yB-EF.yT)*t}
-var EF_FLOORS=[0.18,0.355,0.85];
 function buildParis(svg){
   var R=S.ref,g=el('g',{},svg);
   var bx=0,k=0;
@@ -589,7 +664,8 @@ function buildParis(svg){
 }
 function efLine(g,x1,y1,x2,y2,w){return el('line',{x1:x1.toFixed(1),y1:y1.toFixed(1),x2:x2.toFixed(1),y2:y2.toFixed(1),'stroke-width':w,'stroke-linecap':'round'},g)}
 function drawSection(i,animate){
-  var R=S.ref,N=S.N,t0=i/N,t1=(i+1)/N,cx=EF.cx,g=el('g',{class:'pl'},layers.deck);
+  if(S.mode==='liberty')return drawLibSection(i,animate);
+  var R=S.ref,N=S.N,t0=S.mb[i],t1=S.mb[i+1],cx=EF.cx,g=el('g',{class:'pl'},layers.deck);
   var push=function(e){R.iron.push(e);return e};
   var y0=ty(t0),y1=ty(t1),ym=(y0+y1)/2,a0=hw(t0),a1=hw(t1),am=hw((t0+t1)/2);
   var strips=t0<0.355?[[-1,-.5],[.5,1]]:[[-1,1]];
@@ -604,10 +680,12 @@ function drawSection(i,animate){
     var cy=2*ty(.11)-EF.yB;
     push(el('path',{d:'M'+(cx-.5*a0)+' '+EF.yB+' Q'+cx+' '+cy+' '+(cx+.5*a0)+' '+EF.yB,fill:'none','stroke-width':2.4},g));
   }
-  EF_FLOORS.forEach(function(f,fi){
-    if(f>=t0&&f<t1){
+  EF_MS.forEach(function(m,fi){
+    var f=m[0];
+    if(Math.abs(t1-f)<1e-9){
       var yf=ty(f),wf=hw(f)+(fi===2?4:7);
       R.ironF.push(el('rect',{x:cx-wf,y:yf-2,width:2*wf,height:4,rx:1.2},g));
+      if(animate)toast(m[1]+' complete',m[2],true,2800);
     }
   });
   if(i===N-1){
@@ -629,12 +707,16 @@ function drawSection(i,animate){
 function efBitX(i){return (i%2?1:-1)}
 function efBitMark(i){
   var g=S.planks[0];if(!g)return;
+  if(S.mode==='liberty'){
+    var d2=efBitX(i),y2=(i%3===0)?193:150+(i%4)*9,x2=LB.cx+d2*((i%3===0)?58:20);
+    el('circle',{cx:x2,cy:y2,r:3.4,fill:'#16294f'},g);return;
+  }
   var yy=EF.yB-6-(i%4)*8,t=(EF.yB-yy)/(EF.yB-EF.yT),d=efBitX(i);
   var x=EF.cx+d*hw(t)*(i%3===0?1:.5);
   el('circle',{cx:x.toFixed(1),cy:yy,r:3.4,fill:'#16294f'},g);
   el('polyline',{points:(x-3)+','+(yy+3)+' '+x+','+(yy+6)+' '+(x+2)+','+(yy+3),fill:'none',stroke:'#16294f','stroke-width':1},g);
 }
-function efBiteX(){var side=S.biteN%2?1:-1;return EF.cx+side*(S.biteN%3===0?EF.w0:EF.w0*.5)}
+function efBiteX(){var side=S.biteN%2?1:-1;if(S.mode==='liberty')return LB.cx+side*(S.biteN%3===0?70:38);return EF.cx+side*(S.biteN%3===0?EF.w0:EF.w0*.5)}
 async function fireworks(){
   var gen=S.gen,cols=['#f2c230','#e0584f','#4cc36e','#4a7be8','#e65aa8','#f5eedc'];
   var bursts=[];
@@ -654,8 +736,8 @@ async function fireworks(){
 function buildScene(){
   S.gen++;
   var svg=$('#wb');svg.innerHTML='';
-  S.ref={ink:[],steel:[],glow:[],cliffs:[],tops:[],waves:[],pier:[],iron:[],ironF:[],ground:[]};var R=S.ref;
-  var defs=el('defs',{},svg);
+  S.ref={ink:[],steel:[],glow:[],cliffs:[],tops:[],waves:[],pier:[],iron:[],ironF:[],ground:[],stat:[],statS:[],statLn:[],stone:[]};var R=S.ref;
+  var defs=el('defs',{},svg);R.defs=defs;
   var gr=el('linearGradient',{id:'skyG',gradientUnits:'userSpaceOnUse',x1:0,y1:0,x2:0,y2:210},defs);
   R.gs=[el('stop',{offset:0},gr),el('stop',{offset:1},gr)];
   el('rect',{x:0,y:0,width:520,height:250,fill:'url(#skyG)'},svg);
@@ -665,13 +747,15 @@ function buildScene(){
   el('circle',{cx:455,cy:42,r:15,fill:'#f5eedc',opacity:.92},R.moon);el('circle',{cx:449,cy:38,r:14,fill:'#16294f'},R.moon);
   R.sun=el('g',{},svg);
   el('circle',{cx:150,cy:232,r:20,fill:'#f2a65a'},R.sun);
-  var ef=S.mode==='eiffel',WY=ef?214:208;
-  R.wb=el('rect',{x:0,y:ef?WY:205,width:520,height:250-(ef?WY:205)},svg);
+  var ef=S.mode!=='bridge',lib=S.mode==='liberty',WY=lib?206:(ef?214:208),WBY=lib?176:(ef?214:205);
+  R.wb=el('rect',{x:0,y:WBY,width:520,height:250-WBY},svg);
   S.ghosts=[];S.planks=[];
   if(ef){
-    S.cab=null;buildParis(svg);
+    S.cab=null;S.mb=monBounds(S.N,S.mode);
+    if(lib)buildNY(svg);else buildParis(svg);
     for(var i=0;i<S.N;i++){
-      var t0=i/S.N,t1=(i+1)/S.N;
+      var t0=S.mb[i],t1=S.mb[i+1];
+      if(lib){var lw=t1<.1?72:(t1<.42?34:(t1<.7?28:32));S.ghosts.push(el('rect',{x:LB.cx-lw,y:lty(t1).toFixed(1),width:2*lw,height:(lty(t0)-lty(t1)).toFixed(1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));continue}
       S.ghosts.push(el('polygon',{points:(EF.cx-hw(t0))+','+ty(t0)+' '+(EF.cx+hw(t0))+','+ty(t0)+' '+(EF.cx+hw(t1))+','+ty(t1)+' '+(EF.cx-hw(t1))+','+ty(t1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));
     }
   }else{
@@ -707,7 +791,7 @@ function markNext(){
   });
 }
 function drawPlank(i,animate){
-  if(S.mode==='eiffel')return drawSection(i,animate);
+  if(S.mode!=='bridge')return drawSection(i,animate);
   var w=slotW(),x=plankX(i),g=el('g',{class:'pl'},layers.deck);
   var cx=x+w/2;
   plankExtras(i,cx,g);
@@ -723,7 +807,7 @@ function drawPlank(i,animate){
   return g;
 }
 function bitMark(i){
-  if(S.mode==='eiffel')return efBitMark(i);
+  if(S.mode!=='bridge')return efBitMark(i);
   var g=S.planks[i];if(!g)return;
   var w=slotW(),cx=plankX(i)+w/2+((i*7)%5-2)*1.5;
   el('circle',{cx:cx,cy:149,r:4,fill:'#16294f'},g);
@@ -866,14 +950,18 @@ function hitSentence(a,obj){
   return t.charAt(0).toUpperCase()+t.slice(1);
 }
 function chompHit(a){
-  var ef=S.mode==='eiffel',pool=[['plank',55]];
+  var ef=S.mode!=='bridge',pool=[['plank',55]];
   if(!ef&&S.decor.length)pool.push(['decor',30]);
   if(!ef&&S.upg>1)pool.push(['struct',15]);
   if(ef&&S.placed>1)pool.push(['top',20]);
   var tot=0;pool.forEach(function(p){tot+=p[1]});
   var r=Math.random()*tot,kind='plank';
   for(var i=0;i<pool.length;i++){if(r<pool[i][1]){kind=pool[i][0];break}r-=pool[i][1]}
-  var base=ef?a[3].replace(/plank/gi,'girder'):a[3];
+  var base=a[3];
+  if(ef){
+    base=base.replace(/plank/gi,MON[S.mode].base).replace(/the bridge/,'the '+MON[S.mode].noun);
+    if(a[0]==='swim')base=S.mode==='eiffel'?'Chomp swam up the Seine.':'Chomp swam around the island.';
+  }
   if(kind==='decor'){
     var id=S.decor[rnd(S.decor.length)],d=DECOR.filter(function(x){return x.id===id})[0];
     S.decor=S.decor.filter(function(x){return x!==id});
@@ -890,12 +978,12 @@ function chompHit(a){
     if(g){g.style.transition='transform .6s ease-in,opacity .6s ease-in';g.style.transform='translateY(90px) rotate(8deg)';g.style.opacity='0'}
     S.planks[S.placed]=null;S.bitten=S.bitten.filter(function(i){return i<S.placed});
     markNext();hud();
-    return base+' The top section falls off.';
+    return base+' The top piece falls off.';
   }
   return base;
 }
 async function bite(){
-  var gen=S.gen,ef=S.mode==='eiffel',TY=ef?176:138;
+  var gen=S.gen,ef=S.mode!=='bridge',TY=ef?(S.mode==='liberty'?188:176):138;
   var idx=ef?Math.max(0,Math.min(S.placed-1,S.bitten.length)):Math.max(S.placed-1,0);
   var cx=ef?efBiteX():(S.placed>0?plankX(idx)+slotW()/2:X0+8);
   var a=ATTACKS[S.biteN%ATTACKS.length];S.biteN++;
@@ -924,7 +1012,7 @@ async function bite(){
 }
 async function collapse(){
   var gen=S.gen;
-  toast('fall · fell · fallen',S.mode==='eiffel'?'The tower came crashing down.':'The bridge fell into the river.');
+  toast('fall · fell · fallen',S.mode==='bridge'?'The bridge fell into the river.':'The '+MON[S.mode].noun+' came crashing down.');
   S.planks.forEach(function(g,i){
     if(!g)return;
     g.style.transition='transform .9s ease-in '+(i*0.05).toFixed(2)+'s,opacity .9s ease-in '+(i*0.05).toFixed(2)+'s';
@@ -1205,7 +1293,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row to catch a fish; longer streaks catch bigger fish.</li><li>Finish a bridge and the scenery changes: you travel to Paris and build the Eiffel Tower, section by section. Chomp follows you up the Seine. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top section off the tower. Buy them again in the shop, even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, and add decorations. Answer 3 questions in a row to catch a fish; longer streaks catch bigger fish.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop, even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1248,10 +1336,10 @@ function startLevel(saved){
   S.bitten=res&&Array.isArray(saved.bitten)?saved.bitten.filter(function(i){return i<S.placed}):[];
   S.q=null;S.gq=null;S.view='main';S.busy=false;S.ended=false;S.levelDone=false;S.nextLevel=0;S.active=true;
   S.sinceGift=0;S.nextGift=(!res&&S.level===1)?2+rnd(2):4+rnd(3);S.streak=0;S.paused=false;S.era=Math.min(Math.max(S.upg|0,1),6);
-  S.mode=(saved?saved.mode:S.nextMode)==='eiffel'?'eiffel':'bridge';S.nextMode='';
+  var wm=saved?saved.mode:S.nextMode;S.mode=MON[wm]?wm:'bridge';S.nextMode='';
   S.stats.maxLevel=Math.max(S.stats.maxLevel,S.level);
   buildScene();hud();hideScreen();
-  if(!res||S.placed===0){if(S.mode==='eiffel')toast('Paris: the Eiffel Tower','wrought iron (fer puddl\u00e9) \u00b7 lattice (treillis) \u00b7 rivet (rivet)',true,4600);else{var E=ERAS[S.era-1];toast(E.n,E.w,true,4200)}}
+  if(!res||S.placed===0){if(S.mode!=='bridge')toast(MON[S.mode].place+': the '+MON[S.mode].title,MON[S.mode].words,true,4600);else{var E=ERAS[S.era-1];toast(E.n,E.w,true,4200)}}
   nextQuestion();scheduleSave();
 }
 function saveBest(){
@@ -1260,18 +1348,18 @@ function saveBest(){
 async function levelComplete(){
   var gen=S.gen;
   S.ended=true;S.levelDone=true;S.nextLevel=S.level+1;S.stats.levelsCleared++;removeGift();
-  var ef=S.mode==='eiffel';S.nextMode=ef?'bridge':'eiffel';
+  var ef=S.mode!=='bridge';S.nextMode=NEXTMODE[S.mode]||'bridge';
   var bonus=S.lives*20,cb=S.lives*3+(ef?20:0);S.score+=bonus;S.coins+=cb;saveBest();hud();scheduleSave();flush();
-  idle(ef?'The Eiffel Tower is finished. Fireworks over Paris!':'The bridge is finished. Here comes the first truck!');
+  idle(ef?MON[S.mode].done:'The bridge is finished. Here comes the first truck!');
   for(var b=0;b<5;b++)setTimeout(spawnBird,b*350);
   var ok=ef?await fireworks():await truck();
   if(!ok||gen!==S.gen)return;
   levelDoneScreen(bonus,cb);
 }
 function levelDoneScreen(bonus,cb){
-  var efd=S.mode==='eiffel',goParis=S.nextMode==='eiffel';
-  screen('<h2>'+(efd?'Eiffel Tower complete':'Bridge '+S.level+' complete')+'</h2>'+(goParis?'<p class="ok">Bridge finished! Next stop: Paris. Build the Eiffel Tower!</p>':'')+'<p>Bonus for remaining lives: <b class="big">+'+bonus+'</b> points and <b class="big">+'+cb+'</b> coins<br>Score: <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
-    '<div class="row"><button class="btn solid" id="nx">'+(goParis?'Go to Paris':'Next bridge')+'</button><button class="btn" id="shp">Shop ('+S.coins+' coins)</button><button class="btn" id="mn">Menu</button></div>');
+  var efd=S.mode!=='bridge',goParis=S.nextMode!=='bridge',nm=MON[S.nextMode];
+  screen('<h2>'+(efd?MON[S.mode].title+' complete':'Bridge '+S.level+' complete')+'</h2>'+(goParis?'<p class="ok">'+(efd?MON[S.mode].title+' finished!':'Bridge finished!')+' Next stop: '+nm.place+'. Build the '+nm.title+'!</p>':'')+'<p>Bonus for remaining lives: <b class="big">+'+bonus+'</b> points and <b class="big">+'+cb+'</b> coins<br>Score: <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
+    '<div class="row"><button class="btn solid" id="nx">'+(goParis?'Go to '+nm.place:'Next bridge')+'</button><button class="btn" id="shp">Shop ('+S.coins+' coins)</button><button class="btn" id="mn">Menu</button></div>');
   $('#shp').addEventListener('click',function(){shopScreen(function(){levelDoneScreen(bonus,cb)})});
   $('#nx').addEventListener('click',function(){S.level++;S.missed=[];startLevel()});
   $('#mn').addEventListener('click',startScreen);
@@ -1326,8 +1414,8 @@ function shopScreen(back){
 }
 function gameOver(){
   S.ended=true;S.levelDone=true;S.nextLevel=S.level;S.nextMode=S.mode;S.busy=false;removeGift();saveBest();hud();scheduleSave();flush();
-  screen('<h2>The '+(S.mode==='eiffel'?'tower':'bridge')+' collapsed</h2><p>'+(S.mode==='eiffel'?'Eiffel Tower':'Bridge '+S.level)+': score <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
-    '<div class="row"><button class="btn solid" id="rt">Rebuild this '+(S.mode==='eiffel'?'tower':'bridge')+'</button><button class="btn" id="mn">Menu</button></div>');
+  screen('<h2>The '+(S.mode==='bridge'?'bridge':MON[S.mode].noun)+' collapsed</h2><p>'+(S.mode==='bridge'?'Bridge '+S.level:MON[S.mode].title)+': score <b class="big">'+S.score+'</b> (best: '+S.best+')</p>'+recapHTML()+
+    '<div class="row"><button class="btn solid" id="rt">Rebuild this '+(S.mode==='bridge'?'bridge':MON[S.mode].noun)+'</button><button class="btn" id="mn">Menu</button></div>');
   $('#rt').addEventListener('click',function(){S.missed=[];startLevel()});
   $('#mn').addEventListener('click',startScreen);
 }
