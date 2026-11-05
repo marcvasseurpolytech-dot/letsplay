@@ -273,12 +273,23 @@ function letterOk(L){
     default:return (S.stats[L.k]|0)>=L.n;
   }
 }
+function tabLabel(id){var f=C.TABS.filter(function(t){return t[0]===id})[0];return f?f[1]:id}
+function letterHint(L){
+  if(!L||L.k!=='own'||!ITEM[L.n])return {txt:'',go:null};
+  var it=ITEM[L.n],h='Find it in Shop, tab '+tabLabel(it.tab)+'.';
+  if(it.st>S.stg)h='Unlocks at Stage '+it.st+' (Shop, tab '+tabLabel(it.tab)+').';
+  else if(it.chain&&!own(it.chain))h='Buy '+ITEM[it.chain].name+' first (Shop, tab '+tabLabel(ITEM[it.chain].tab)+').';
+  return {txt:h,go:(it.st>S.stg||(it.chain&&!own(it.chain)))?null:it.tab,price:it.price};
+}
 function letterHUD(){
   var L=C.LETTERS[S.qi],e=$('#letter');
   if(!P.user){e.style.display='none';return}
   e.style.display='';
-  e.innerHTML=L?'<i class="env"></i><span><b>Letter from Santa:</b> '+esc(L.t)+'</span><em>+'+L.r+'</em>':'<i class="env"></i><span><b>Santa says:</b> You answered every letter. Merry Christmas!</span>';
+  var h=letterHint(L);
+  e.classList.toggle('go',!!h.go);e.setAttribute('data-go',h.go||'');
+  e.innerHTML=L?'<i class="env"></i><span><b>Letter from Santa:</b> '+esc(L.t)+(h.txt?' <em class="hint">'+esc(h.txt)+(h.go?' Tap here to open it.':'')+'</em>':'')+'</span><em>+'+L.r+'</em>':'<i class="env"></i><span><b>Santa says:</b> You answered every letter. Merry Christmas!</span>';
 }
+$('#letter').addEventListener('click',function(){var g=this.getAttribute('data-go');if(g&&P.user)openSheet('shop',g)});
 function checkLetter(){
   var L=C.LETTERS[S.qi],guard=0;
   while(L&&letterOk(L)&&guard++<10){
@@ -499,6 +510,7 @@ function shopHTML(){
   }
   h+='</div>';
   $('#sheet').innerHTML=h;wireSheet();
+  var tb=document.querySelector('.stabs'),ta=document.querySelector('.stab.on');if(tb&&ta)tb.scrollLeft=Math.max(0,ta.offsetLeft-tb.clientWidth/2+ta.offsetWidth/2);
   Array.prototype.forEach.call(document.querySelectorAll('[data-tab]'),function(b){b.addEventListener('click',function(){S.shopTab=b.getAttribute('data-tab');S.chestMsg='';renderSheet()})});
   Array.prototype.forEach.call(document.querySelectorAll('[data-buy]'),function(b){b.addEventListener('click',function(){buyItem(b.getAttribute('data-buy'))})});
   Array.prototype.forEach.call(document.querySelectorAll('[data-boost]'),function(b){b.addEventListener('click',function(){var o=C.BOOSTS.filter(function(x){return x.id===b.getAttribute('data-boost')})[0];if(S.coins<o.price)return;S.coins-=o.price;S.inv[o.id]++;toast('Bought',o.name,true,1500);sold()})});
