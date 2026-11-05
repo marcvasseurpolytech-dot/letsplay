@@ -439,25 +439,25 @@ var FISH=[
 ];
 var EUP=[
  {n:'Plain iron tower',fr:'tour de fer nue',c:0,w:'lattice (treillis) \u00b7 girder (poutre) \u00b7 rivet (rivet)'},
- {n:'Warm lights',fr:'guirlandes lumineuses',c:30,w:'bulb (ampoule) \u00b7 string of lights (guirlande) \u00b7 glow (lueur)'},
- {n:'Searchlight and flag',fr:'projecteur et drapeau',c:60,w:'beam (faisceau) \u00b7 flag (drapeau) \u00b7 flagpole (m\u00e2t)'},
- {n:'Golden illumination',fr:'illumination dor\u00e9e',c:100,w:'sparkle (\u00e9tincelle) \u00b7 gilded (dor\u00e9) \u00b7 landmark (monument)'}
+ {n:'Warm lights',fr:'guirlandes lumineuses',c:12,w:'bulb (ampoule) \u00b7 string of lights (guirlande) \u00b7 glow (lueur)'},
+ {n:'Searchlight and flag',fr:'projecteur et drapeau',c:25,w:'beam (faisceau) \u00b7 flag (drapeau) \u00b7 flagpole (m\u00e2t)'},
+ {n:'Golden illumination',fr:'illumination dor\u00e9e',c:45,w:'sparkle (\u00e9tincelle) \u00b7 gilded (dor\u00e9) \u00b7 landmark (monument)'}
 ];
 var LUP=[
  {n:'Plain glass pyramid',fr:'pyramide de verre',c:0},
- {n:'Warm lights',fr:'guirlandes lumineuses',c:30},
- {n:'Fountains',fr:'bassins et jets d\'eau',c:60},
- {n:'Golden glass',fr:'verre dor\u00e9 illumin\u00e9',c:100}
+ {n:'Warm lights',fr:'guirlandes lumineuses',c:12},
+ {n:'Fountains',fr:'bassins et jets d\'eau',c:25},
+ {n:'Golden glass',fr:'verre dor\u00e9 illumin\u00e9',c:45}
 ];
 var SUP=[
  {n:'Plain copper statue',fr:'statue de cuivre',c:0},
- {n:'Glowing torch',fr:'flambeau lumineux',c:30},
- {n:'Crown lights',fr:'couronne \u00e9clair\u00e9e',c:60},
- {n:'Harbor floodlights',fr:'projecteurs du port',c:100}
+ {n:'Glowing torch',fr:'flambeau lumineux',c:12},
+ {n:'Crown lights',fr:'couronne \u00e9clair\u00e9e',c:25},
+ {n:'Harbor floodlights',fr:'projecteurs du port',c:45}
 ];
 var FXC=[
- {id:'gold',n:'Gold',fr:'or',c:0,col:'#ffd45a'},{id:'blue',n:'Blue',fr:'bleu',c:20,col:'#7fc8ff'},
- {id:'rose',n:'Rose',fr:'rose',c:20,col:'#ff8fc8'},{id:'green',n:'Green',fr:'vert',c:20,col:'#8dff9a'},{id:'rainbow',n:'Rainbow',fr:'arc-en-ciel',c:40,col:null}
+ {id:'gold',n:'Gold',fr:'or',c:0,col:'#ffd45a'},{id:'blue',n:'Blue',fr:'bleu',c:8,col:'#7fc8ff'},
+ {id:'rose',n:'Rose',fr:'rose',c:8,col:'#ff8fc8'},{id:'green',n:'Green',fr:'vert',c:8,col:'#8dff9a'},{id:'rainbow',n:'Rainbow',fr:'arc-en-ciel',c:15,col:null}
 ];
 var RAINBOW=['#ff6a5e','#ffb347','#ffe27a','#8dff9a','#7fc8ff','#c79bff'];
 var FX_IDS=['fw','c_blue','c_rose','c_green','c_rainbow'];
@@ -1683,7 +1683,7 @@ function shopScreen(back){
   });
   h+='</div><p class="big">Light show</p><p>Fireworks and sparkling colors for your monuments in Paris and New York.</p><div class="shop">';
   var fwOwn=S.fx.indexOf('fw')>=0;
-  h+='<div class="shopi"><span>Fireworks show <em>(feux d\'artifice)</em></span>'+(fwOwn?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=80?' solid':'')+'" data-fw="1"'+(S.coins>=80?'':' disabled')+'>Buy &middot; 80</button>')+'</div>';
+  h+='<div class="shopi"><span>Fireworks show <em>(feux d\'artifice)</em></span>'+(fwOwn?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=35?' solid':'')+'" data-fw="1"'+(S.coins>=35?'':' disabled')+'>Buy &middot; 35</button>')+'</div>';
   FXC.forEach(function(c){
     var own=c.id==='gold'||S.fx.indexOf('c_'+c.id)>=0,use=S.lc===c.id;
     h+='<div class="shopi"><span>Sparkle: '+c.n+' <em>('+c.fr+')</em></span>'+
@@ -1745,8 +1745,8 @@ function shopScreen(back){
   });
   Array.prototype.forEach.call(document.querySelectorAll('[data-fw]'),function(b){
     b.addEventListener('click',function(){
-      if(S.coins<80||S.fx.indexOf('fw')>=0)return;
-      S.coins-=80;S.fx.push('fw');persistShop();
+      if(S.coins<35||S.fx.indexOf('fw')>=0)return;
+      S.coins-=35;S.fx.push('fw');persistShop();
     });
   });
   Array.prototype.forEach.call(document.querySelectorAll('[data-lc]'),function(b){
