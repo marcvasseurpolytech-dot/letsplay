@@ -261,7 +261,7 @@ function emptyStats(){return {byCat:{},answered:0,correct:0,levelsCleared:0,maxL
 var S={cats:{},level:1,score:0,lives:MAXL,N:10,placed:0,bitten:[],q:null,gq:null,view:'main',busy:false,ended:true,active:false,
   deck:[],hdeck:[],missed:[],best:0,qCount:0,okCount:0,sinceGift:0,nextGift:4+rnd(3),gift:null,biteN:rnd(ATTACKS.length),
   stats:emptyStats(),levelDone:true,nextLevel:0,gen:0,planks:[],ghosts:[],
-  coins:0,decor:[],fish:{},threat:false,streak:0,skyP:0,era:1,upg:1,eup:1,lup:1,sup:1,fx:[],lc:'gold',mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
+  coins:0,decor:[],fish:{},threat:false,streak:0,skyP:0,era:1,upg:1,eup:1,lup:1,sup:1,mi:[],fx:[],lc:'gold',mode:'bridge',nextMode:'',ref:{},cab:null,swim:[]};
 function levelN(l){return Math.min(20,10+2*(l-1))}
 try{S.best=parseInt(localStorage.getItem('wordBridgeBest')||'0',10)||0}catch(e){}
 
@@ -483,6 +483,14 @@ var SUP=[
  {n:'Crown lights',fr:'couronne \u00e9clair\u00e9e',c:25},
  {n:'Harbor floodlights',fr:'projecteurs du port',c:45}
 ];
+var MI=[
+ {id:'frame',n:'Golden frame',fr:'cadre dor\u00e9',c:12},{id:'easel',n:'Easel',fr:'chevalet',c:10},
+ {id:'tapestry',n:'Wall tapestries',fr:'tapisseries murales',c:12},{id:'curtain',n:'Red curtains',fr:'rideaux rouges',c:15},
+ {id:'spot',n:'Spotlights',fr:'projecteurs',c:15},{id:'rope',n:'Velvet rope',fr:'cordon de velours',c:10},
+ {id:'plaque',n:'Name plaque',fr:'cartel',c:6},{id:'glass',n:'Glass case',fr:'vitrine de protection',c:20},
+ {id:'bench',n:'Museum bench',fr:'banc de mus\u00e9e',c:8},{id:'vase',n:'Flower vase',fr:'vase de fleurs',c:8},
+ {id:'lustre',n:'Chandelier',fr:'lustre',c:25}
+];
 var FXC=[
  {id:'gold',n:'Gold',fr:'or',c:0,col:'#ffd45a'},{id:'blue',n:'Blue',fr:'bleu',c:8,col:'#7fc8ff'},
  {id:'rose',n:'Rose',fr:'rose',c:8,col:'#ff8fc8'},{id:'green',n:'Green',fr:'vert',c:8,col:'#8dff9a'},{id:'rainbow',n:'Rainbow',fr:'arc-en-ciel',c:15,col:null}
@@ -525,6 +533,7 @@ function setSky(p){
   (r.stat||[]).forEach(function(e){e.setAttribute('fill',sg)});(r.statS||[]).forEach(function(e){e.setAttribute('stroke',sg)});(r.statLn||[]).forEach(function(e){e.setAttribute('stroke',sl)});(r.stone||[]).forEach(function(e){e.setAttribute('fill',st)});
   var gc=ramp('#1d3a3a','#4e6b44','#5d8a4f',p);(r.ground||[]).forEach(function(e){e.setAttribute('fill',gc)});
   var pc=ramp('#2a3a66','#4a5575','#8a96b0',p);r.pier.forEach(function(e){e.setAttribute('fill',pc)});
+  (r.mwall||[]).forEach(function(e){e.setAttribute('fill',ramp('#3a1c2a','#6b3b3a','#9a5a4c',p))});(r.mtrim||[]).forEach(function(e){e.setAttribute('fill',ramp('#241018','#3a2218','#5a3a28',p))});(r.mfloor||[]).forEach(function(e){e.setAttribute('fill',ramp('#3a2418','#5b3a26','#8a5a38',p))});
   var g=Math.max(0,1-p*1.4)*.6;r.glow.forEach(function(e){e.setAttribute('opacity',g.toFixed(2))});
 }
 function skyTo(to){
@@ -628,10 +637,11 @@ function plankExtras(i,cx,g){
 /* ---------- monuments: Eiffel Tower (Paris) and Statue of Liberty (New York) ---------- */
 var MON={
  eiffel:{title:'Eiffel Tower',place:'Paris',noun:'tower',words:'wrought iron (fer puddlé) · lattice (treillis) · rivet (rivet)',done:'The Eiffel Tower is finished. Fireworks over Paris!',base:'girder'},
+ mona:{title:'Mona Lisa',place:'The Louvre Museum',noun:'painting',words:'canvas (toile) \u00b7 brushstroke (coup de pinceau) \u00b7 portrait (portrait)',done:'The Mona Lisa is finished. She is smiling at you! Fireworks over the Louvre!',base:'canvas tile'},
  louvre:{title:'Louvre Pyramid',place:'Paris',noun:'pyramid',words:'glass (verre) \u00b7 steel (acier) \u00b7 museum (mus\u00e9e)',done:'The Louvre Pyramid is finished. Fireworks over Paris!',base:'glass panel'},
  liberty:{title:'Statue of Liberty',place:'New York',noun:'statue',words:'copper (cuivre) · pedestal (piédestal) · torch (flambeau)',done:'Lady Liberty is finished. Fireworks over New York!',base:'copper plate'}
 };
-var NEXTMODE={bridge:'eiffel',eiffel:'louvre',louvre:'liberty',liberty:'bridge'};
+var NEXTMODE={bridge:'eiffel',eiffel:'louvre',louvre:'mona',mona:'liberty',liberty:'bridge'};
 var EF_MS=[[0.18,'First floor','premier étage'],[0.355,'Second floor','deuxième étage'],[0.85,'Third floor','troisième étage (sommet)']];
 var LB={cx:262,yB:200,yT:14};
 var LB_MS=[[.37,'The pedestal','pedestal (piédestal) · granite (granit)'],[.64,'Robe and torso','robe (robe) · tablet (tablette)'],[.85,'Head and crown','crown (couronne) · rays (rayons)'],[1,'The torch','torch (flambeau) · flame (flamme)']];
@@ -718,6 +728,145 @@ function drawLibSection(i,animate){
     requestAnimationFrame(function(){requestAnimationFrame(function(){g.style.transition='opacity .5s';g.style.opacity='1'})});
   }
   return g;
+}
+/* ---------- the Louvre museum: a cartoon Mona Lisa, built block by block ---------- */
+var MN={x0:210,y0:36,w:104,h:154,cx:262};
+function monaTiles(N){
+  var R=Math.max(2,Math.round(N/4)),base=Math.floor(N/R),ex=N-base*R,out=[],th=MN.h/R;
+  for(var r=0;r<R;r++){
+    var n=base+(r<ex?1:0),tw2=MN.w/n,y=MN.y0+MN.h-(r+1)*th;
+    for(var c=0;c<n;c++)out.push({x:MN.x0+c*tw2,y:y,w:tw2,h:th,r:r,last:c===n-1,R:R});
+  }
+  return out;
+}
+function buildMuseum(svg){
+  var R=S.ref,g=el('g',{},svg);
+  R.mwall=[el('rect',{x:0,y:0,width:520,height:214},g)];
+  R.mtrim=[el('rect',{x:0,y:196,width:520,height:5},g),el('rect',{x:0,y:20,width:520,height:3},g)];
+  R.mfloor=[el('rect',{x:0,y:201,width:520,height:13},g)];
+  for(var x=0;x<520;x+=26)el('line',{x1:x,y1:201,x2:x-10,y2:214,stroke:'#00000033','stroke-width':1},g);
+  layers.mbk=el('g',{},svg);
+}
+function drawMonaParts(g){
+  var x0=MN.x0,x1=MN.x0+MN.w,cx=MN.cx,OL='#2b1d12',sk='#f0d2a8';
+  el('rect',{x:x0,y:MN.y0,width:MN.w,height:MN.h,fill:'#d9c58a'},g);
+  el('polygon',{points:x0+',100 '+(x0+25)+',84 '+(x0+45)+',98 '+(x0+70)+',80 '+x1+',96 '+x1+',125 '+x0+',125',fill:'#8fa7a0'},g);
+  el('polygon',{points:x0+',120 '+(x0+30)+',112 '+(x0+60)+',122 '+x1+',110 '+x1+',160 '+x0+',160',fill:'#7d9470'},g);
+  el('path',{d:'M'+(x0+6)+' 128 Q'+(x0+30)+' 116 '+(x0+52)+' 126 T'+(x0+98)+' 114',fill:'none',stroke:'#e4dcae','stroke-width':3,'stroke-linecap':'round'},g);
+  el('rect',{x:x0,y:150,width:MN.w,height:40,fill:'#5b6a3e'},g);
+  el('path',{d:'M'+(cx-23)+' 84 Q'+(cx-30)+' 140 '+(cx-26)+' 150 L'+(cx+26)+' 150 Q'+(cx+30)+' 140 '+(cx+23)+' 84 Q'+cx+' 40 '+(cx-23)+' 84Z',fill:'#2e2016',stroke:OL,'stroke-width':.8},g);
+  el('polygon',{points:(x0+3)+',190 '+(x0+9)+',150 '+(cx-28)+',128 '+(cx-10)+',119 '+(cx+10)+',119 '+(cx+28)+',128 '+(x1-9)+',150 '+(x1-3)+',190',fill:'#2c3b2c',stroke:OL,'stroke-width':.8},g);
+  el('polygon',{points:(cx-8)+',100 '+(cx+8)+',100 '+(cx+11)+',121 '+(cx-11)+',121',fill:sk,stroke:OL,'stroke-width':.8},g);
+  el('polyline',{points:(cx-19)+',127 '+cx+',141 '+(cx+19)+',127',fill:'none',stroke:'#c9a227','stroke-width':2.2,'stroke-linejoin':'round'},g);
+  el('ellipse',{cx:cx-32,cy:162,rx:15,ry:26,fill:'#b0782f',stroke:OL,'stroke-width':.8,transform:'rotate(8 '+(cx-32)+' 162)'},g);
+  el('ellipse',{cx:cx+32,cy:162,rx:15,ry:26,fill:'#b0782f',stroke:OL,'stroke-width':.8,transform:'rotate(-8 '+(cx+32)+' 162)'},g);
+  el('ellipse',{cx:cx-5,cy:172,rx:17,ry:7,fill:sk,stroke:OL,'stroke-width':.8},g);
+  el('ellipse',{cx:cx+12,cy:169,rx:13,ry:6,fill:sk,stroke:OL,'stroke-width':.8},g);
+  [-2,5,12].forEach(function(d){el('line',{x1:cx+d,y1:170,x2:cx+d+1,y2:176,stroke:OL,'stroke-width':.5},g)});
+  el('circle',{cx:cx,cy:80,r:18,fill:sk,stroke:OL,'stroke-width':.9},g);
+  el('ellipse',{cx:cx-19,cy:92,rx:5,ry:19,fill:'#2e2016'},g);el('ellipse',{cx:cx+19,cy:92,rx:5,ry:19,fill:'#2e2016'},g);
+  el('path',{d:'M'+(cx-20)+' 78 Q'+cx+' 52 '+(cx+20)+' 78 Q'+cx+' 66 '+(cx-20)+' 78Z',fill:'#2e2016'},g);
+  el('path',{d:'M'+(cx-24)+' 74 Q'+cx+' 40 '+(cx+24)+' 74 Q'+(cx+26)+' 120 '+(cx+22)+' 138',fill:'none',stroke:'#e6dcb4','stroke-width':1.6,opacity:.55},g);
+  [-7,7].forEach(function(d){
+    el('ellipse',{cx:cx+d,cy:79,rx:3.6,ry:2.4,fill:'#fff',stroke:OL,'stroke-width':.5},g);
+    el('circle',{cx:cx+d+1,cy:79,r:1.4,fill:'#3b2a1e'},g);
+  });
+  el('circle',{cx:cx-10,cy:87,r:3,fill:'#e58a7a',opacity:.35},g);el('circle',{cx:cx+10,cy:87,r:3,fill:'#e58a7a',opacity:.35},g);
+  el('path',{d:'M'+(cx-1)+' 82 Q'+(cx-3)+' 87 '+(cx+1)+' 87',fill:'none',stroke:OL,'stroke-width':.6},g);
+  el('path',{d:'M'+(cx-8)+' 92 Q'+cx+' 97 '+(cx+8)+' 90',fill:'none',stroke:'#9b3d3d','stroke-width':1.5,'stroke-linecap':'round'},g);
+}
+function drawMonaTile(i,animate){
+  var R=S.ref,N=S.N,t=S.mt[i],id='mc'+i+'_'+S.gen;
+  var cp=el('clipPath',{id:id},R.defs);el('rect',{x:t.x.toFixed(1),y:t.y.toFixed(1),width:(t.w+.3).toFixed(1),height:(t.h+.3).toFixed(1)},cp);
+  var g=el('g',{class:'pl','clip-path':'url(#'+id+')'},layers.deck);
+  drawMonaParts(g);
+  S.planks[i]=g;setSky(S.skyP);
+  if(animate&&t.last){
+    var nm=['The dress and the hands','The shoulders and the neck','The face and the smile','The hair and the veil','The background hills'][Math.min(t.r,4)];
+    if(t.r===t.R-1)nm='The hair and the landscape';
+    toast(nm,'brushstroke (coup de pinceau) \u00b7 portrait (portrait) \u00b7 canvas (toile)',true,2400);
+  }
+  if(animate){
+    g.style.transform='translateY(-26px)';g.style.opacity='0';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      g.style.transition='transform .4s cubic-bezier(.3,1.4,.5,1),opacity .25s';g.style.transform='';g.style.opacity='1';
+    })});
+  }
+  return g;
+}
+function drawMuseumItem(id){
+  var g,L=layers.decor,B=layers.mbk;if(!L||!B)return;
+  var x0=MN.x0,x1=MN.x0+MN.w,cx=MN.cx;
+  if(id==='frame'){
+    g=el('g',{},L);
+    el('rect',{x:x0-6,y:MN.y0-6,width:MN.w+12,height:MN.h+12,fill:'none',stroke:'#c9a227','stroke-width':6},g);
+    el('rect',{x:x0-2.5,y:MN.y0-2.5,width:MN.w+5,height:MN.h+5,fill:'none',stroke:'#8a6d12','stroke-width':1},g);
+    [[x0-6,MN.y0-6],[x1+6,MN.y0-6],[x0-6,MN.y0+MN.h+6],[x1+6,MN.y0+MN.h+6]].forEach(function(p){el('circle',{cx:p[0],cy:p[1],r:4.5,fill:'#e8c24a',stroke:'#8a6d12','stroke-width':.8},g)});
+    el('path',{d:'M'+(cx-10)+' '+(MN.y0-6)+' l4 -8 l6 5 l6 -5 l4 8z',fill:'#e8c24a',stroke:'#8a6d12','stroke-width':.8},g);
+  }else if(id==='easel'){
+    g=el('g',{},L);
+    [x0-10,x1+10].forEach(function(x){el('line',{x1:x,y1:MN.y0-12,x2:x,y2:214,stroke:'#7a4a22','stroke-width':3.2,'stroke-linecap':'round'},g)});
+    el('line',{x1:x0-10,y1:MN.y0-12,x2:x1+10,y2:MN.y0-12,stroke:'#7a4a22','stroke-width':3.2,'stroke-linecap':'round'},g);
+    el('line',{x1:cx-6,y1:195,x2:cx-26,y2:214,stroke:'#7a4a22','stroke-width':3,'stroke-linecap':'round'},g);
+    el('line',{x1:cx+6,y1:195,x2:cx+26,y2:214,stroke:'#7a4a22','stroke-width':3,'stroke-linecap':'round'},g);
+    el('rect',{x:x0-12,y:195,width:MN.w+24,height:5,rx:1.5,fill:'#9a6430'},g);
+  }else if(id==='tapestry'){
+    g=el('g',{},B);
+    [46,434].forEach(function(x,k){
+      el('rect',{x:x,y:28,width:40,height:118,fill:'#7a2230',stroke:'#c9a227','stroke-width':1.6},g);
+      for(var yy=44;yy<140;yy+=24){el('path',{d:'M'+(x+20)+' '+(yy-8)+' l9 9 l-9 9 l-9 -9z',fill:'#e8c24a',opacity:.85},g);el('circle',{cx:x+20,cy:yy+1,r:2.4,fill:'#7a2230'},g)}
+      for(var tx=x+4;tx<x+40;tx+=8)el('line',{x1:tx,y1:146,x2:tx,y2:154,stroke:'#c9a227','stroke-width':1.4},g);
+    });
+  }else if(id==='curtain'){
+    g=el('g',{},B);
+    el('path',{d:'M0 0 H520 V12 Q494 24 468 12 Q442 24 416 12 Q390 24 364 12 Q338 24 312 12 Q286 24 260 12 Q234 24 208 12 Q182 24 156 12 Q130 24 104 12 Q78 24 52 12 Q26 24 0 12Z',fill:'#8a1f2d',stroke:'#c9a227','stroke-width':.8},g);
+    el('path',{d:'M0 12 H40 Q26 60 30 110 Q14 118 0 124Z',fill:'#8a1f2d',stroke:'#c9a227','stroke-width':.8},g);
+    el('path',{d:'M520 12 H480 Q494 60 490 110 Q506 118 520 124Z',fill:'#8a1f2d',stroke:'#c9a227','stroke-width':.8},g);
+    [[30,100],[490,100]].forEach(function(p){el('circle',{cx:p[0],cy:p[1],r:3.2,fill:'#e8c24a'},g)});
+  }else if(id==='spot'){
+    g=el('g',{},L);
+    [238,286].forEach(function(x,k){
+      el('rect',{x:x-6,y:4,width:12,height:6,rx:2,fill:'#5b6a8f'},g);
+      var cn=el('polygon',{points:(x-4)+',10 '+(x+4)+',10 '+(x+(k?46:-6))+',190 '+(x+(k?-6:-46))+',190',fill:lcol(k*2),opacity:.12,class:'bulb'},g);
+      cn.style.animationDuration='4s';cn.style.animationDelay=(k*1.3)+'s';
+    });
+  }else if(id==='rope'){
+    g=el('g',{},L);
+    [150,374].forEach(function(x){el('rect',{x:x-1.5,y:192,width:3,height:20,fill:'#c9a227'},g);el('circle',{cx:x,cy:191,r:3.2,fill:'#e8c24a'},g)});
+    el('path',{d:'M150 192 Q262 216 374 192',fill:'none',stroke:'#a3202b','stroke-width':2.8,'stroke-linecap':'round'},g);
+  }else if(id==='plaque'){
+    g=el('g',{},L);
+    el('rect',{x:330,y:122,width:42,height:14,rx:1.5,fill:'#c9a227',stroke:'#8a6d12','stroke-width':.8},g);
+    var tx=el('text',{x:351,y:131.5,'text-anchor':'middle','font-size':6.2,'font-weight':700,fill:'#2b1d12'},g);tx.textContent='MONA LISA';
+  }else if(id==='glass'){
+    g=el('g',{},L);
+    el('rect',{x:x0-8,y:MN.y0-8,width:MN.w+16,height:MN.h+16,rx:2,fill:'#bfe6f5',opacity:.14,stroke:'#dff3ff','stroke-width':1.2},g);
+    [[x0+4,MN.y0+30,x0+44,MN.y0+4],[x0+30,MN.y0+90,x0+96,MN.y0+30]].forEach(function(p){el('line',{x1:p[0],y1:p[1],x2:p[2],y2:p[3],stroke:'#fff','stroke-width':3,opacity:.25,'stroke-linecap':'round'},g)});
+  }else if(id==='bench'){
+    g=el('g',{},L);
+    el('rect',{x:70,y:194,width:66,height:7,rx:2,fill:'#8a1f2d'},g);el('rect',{x:70,y:201,width:66,height:3,fill:'#4a2a14'},g);
+    [76,130].forEach(function(x){el('rect',{x:x-1.5,y:204,width:3,height:9,fill:'#4a2a14'},g)});
+  }else if(id==='vase'){
+    g=el('g',{},L);
+    [[412,168,'#e65aa8'],[424,160,'#f2c230'],[434,170,'#f5eedc'],[418,176,'#e0584f']].forEach(function(f){
+      el('line',{x1:424,y1:194,x2:f[0]+3,y2:f[1]+4,stroke:'#3f8f55','stroke-width':1.4},g);el('circle',{cx:f[0]+3,cy:f[1],r:5,fill:f[2]},g);el('circle',{cx:f[0]+3,cy:f[1],r:1.5,fill:'#8a5a2b'},g);
+    });
+    el('path',{d:'M414 194 H434 Q438 206 432 212 H416 Q410 206 414 194Z',fill:'#3f78c4',stroke:'#16294f','stroke-width':.8},g);
+  }else if(id==='lustre'){
+    g=el('g',{},L);
+    el('line',{x1:cx,y1:0,x2:cx,y2:16,stroke:'#c9a227','stroke-width':1.2},g);
+    el('path',{d:'M'+(cx-24)+' 30 Q'+cx+' 10 '+(cx+24)+' 30',fill:'none',stroke:'#c9a227','stroke-width':2},g);
+    el('circle',{cx:cx,cy:16,r:3,fill:'#e8c24a'},g);
+    [-24,-12,0,12,24].forEach(function(d,k){
+      var y=30-Math.cos(d/24*1.3)*0+(d===0?-9:(Math.abs(d)===12?-3:0));
+      var b=el('circle',{cx:cx+d,cy:y+(d===0?6:0)+2,r:2.3,fill:lcol(k),class:'bulb'},g);b.style.animationDelay=(k*.35)+'s';
+      el('line',{x1:cx+d,y1:y+4,x2:cx+d,y2:y+10,stroke:'#dff3ff','stroke-width':1},g);
+    });
+  }
+}
+function redrawMuseumItems(){
+  if(layers.decor)layers.decor.innerHTML='';if(layers.mbk)layers.mbk.innerHTML='';
+  S.mi.forEach(drawMuseumItem);
 }
 /* ---------- PARIS: the Louvre Pyramid level ---------- */
 var LV={cx:262,yB:198,yT:82,w0:80};
@@ -855,6 +1004,7 @@ function efExtras(g,i,t0,t1,y0,y1,a0,a1,cx,N){
 function drawSection(i,animate){
   if(S.mode==='liberty')return drawLibSection(i,animate);
   if(S.mode==='louvre')return drawLouvreSection(i,animate);
+  if(S.mode==='mona')return drawMonaTile(i,animate);
   var R=S.ref,N=S.N,t0=S.mb[i],t1=S.mb[i+1],cx=EF.cx,g=el('g',{class:'pl'},layers.deck);
   var push=function(e){R.iron.push(e);return e};
   var y0=ty(t0),y1=ty(t1),ym=(y0+y1)/2,a0=hw(t0),a1=hw(t1),am=hw((t0+t1)/2);
@@ -902,6 +1052,10 @@ function efBitMark(i){
     var d2=efBitX(i),y2=(i%3===0)?193:150+(i%4)*9,x2=LB.cx+d2*((i%3===0)?58:20);
     el('circle',{cx:x2,cy:y2,r:3.4,fill:'#16294f'},g);return;
   }
+  if(S.mode==='mona'){
+    var tt=S.mt[Math.min(i,S.N-1)];if(!tt)return;
+    el('circle',{cx:(tt.x+tt.w*.5+((i%3)-1)*tt.w*.2).toFixed(1),cy:(tt.y+tt.h*.5).toFixed(1),r:3.6,fill:'#16294f'},layers.deck);return;
+  }
   if(S.mode==='louvre'){
     var yl=LV.yB-8-(i%4)*10,tl=(LV.yB-yl)/(LV.yB-LV.yT),dl=efBitX(i),xl=LV.cx+dl*lvW(tl)*(i%3===0?.9:.45);
     el('circle',{cx:xl.toFixed(1),cy:yl,r:3.4,fill:'#16294f'},g);return;
@@ -911,7 +1065,7 @@ function efBitMark(i){
   el('circle',{cx:x.toFixed(1),cy:yy,r:3.4,fill:'#16294f'},g);
   el('polyline',{points:(x-3)+','+(yy+3)+' '+x+','+(yy+6)+' '+(x+2)+','+(yy+3),fill:'none',stroke:'#16294f','stroke-width':1},g);
 }
-function efBiteX(){var side=S.biteN%2?1:-1;if(S.mode==='louvre')return LV.cx+side*(S.biteN%3===0?LV.w0:LV.w0*.5);if(S.mode==='liberty')return LB.cx+side*(S.biteN%3===0?70:38);return EF.cx+side*(S.biteN%3===0?EF.w0:EF.w0*.5)}
+function efBiteX(){var side=S.biteN%2?1:-1;if(S.mode==='mona')return MN.cx+side*(S.biteN%3===0?58:30);if(S.mode==='louvre')return LV.cx+side*(S.biteN%3===0?LV.w0:LV.w0*.5);if(S.mode==='liberty')return LB.cx+side*(S.biteN%3===0?70:38);return EF.cx+side*(S.biteN%3===0?EF.w0:EF.w0*.5)}
 async function fireworks(){
   var gen=S.gen,cols=['#f2c230','#e0584f','#4cc36e','#4a7be8','#e65aa8','#f5eedc'];
   var bursts=[];
@@ -963,10 +1117,12 @@ function buildScene(){
   S.ghosts=[];S.planks=[];
   if(ef){
     S.cab=null;S.mb=monBounds(S.N,S.mode);
-    if(lib)buildNY(svg);else if(S.mode==='louvre')buildLouvre(svg);else buildParis(svg);
+    if(S.mode==='mona')S.mt=monaTiles(S.N);
+    if(lib)buildNY(svg);else if(S.mode==='louvre')buildLouvre(svg);else if(S.mode==='mona')buildMuseum(svg);else buildParis(svg);
     for(var i=0;i<S.N;i++){
       var t0=S.mb[i],t1=S.mb[i+1];
       if(lib){var lw=t1<.1?72:(t1<.42?34:(t1<.7?28:32));S.ghosts.push(el('rect',{x:LB.cx-lw,y:lty(t1).toFixed(1),width:2*lw,height:(lty(t0)-lty(t1)).toFixed(1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));continue}
+      if(S.mode==='mona'){var mt=S.mt[i];S.ghosts.push(el('rect',{x:mt.x.toFixed(1),y:mt.y.toFixed(1),width:mt.w.toFixed(1),height:mt.h.toFixed(1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));continue}
       if(S.mode==='louvre'){S.ghosts.push(el('polygon',{points:(LV.cx-lvW(t0))+','+lvY(t0)+' '+(LV.cx+lvW(t0))+','+lvY(t0)+' '+(LV.cx+lvW(t1))+','+lvY(t1)+' '+(LV.cx-lvW(t1))+','+lvY(t1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));continue}
       S.ghosts.push(el('polygon',{points:(EF.cx-hw(t0))+','+ty(t0)+' '+(EF.cx+hw(t0))+','+ty(t0)+' '+(EF.cx+hw(t1))+','+ty(t1)+' '+(EF.cx-hw(t1))+','+ty(t1),fill:'none',stroke:'#5b6a8f','stroke-width':.8,'stroke-dasharray':'3 2'},svg));
     }
@@ -991,6 +1147,7 @@ function buildScene(){
   for(var k=0;k<S.placed;k++)drawPlank(k,false);
   S.bitten.forEach(function(i){if(i<S.placed)bitMark(i)});
   if(!ef)S.decor.forEach(function(id){drawDecor(id)});
+  if(S.mode==='mona')S.mi.forEach(drawMuseumItem);
   startSwim();
   setSky(S.placed/S.N);
   markNext();
@@ -1185,6 +1342,7 @@ async function chompBackOff(){
 
 /* ---------- birds ---------- */
 function spawnBird(){
+  if(S.mode==='mona')return;
   if(!layers.birds||document.querySelectorAll('.bird').length>=6)return;
   var gen=S.gen,dir=Math.random()<.5?1:-1,y=28+rnd(80),sp=7000+rnd(4000),sc=.8+Math.random()*.6;
   var g=el('g',{class:'bird'},layers.birds);
@@ -1248,6 +1406,7 @@ function chompHit(a){
   if(S.mode==='eiffel'&&S.eup>1)pool.push(['estruct',15]);
   if(S.mode==='louvre'&&S.lup>1)pool.push(['lstruct',15]);
   if(S.mode==='liberty'&&S.sup>1)pool.push(['sstruct',15]);
+  if(S.mode==='mona'&&S.mi.length)pool.push(['mitem',30]);
   if(ef&&S.placed>1)pool.push(['top',20]);
   var tot=0;pool.forEach(function(p){tot+=p[1]});
   var r=Math.random()*tot,kind='plank';
@@ -1272,6 +1431,11 @@ function chompHit(a){
     var oe=EUP[S.eup-1];
     S.eup--;S.rebuild=true;
     return hitSentence(a,'your '+oe.n.toLowerCase())+' It is now: '+EUP[S.eup-1].n.toLowerCase()+'.';
+  }
+  if(kind==='mitem'){
+    var mid=S.mi[rnd(S.mi.length)],mo=MI.filter(function(x){return x.id===mid})[0];
+    S.mi=S.mi.filter(function(x){return x!==mid});redrawMuseumItems();
+    return hitSentence(a,'your '+mo.n.toLowerCase())+' Buy it again in the shop.';
   }
   if(kind==='sstruct'){
     var os=SUP[S.sup-1];
@@ -1455,7 +1619,7 @@ function post(action,body){
 function snapshot(){
   var inLevel=!S.levelDone&&S.active;
   return {level:S.levelDone?(S.nextLevel||S.level):S.level,score:S.score,best:S.best,lives:S.lives,placed:inLevel?S.placed:0,inLevel:inLevel,
-    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,eup:S.eup,lup:S.lup,sup:S.sup,fx:S.fx.slice(),lc:S.lc,mode:S.levelDone?(S.nextMode||S.mode):S.mode,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
+    bitten:inLevel?S.bitten.slice():[],coins:S.coins,upg:S.upg,eup:S.eup,lup:S.lup,sup:S.sup,mi:S.mi.slice(),fx:S.fx.slice(),lc:S.lc,mode:S.levelDone?(S.nextMode||S.mode):S.mode,decor:S.decor.slice(),fish:S.fish,cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats,savedAt:Date.now()};
 }
 function scheduleSave(){
   if(!S.active)return;
@@ -1483,6 +1647,7 @@ function adopt(pr){
   S.eup=Math.min(4,Math.max(1,(pr&&pr.eup)|0||1));
   S.lup=Math.min(4,Math.max(1,(pr&&pr.lup)|0||1));
   S.sup=Math.min(4,Math.max(1,(pr&&pr.sup)|0||1));
+  S.mi=pr&&Array.isArray(pr.mi)?MI.map(function(x){return x.id}).filter(function(id){return pr.mi.indexOf(id)>=0}):[];
   S.fx=pr&&Array.isArray(pr.fx)?FX_IDS.filter(function(id){return pr.fx.indexOf(id)>=0}):[];
   S.lc=FXC.some(function(c){return c.id===(pr&&pr.lc)})?pr.lc:'gold';
   S.decor=pr&&Array.isArray(pr.decor)?pr.decor.filter(function(id){return DECOR.some(function(d){return d.id===id})}):[];
@@ -1612,7 +1777,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower, your Louvre Pyramid and your Statue of Liberty, buy a fireworks show and choose the color of the sparkles, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then the glass Louvre Pyramid, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower, your Louvre Pyramid and your Statue of Liberty, dress up the gallery of your cartoon Mona Lisa, buy a fireworks show and choose the color of the sparkles, and add decorations. Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then the glass Louvre Pyramid, then a cartoon Mona Lisa painted block by block in the Louvre, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1683,7 +1848,7 @@ function levelDoneScreen(bonus,cb){
   $('#nx').addEventListener('click',function(){S.level++;S.missed=[];startLevel()});
   $('#mn').addEventListener('click',startScreen);
 }
-var SHOP_TABS=[['bridge','Bridge'],['eiffel','Eiffel'],['louvre','Louvre'],['liberty','Liberty'],['show','Light show'],['decor','Decor']];
+var SHOP_TABS=[['bridge','Bridge'],['eiffel','Eiffel'],['louvre','Louvre'],['liberty','Liberty'],['mona','Mona Lisa'],['show','Light show'],['decor','Decor']];
 function shopSteps(list,cur,attr,intro){
   var h='<p class="sintro">'+intro+'</p><div class="sbar"><b style="width:'+Math.round((cur-1)/(list.length-1)*100)+'%"></b></div><div class="shop">';
   list.forEach(function(er,i){
@@ -1694,18 +1859,25 @@ function shopSteps(list,cur,attr,intro){
   return h+'</div>';
 }
 function shopScreen(back,tab){
-  var modeTab={bridge:'bridge',eiffel:'eiffel',louvre:'louvre',liberty:'liberty'}[S.mode]||'bridge';
+  var modeTab={bridge:'bridge',eiffel:'eiffel',louvre:'louvre',mona:'mona',liberty:'liberty'}[S.mode]||'bridge';
   if(tab)S.shopTab=tab;
   if(!S.shopTab||!SHOP_TABS.some(function(t){return t[0]===S.shopTab}))S.shopTab=modeTab;
   var cur=S.shopTab;
-  var badge={bridge:S.upg+'/'+ERAS.length,eiffel:S.eup+'/'+EUP.length,louvre:S.lup+'/'+LUP.length,liberty:S.sup+'/'+SUP.length,show:(S.fx.length+1)+'/'+(FX_IDS.length+1),decor:S.decor.length+'/'+DECOR.length};
+  var badge={bridge:S.upg+'/'+ERAS.length,eiffel:S.eup+'/'+EUP.length,louvre:S.lup+'/'+LUP.length,liberty:S.sup+'/'+SUP.length,mona:S.mi.length+'/'+MI.length,show:(S.fx.length+1)+'/'+(FX_IDS.length+1),decor:S.decor.length+'/'+DECOR.length};
   var h='<div class="shophead"><h2>Shop</h2><span class="coinchip"><b>'+S.coins+'</b> coins</span></div>';
   h+='<div class="stabs">'+SHOP_TABS.map(function(t){return '<button class="stab'+(t[0]===cur?' on':'')+'" data-tab="'+t[0]+'">'+t[1]+'<i>'+badge[t[0]]+'</i></button>'}).join('')+'</div>';
   if(cur==='bridge')h+=shopSteps(ERAS,S.upg,'u','From a rope bridge up to the Pont de Normandie. It shows on your bridge when you go back to the game.');
   else if(cur==='eiffel')h+=shopSteps(EUP,S.eup,'e','Light up the tower you build in Paris. Chomp can wreck these.');
   else if(cur==='louvre')h+=shopSteps(LUP,S.lup,'l','Make the glass pyramid shine. Chomp can wreck these.');
   else if(cur==='liberty')h+=shopSteps(SUP,S.sup,'s','Make Lady Liberty shine over New York harbor. Chomp can wreck these.');
-  else if(cur==='show'){
+  else if(cur==='mona'){
+    h+='<p class="sintro">Dress up the gallery around your cartoon Mona Lisa. Buy in any order. Chomp can destroy them.</p><div class="shop">';
+    MI.forEach(function(d){
+      var own=S.mi.indexOf(d.id)>=0;
+      h+='<div class="sstep'+(own?' done':'')+'"><span class="snum">'+(own?'\u2713':'+')+'</span><span class="sname">'+d.n+'<em>'+d.fr+'</em></span>'+(own?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=d.c?' solid':'')+'" data-m="'+d.id+'"'+(S.coins>=d.c?'':' disabled')+'>'+d.c+' coins</button>')+'</div>';
+    });
+    h+='</div>';
+  }else if(cur==='show'){
     var fwOwn=S.fx.indexOf('fw')>=0;
     h+='<p class="sintro">For your monuments in Paris and New York.</p><div class="shop"><div class="sstep'+(fwOwn?' done':'')+'"><span class="snum">'+(fwOwn?'\u2713':'*')+'</span><span class="sname">Fireworks show<em>feux d\'artifice</em></span>'+(fwOwn?'<span class="ok">Owned</span>':'<button class="btn'+(S.coins>=35?' solid':'')+'" data-fw="1"'+(S.coins>=35?'':' disabled')+'>35 coins</button>')+'</div></div>';
     h+='<p class="big">Sparkle color</p><div class="swatches">';
@@ -1732,7 +1904,7 @@ function shopScreen(back,tab){
       S.coins-=d.c;S.decor.push(d.id);S.shopDirty=true;hud();
       if(S.mode==='bridge'&&layers.decor&&S.ref&&S.ref.glow)drawDecor(d.id);
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
@@ -1744,7 +1916,7 @@ function shopScreen(back,tab){
       if(!er||lv!==S.upg+1||S.coins<er.c)return;
       S.coins-=er.c;S.upg=lv;S.shopDirty=true;hud();
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
@@ -1752,7 +1924,7 @@ function shopScreen(back,tab){
   });
   function persistShop(){
     var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-    base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+    base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
     P.progress=base;lsSet(progKey(),JSON.stringify(base));
     if(P.user){P.dirty=true;flush()}
     S.shopDirty=true;hud();shopScreen(back);
@@ -1762,6 +1934,13 @@ function shopScreen(back,tab){
       var lv=+b.getAttribute('data-l'),er=LUP[lv-1];
       if(!er||lv!==S.lup+1||S.coins<er.c)return;
       S.coins-=er.c;S.lup=lv;persistShop();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-m]'),function(b){
+    b.addEventListener('click',function(){
+      var id=b.getAttribute('data-m'),d=MI.filter(function(x){return x.id===id})[0];
+      if(!d||S.coins<d.c||S.mi.indexOf(id)>=0)return;
+      S.coins-=d.c;S.mi.push(id);persistShop();
     });
   });
   Array.prototype.forEach.call(document.querySelectorAll('[data-s]'),function(b){
@@ -1792,7 +1971,7 @@ function shopScreen(back,tab){
       if(!er||lv!==S.eup+1||S.coins<er.c)return;
       S.coins-=er.c;S.eup=lv;S.shopDirty=true;hud();
       var base=S.active?snapshot():Object.assign({},P.progress||{level:S.level,score:S.score,best:S.best,lives:MAXL,placed:0,inLevel:false,bitten:[],cats:S.cats,qCount:S.qCount,okCount:S.okCount,stats:S.stats});
-      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
+      base.coins=S.coins;base.upg=S.upg;base.eup=S.eup;base.lup=S.lup;base.sup=S.sup;base.mi=S.mi.slice();base.fx=S.fx.slice();base.lc=S.lc;base.decor=S.decor.slice();base.fish=S.fish;base.savedAt=Date.now();
       P.progress=base;lsSet(progKey(),JSON.stringify(base));
       if(P.user){P.dirty=true;flush()}
       shopScreen(back);
