@@ -1358,7 +1358,7 @@ function fishJump(sw,tx,ty){
 function quickBonus(){
   if(!layers.birds)return;
   var gen=S.gen,g=el('g',{},layers.birds),lbl=el('text',{'text-anchor':'middle','font-size':12,'font-weight':800,fill:'#f2c230',stroke:'#0d1b3a','stroke-width':3,'paint-order':'stroke'},g);
-  lbl.textContent='QUICK! +1 coin';
+  lbl.textContent='QUICK! +3 coins';
   if(Math.random()<.55){
     var x0=40+rnd(220),y0=20+rnd(40),dx=190,dy=90,hd=el('circle',{r:3.2,fill:'#fff6b0'},g);
     var tail=el('polygon',{fill:'#fff6b0',opacity:.7},g);
@@ -1668,7 +1668,7 @@ function giftResult(q){
   S.stats.gifts++;if(q.ok)S.stats.giftsOk++;
   var add='';
   if(q.ok){
-    S.coins+=5;add='<br><span class="ok">+5 coins!</span>';
+    S.coins+=15;add='<br><span class="ok">+15 coins!</span>';
     if(S.lives<MAXL){S.lives++;add+='<br><span class="ok">+1 life!</span>'}
     else{S.score+=30;add+='<br><span class="ok">Your stability is already full: +30 points instead.</span>'}
   }else add='<br><span class="ko">Gift lost.</span>';
@@ -1686,11 +1686,11 @@ async function mainResult(ok,fast){
   S.busy=true;S.qCount++;if(ok)S.okCount++;
     if(ok){
     var backed=S.threat;
-    if(backed){S.coins+=2;toast('Chomp backs off','Well done! +2 coins',true,2400);chompBackOff()}
-    S.score+=10;S.coins++;S.streak++;S.placed++;markNext();
+    if(backed){S.coins+=6;toast('Chomp backs off','Well done! +6 coins',true,2400);chompBackOff()}
+    S.score+=10;S.coins+=3;S.streak++;S.placed++;markNext();
     drawPlank(S.placed-1,true);skyTo(S.placed/S.N);
-    if(fast){S.coins++;quickBonus()}
-    var three=(S.streak%3===0),bonus=Math.min(8,2+S.streak/3);
+    if(fast){S.coins+=3;quickBonus()}
+    var three=(S.streak%3===0),bonus=Math.min(24,6+S.streak);
     if(three&&S.placed<S.N){S.coins+=bonus;flyPlane(bonus);awardFish()}
     hud();scheduleSave();showPanel();
     await wait(450);
@@ -1898,7 +1898,7 @@ function startScreen(){
     '<li>Be quick: you have 20 seconds per question (30 seconds to spot the wrong segment, 40 seconds for a scrambled word). When time runs out, it counts as a wrong answer.</li>'+
     '<li>Lose all 5 lives and the bridge collapses. You can replay the same bridge.</li>'+
     '<li>Look at the sky: a gift parachutes down from time to time. Tap it before it falls into the river, then answer its question. A correct answer wins back one life (or 30 points if your lives are full). A wrong answer loses the gift, but costs no life.</li>'+
-    '<li>Earn coins (1 per correct answer, 5 per gift, 3 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower, your Louvre Pyramid and your Statue of Liberty, dress up the gallery of your cartoon Mona Lisa, buy boosts (shield against Chomp, 50/50, +10 seconds), buy a fireworks show and choose the color of the sparkles, and add decorations. Answer in 5 seconds or less and you get +1 coin and a bonus animation (a shooting star or a rocket taking off). Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+2 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then the glass Louvre Pyramid, then a cartoon Mona Lisa painted block by block in the Louvre, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
+    '<li>Earn coins (3 per correct answer, 15 per gift, 8 per life left at the end) and spend them in the shop: upgrade your bridge, from a simple rope bridge up to the Pont de Normandie, light up your Eiffel Tower, your Louvre Pyramid and your Statue of Liberty, dress up the gallery of your cartoon Mona Lisa, buy boosts (shield against Chomp, 50/50, +10 seconds), buy a fireworks show and choose the color of the sparkles, and add decorations. Answer in 5 seconds or less and you get +3 coins and a bonus animation (a shooting star or a rocket taking off). Answer 3 questions in a row and a plane flies by with bonus coins (longer streaks pay more) and a fish joins your river: tap above a fish to make it jump, as often as you like. Then Chomp challenges you: he lurks under the bridge. A correct answer makes him back off (+6 coins), a wrong one and he bites.</li><li>Finish a bridge and the scenery changes. First you travel to Paris and build the Eiffel Tower floor by floor, then the glass Louvre Pyramid, then a cartoon Mona Lisa painted block by block in the Louvre, then to New York to build the Statue of Liberty piece by piece. Chomp follows you everywhere. Then it is back to a new bridge.</li><li>Careful: Chomp does not only bite planks. He can also destroy your decorations, wreck your bridge upgrade, or knock the top piece off a monument. Buy them again in the shop (bridge and Eiffel Tower upgrades too), even in the middle of a game (the timer stops while you shop).</li><li>The sun rises as you build. Every bridge is longer and harder than the last one. Lives left at the end give you bonus points.</li></ol></details>'+
     (P.user?'<p class="big">Choose your question types</p><div class="chips">'+chips+'</div>'+btns:'')+
     (P.user?'<div class="row"><button class="btn" id="shp0">Shop and album ('+S.coins+' coins)</button></div>':'')+
     '<p>Best score: <b class="big">'+S.best+'</b></p><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>');
@@ -1954,7 +1954,7 @@ async function levelComplete(){
   var gen=S.gen;
   S.ended=true;S.levelDone=true;S.nextLevel=S.level+1;S.stats.levelsCleared++;removeGift();
   var ef=S.mode!=='bridge';S.nextMode=NEXTMODE[S.mode]||'bridge';
-  var bonus=S.lives*20,cb=S.lives*3+(ef?20:0);S.score+=bonus;S.coins+=cb;saveBest();hud();scheduleSave();flush();
+  var bonus=S.lives*20,cb=S.lives*8+(ef?60:0);S.score+=bonus;S.coins+=cb;saveBest();hud();scheduleSave();flush();
   idle(ef?MON[S.mode].done:'The bridge is finished. Here comes the first truck!');
   for(var b=0;b<5;b++)setTimeout(spawnBird,b*350);
   var ok=ef?await fireworks():await truck();
@@ -2021,7 +2021,7 @@ function shopScreen(back,tab){
     });
     h+='</div>';
   }
-  h+='<p class="sintro">Earn 1 coin per correct answer, bonus coins from the plane, 5 per gift, and 3 per life left at the end of a level.</p><div class="row"><button class="btn solid" id="bk">Back</button></div>';
+  h+='<p class="sintro">Earn 3 coins per correct answer, bonus coins from the plane and quick answers, 15 per gift, and 8 per life left at the end of a level.</p><div class="row"><button class="btn solid" id="bk">Back</button></div>';
   screen(h);
   Array.prototype.forEach.call(document.querySelectorAll('[data-tab]'),function(b){b.addEventListener('click',function(){shopScreen(back,b.getAttribute('data-tab'))})});
   Array.prototype.forEach.call(document.querySelectorAll('[data-b]'),function(b){
