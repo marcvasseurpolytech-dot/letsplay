@@ -166,7 +166,11 @@ function press(k) {
 addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault(); if (!e.repeat) press(k); S.keys[k] = true; });
 addEventListener('keyup', (e) => { S.keys[e.key.toLowerCase()] = false; });
 addEventListener('blur', () => { S.keys = {}; });
-cv.addEventListener('pointerdown', () => { if (S.st !== 'play') press('x'); });
+cv.addEventListener('pointerdown', (e) => {
+  if (S.st !== 'play') { press('x'); return; }
+  if (e.button === 2) S.jumpReq = { t: 0.35 }; else if (e.button === 0) S.digReq = { d: S.p.dir, t: 0.4 };
+});
+cv.addEventListener('contextmenu', (e) => e.preventDefault());
 /* ---- draw ---- */
 const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
 function T(s, x, y, size, col, al) { ctx.font = 'bold ' + size + 'px "Courier New", monospace'; ctx.fillStyle = col || C.wh; ctx.textAlign = al || 'left'; ctx.fillText(s, x, y); }
@@ -181,7 +185,7 @@ function draw() {
   R(0, 0, W, H, C.bg);
   if (S.st === 'title') {
     T('TOEICrunner', W / 2, 140, 44, C.gold, 'center'); T('a Lode Runner style prototype', W / 2, 175, 16, C.lb, 'center');
-    ['Collect the gold bars that carry the RIGHT words.', 'Wrong words cost you 12 seconds. Then run to the EXIT.', '', 'Z Q S D: climb up, run left, go down, run right', 'LEFT / RIGHT arrows: dig a hole on that side     SPACE: jump 2 tiles', 'A guard that falls in a hole is trapped for a few seconds.', 'Do not fall in your own hole when it closes!'].forEach((l, i) => T(l, W / 2, 245 + i * 26, 16, C.wh, 'center'));
+    ['Collect the gold bars that carry the RIGHT words.', 'Wrong words cost you 12 seconds. Then run to the EXIT.', '', 'Z Q S D: climb up, run left, go down, run right', 'LEFT CLICK: dig a hole in the direction you face', 'RIGHT CLICK: jump 2 tiles (over a hole or a guard)', '(keyboard: LEFT / RIGHT arrows dig, SPACE jumps)', 'A guard that falls in a hole is trapped for a few seconds.', 'Do not fall in your own hole when it closes!'].forEach((l, i) => T(l, W / 2, 232 + i * 25, 16, C.wh, 'center'));
     T(PR.user ? 'Player: ' + PR.user.nom + '   Best score: ' + PR.best + '   Words: ' + Object.keys(PR.words).length : 'Guest mode: log in on the arcade hub to save your score', W / 2, 455, 13, PR.user ? C.gr : C.lb, 'center');
     if (Math.floor(S.t * 2) % 2) T('PRESS ANY KEY', W / 2, 490, 20, C.gold, 'center');
     ctx.restore(); return;
