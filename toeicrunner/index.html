@@ -70,11 +70,27 @@ function loadLevel() {
   S.p = { tx: lv.start[1], ty: FL[lv.start[0]], mv: null, dir: 1, f: 0 };
   S.gs = lv.guards.map(([f, x]) => ({ tx: x, ty: FL[f], mv: null, spd: 2.7 + S.lv * 0.3, pt: rnd(0, 0.3), dir: 1, holeT: 0, home: [f, x] }));
   S.door = { x: lv.door, y: FL[0] };
+  S.acc = placeAcc(lv);
+}
+function placeAcc(lv) {
+  const seen = new Set(), q = [[S.p.tx, S.p.ty]]; seen.add(S.p.tx + ',' + S.p.ty);
+  while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of moves(x, y, S.p)) { const k = (x + dx) + ',' + (y + dy); if (!seen.has(k)) { seen.add(k); q.push([x + dx, y + dy]); } } }
+  const cands = [];
+  for (let f = 0; f < 4; f++) for (let x = 2; x < 23; x++) {
+    const y = FL[f]; if (ch(x, y) !== ' ' || !solid(x, y + 1) || !seen.has(x + ',' + y)) continue;
+    if (S.slots.some((o) => o.y === y && Math.abs(o.x - x) < 2) || S.gs.some((g) => g.ty === y && Math.abs(g.tx - x) < 3) || (S.door.y === y && Math.abs(S.door.x - x) < 2) || (y === S.p.ty && Math.abs(S.p.tx - x) < 3)) continue;
+    cands.push({ x, y, f });
+  }
+  const out = [], kinds = ['hat', 'umbrella', 'purse'], used = new Set();
+  shuffle(cands.slice()).forEach((c) => { if (out.length < 3 && !used.has(c.f)) { used.add(c.f); out.push({ x: c.x, y: c.y, k: kinds[out.length], taken: false }); } });
+  shuffle(cands.slice()).forEach((c) => { if (out.length < 3 && !out.some((o) => o.x === c.x && o.y === c.y)) out.push({ x: c.x, y: c.y, k: kinds[out.length], taken: false }); });
+  return out;
 }
 function newGame() { profStart(); S.lv = 0; S.lives = 3; S.wrong = 0; S.score = 0; loadLevel(); S.st = 'play'; say('Collect the right words (gold bars), avoid the wrong ones. LEFT / RIGHT arrows dig a hole to trap guards.', 5); }
 function die(why) { if (S.st !== 'play') return; S.st = 'dead'; S.deadT = 0; S.lives--; S.why = why; if (S.lives <= 0) profEnd(); }
 function arrive(e) {
   if (e === S.p) {
+    const ac = (S.acc || []).find((a) => !a.taken && a.x === e.tx && a.y === e.ty); if (ac) { ac.taken = true; S.score += 200; say(ac.k.toUpperCase() + ' +200', 1.2); }
     const sl = S.slots.find((s) => !s.taken && s.x === e.tx && s.y === e.ty);
     if (sl) { sl.taken = true; profPick(sl.w, sl.ok); if (sl.ok) { S.got++; S.score += 100; say('"' + sl.w + '"  OK!  ' + S.got + ' / ' + S.need, 1.6); if (S.got >= S.need) { S.open = true; say('ALL WORDS FOUND! Run to the EXIT door at the top.', 3.5); } } else { S.wrong++; S.time -= 12; S.shake = 0.3; say('"' + sl.w + '" is WRONG: -12 s', 2); } }
     if (S.open && e.tx === S.door.x && e.ty === S.door.y) { S.st = 'ok'; S.okT = 0; S.score += Math.floor(S.time) * 2; PR.maxRound = Math.max(PR.maxRound, Math.min(LV.length, S.lv + 2)); profEnd(); }
@@ -174,6 +190,29 @@ cv.addEventListener('contextmenu', (e) => e.preventDefault());
 /* ---- draw ---- */
 const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
 function T(s, x, y, size, col, al) { ctx.font = 'bold ' + size + 'px "Courier New", monospace'; ctx.fillStyle = col || C.wh; ctx.textAlign = al || 'left'; ctx.fillText(s, x, y); }
+const TH = [
+  { g: '#d8444c', g2: '#8a1f2e', rv: '#f6c8c8', lad: '#53d6e0', rope: '#f2d35c' },
+  { g: '#e8a03c', g2: '#8f5518', rv: '#fbe3b5', lad: '#5aa0ff', rope: '#ff7acb' },
+  { g: '#4aa8e8', g2: '#1f5f9a', rv: '#d4edff', lad: '#ff7acb', rope: '#f2d35c' },
+  { g: '#8e5be0', g2: '#4a2c8a', rv: '#e4d6ff', lad: '#f2d35c', rope: '#5ce0a0' }
+];
+const lerp = (a, b, t) => a + (b - a) * t;
+const offF = (f, x) => [14, -14, 14, 0][f] * (S.lv % 2 ? -1 : 1) * ((x - 12.5) / 12.5);
+function yoffTile(x, y) { let f = 0; for (let i = 0; i < FL.length; i++) if (FL[i] <= y) f = i; return Math.round(offF(f, x + 0.5)); }
+function yoffEnt(xf, yf) { let f = FL.length - 1; for (let i = 0; i < FL.length - 1; i++) if (yf < FL[i + 1]) { f = i; break; } if (f >= FL.length - 1) return Math.round(offF(f, xf)); const t = Math.max(0, Math.min(1, (yf - FL[f]) / (FL[f + 1] - FL[f]))); return Math.round(lerp(offF(f, xf), offF(f + 1, xf), t)); }
+function girder(px, py, th, under) {
+  if (under) { R(px, py, TS, TS, th.g2); R(px, py + 14, TS, 3, th.g); for (const rx of [3, TS - 7]) R(px + rx, py + 6, 4, 4, th.rv); return; }
+  R(px, py, TS, TS, th.g); R(px, py, TS, 3, th.rv); R(px, py + TS - 4, TS, 4, th.g2);
+  ctx.strokeStyle = th.g2; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(px + 2, py + 4); ctx.lineTo(px + TS - 2, py + TS - 5); ctx.moveTo(px + TS - 2, py + 4); ctx.lineTo(px + 2, py + TS - 5); ctx.stroke();
+  for (const rx of [2, TS - 6]) { R(px + rx, py + 4, 4, 4, th.rv); R(px + rx, py + TS - 10, 4, 4, th.rv); }
+}
+function barrel(x, y, th) { R(x, y - 24, 22, 24, '#a1683c'); R(x + 2, y - 24, 18, 3, '#6d3b33'); R(x, y - 18, 22, 3, '#4b2a22'); R(x, y - 8, 22, 3, '#4b2a22'); R(x + 2, y - 3, 18, 3, '#6d3b33'); R(x + 8, y - 15, 6, 5, th.rope); }
+function oil(x, y, th) { R(x + 4, y - 30, 24, 30, '#3c5fd1'); R(x + 4, y - 30, 24, 4, '#8fb0ff'); R(x + 4, y - 20, 24, 3, '#1f2f80'); R(x + 4, y - 8, 24, 3, '#1f2f80'); T('OIL', x + 16, y - 11, 8, '#fff', 'center'); const fl = Math.floor(S.t * 8) % 2; R(x + 8, y - 40 - fl * 3, 6, 10 + fl * 3, '#ff9a3c'); R(x + 16, y - 44 + fl * 3, 6, 14 - fl * 3, '#ff5a2a'); R(x + 12, y - 36, 4, 6, '#ffe14d'); }
+function acc(k, cx, fy) {
+  if (k === 'hat') { R(cx - 10, fy - 6, 20, 4, '#ff7acb'); R(cx - 6, fy - 14, 12, 8, '#ff7acb'); R(cx - 6, fy - 8, 12, 2, '#fff'); }
+  else if (k === 'umbrella') { R(cx - 10, fy - 20, 20, 6, '#53d6e0'); R(cx - 7, fy - 24, 14, 4, '#53d6e0'); R(cx - 1, fy - 14, 2, 12, '#ccc'); R(cx - 4, fy - 4, 5, 2, '#ccc'); R(cx - 10, fy - 15, 4, 2, '#fff'); R(cx + 2, fy - 15, 4, 2, '#fff'); }
+  else { R(cx - 9, fy - 14, 18, 12, '#ff9a3c'); R(cx - 5, fy - 18, 10, 4, '#a1683c'); R(cx - 2, fy - 10, 4, 4, '#ffe14d'); }
+}
 function brick(x, y, dim) { const px = x * TS, py = OY + y * TS; R(px, py, TS, TS, dim ? C.br2 : C.br); R(px, py + 15, TS, 2, C.bg); R(px, py + 31, TS, 1, C.bg); R(px + 15, py, 2, 15, C.bg); R(px + 7, py + 17, 2, 15, C.bg); R(px + 23, py + 17, 2, 15, C.bg); }
 function man(px, py, dir, col, f, climbing) {
   const st = Math.floor(f) % 2; R(px + 11, py + 4, 10, 8, col === C.wh ? C.pk : col); R(px + 9, py + 12, 14, 10, col);
@@ -195,22 +234,34 @@ function draw() {
   T(lv.prompt, W / 2, 30, 19, C.wh, 'center'); T(lv.fr, W / 2, 52, 13, C.cy, 'center');
   T('LEVEL ' + (S.lv + 1) + '/' + LV.length + '   WORDS ' + S.got + '/' + S.need, 14, 68, 13, C.gr); T('LIVES ' + S.lives, W / 2 + 110, 68, 13, C.pk, 'center');
   T('TIME ' + Math.floor(S.time / 60) + ':' + String(Math.floor(S.time % 60)).padStart(2, '0'), W - 14, 68, 13, S.time < 30 ? C.rd : C.gold, 'right');
+  const th = TH[S.lv % TH.length];
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
-    const c = S.g[y][x], px = x * TS, py = OY + y * TS;
-    if (c === '#') brick(x, y, false); else if (c === '=') { R(px, py, TS, TS, C.dg); R(px, py, TS, 2, C.lb); }
-    else if (c === 'H') { R(px + 5, py, 3, TS, C.lad); R(px + 24, py, 3, TS, C.lad); for (let i = 4; i < TS; i += 10) R(px + 5, py + i, 22, 3, C.lad); }
-    else if (c === '-') R(px, py + 4, TS, 3, C.rope);
-    if (isHole(x, y)) { const t = S.holes.get(x + ',' + y); if (t < 1.5) { R(px, py + 12, TS, 20, C.br2); if (Math.floor(S.t * 10) % 2) R(px, py + 8, TS, 24, C.br); } }
+    const c = S.g[y][x], px = x * TS, py = OY + y * TS + yoffTile(x, y);
+    if (c === '#') girder(px, py, th, y > 0 && S.g[y - 1][x] === '#' || (y > 0 && isHole(x, y - 1)));
+    else if (c === '-') R(px, py + 4, TS, 3, th.rope);
+    if (isHole(x, y)) { const t = S.holes.get(x + ',' + y); if (t < 1.5) { R(px, py + 12, TS, 20, th.g2); if (Math.floor(S.t * 10) % 2) R(px, py + 8, TS, 24, th.g); } }
   }
+  LV[Math.min(S.lv, LV.length - 1)].lad.forEach(([f, x]) => {
+    const y0 = OY + FL[f] * TS + yoffTile(x, FL[f]) + 2, y1 = OY + (FL[f + 1] + 1) * TS + yoffTile(x, FL[f + 1]) - 0, px = x * TS;
+    ctx.fillStyle = th.lad; ctx.fillRect(px + 5, y0, 3, y1 - y0); ctx.fillRect(px + 24, y0, 3, y1 - y0);
+    for (let yy = y0 + 6; yy < y1 - 2; yy += 10) ctx.fillRect(px + 5, yy, 22, 3);
+  });
+  // decor : tas de tonneaux (en haut à gauche) et baril d'huile (en bas à droite)
+  const bx = 0, by = OY + 1 * TS + yoffTile(0, 1) + TS;
+  [[6, 0], [28, 0], [17, -22]].forEach(([dx, dy]) => barrel(bx + dx, by + dy, th));
+  oil(24 * TS, OY + 13 * TS + yoffTile(24, 13) + TS, th);
+  // accessoires bonus
+  (S.acc || []).forEach((a) => { if (!a.taken) acc(a.k, a.x * TS + 16, OY + (a.y + 1) * TS + yoffEnt(a.x + 0.5, a.y)); });
   // door
-  if (S.open) { const dx = S.door.x * TS, dy = OY + S.door.y * TS; R(dx + 2, dy - 4, 28, 36, C.gold); R(dx + 6, dy, 20, 32, C.br); R(dx + 22, dy + 14, 3, 3, C.gold); T('EXIT', dx + 16, dy - 8, 10, C.gold, 'center'); }
-  else { const dx = S.door.x * TS, dy = OY + S.door.y * TS; R(dx + 4, dy + 8, 24, 24, C.dg); T('?', dx + 16, dy + 28, 16, C.lb, 'center'); }
+  { const dx = S.door.x * TS, dy = OY + S.door.y * TS + yoffEnt(S.door.x + 0.5, S.door.y);
+    if (S.open) { R(dx + 2, dy - 4, 28, 36, th.rope); R(dx + 6, dy, 20, 32, th.g2); R(dx + 22, dy + 14, 3, 3, th.rope); T('EXIT', dx + 16, dy - 8, 10, th.rope, 'center'); }
+    else { R(dx + 4, dy + 8, 24, 24, C.dg); T('?', dx + 16, dy + 28, 16, C.lb, 'center'); } }
   // gold
-  S.slots.forEach((s) => { if (s.taken) return; const px = s.x * TS, py = OY + s.y * TS; R(px + 6, py + 18, 20, 12, C.gold); R(px + 9, py + 20, 14, 3, '#ffffff'); R(px + 6, py + 28, 20, 2, '#a1683c'); ctx.font = 'bold 12px "Courier New", monospace'; const w = ctx.measureText(s.w).width + 8; R(px + 16 - w / 2, py + 1, w, 15, '#201a60'); T(s.w, px + 16, py + 13, 12, C.wh, 'center'); });
+  S.slots.forEach((s) => { if (s.taken) return; const px = s.x * TS, py = OY + s.y * TS + yoffEnt(s.x + 0.5, s.y); R(px + 6, py + 18, 20, 12, C.gold); R(px + 9, py + 20, 14, 3, '#ffffff'); R(px + 6, py + 28, 20, 2, '#a1683c'); ctx.font = 'bold 12px "Courier New", monospace'; const w = ctx.measureText(s.w).width + 8; R(px + 16 - w / 2, py + 1, w, 15, '#201a60'); T(s.w, px + 16, py + 13, 12, C.wh, 'center'); });
   // guards
-  S.gs.forEach((g) => { const px = (g.tx + (g.mv ? g.mv.dx * g.mv.p : 0)) * TS, py = OY + (g.ty + (g.mv ? g.mv.dy * g.mv.p : 0)) * TS; const hole = isHole(g.tx, g.ty) && !g.mv; man(px, py + (hole ? 6 : 0), g.dir, C.rd, S.t * 8, ch(g.tx, g.ty) === 'H'); if (hole) R(px + 4, py - 2, 24, 4, C.gold); });
+  S.gs.forEach((g) => { const gxf = g.tx + (g.mv ? g.mv.dx * g.mv.p : 0), gyf = g.ty + (g.mv ? g.mv.dy * g.mv.p : 0), px = gxf * TS, py = OY + gyf * TS + yoffEnt(gxf + 0.5, gyf); const hole = isHole(g.tx, g.ty) && !g.mv; man(px, py + (hole ? 6 : 0), g.dir, C.rd, S.t * 8, ch(g.tx, g.ty) === 'H'); if (hole) R(px + 4, py - 2, 24, 4, C.gold); });
   // player
-  if (S.st !== 'dead' || Math.floor(S.deadT * 10) % 2) { const p = S.p, px = (p.tx + (p.mv ? p.mv.dx * p.mv.p : 0)) * TS, py = OY + (p.ty + (p.mv ? p.mv.dy * p.mv.p : 0)) * TS; man(px, py - (p.mv && p.mv.jump ? Math.sin(Math.PI * p.mv.p) * 18 : 0), p.dir, C.wh, p.mv ? p.f : 0, ch(p.tx, p.ty) === 'H' && p.mv && p.mv.dy); }
+  if (S.st !== 'dead' || Math.floor(S.deadT * 10) % 2) { const p = S.p, pxf = p.tx + (p.mv ? p.mv.dx * p.mv.p : 0), pyf = p.ty + (p.mv ? p.mv.dy * p.mv.p : 0), px = pxf * TS, py = OY + pyf * TS + yoffEnt(pxf + 0.5, pyf); man(px, py - (p.mv && p.mv.jump ? Math.sin(Math.PI * p.mv.p) * 18 : 0), p.dir, C.wh, p.mv ? p.f : 0, ch(p.tx, p.ty) === 'H' && p.mv && p.mv.dy); }
   if (S.msgT > 0 && S.msg) { R(60, 484, W - 120, 30, 'rgba(32,26,96,.92)'); T(S.msg, W / 2, 505, 14, C.gold, 'center'); }
   if (S.st === 'dead') { R(180, 200, 440, 120, '#201a60'); T(S.why === 'time' ? 'TIME IS UP' : S.why === 'hole' ? 'BURIED ALIVE!' : 'CAUGHT!', W / 2, 250, 30, C.rd, 'center'); T(S.lives > 0 ? S.lives + ' ' + (S.lives > 1 ? 'lives' : 'life') + ' left' : 'no life left', W / 2, 282, 15, C.wh, 'center'); if (S.deadT > 1) T('PRESS ANY KEY', W / 2, 308, 13, C.gold, 'center'); }
   if (S.st === 'ok') { S.okT += 1 / 60; R(120, 190, 560, 150, '#201a60'); T('LEVEL COMPLETE', W / 2, 245, 30, C.gr, 'center'); T('Score ' + S.score, W / 2, 285, 16, C.wh, 'center'); if (Math.floor(S.t * 2) % 2) T('PRESS ANY KEY', W / 2, 320, 14, C.gold, 'center'); }
