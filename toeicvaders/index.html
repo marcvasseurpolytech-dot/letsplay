@@ -77,7 +77,7 @@
 <body>
 <div id="wrap">
   <canvas id="c" width="800" height="600"></canvas>
-  <div id="hint">ARROWS / A-D: move &nbsp; SPACE / CLICK: fire &nbsp; P: pause &nbsp; M: sound</div>
+  <div id="hint">LEFT / RIGHT: move &nbsp; UP ARROW / SPACE / CLICK: fire &nbsp; P: pause &nbsp; M: sound</div>
 </div>
 <div id="pad"><div class="b" data-d="l">&#9664;</div><div class="b" data-d="r">&#9654;</div><div class="b" id="padFire">FIRE</div></div>
 <div id="auth" class="ov"><div class="panel" id="authBox"></div></div>
@@ -591,7 +591,7 @@ function update(dt) {
   }
   if (st !== 'play') return;
   moveCannon(dt); G.qT += dt;
-  if (KS[' '] || PADK.f) fire();
+  if (KS[' '] || KS.arrowup || PADK.f) fire();
   moveFormation(dt); if (G.state !== 'play') return;
   // soucoupe
   G.ufoT -= dt;
@@ -803,8 +803,8 @@ function gameOverView() { G.state = 'gameover'; const s = SND.over; SND.over = (
 window.addEventListener('keydown', (e) => {
   if (e.target && /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(e.target.tagName)) return;
   const k = e.key.toLowerCase(); KS[k] = true;
-  if (['arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
-  if (k === ' ' || k === 'enter') { if (!e.repeat) action(); e.preventDefault(); }
+  if (['arrowleft', 'arrowright', 'arrowup', ' '].includes(k)) e.preventDefault();
+  if (k === ' ' || k === 'enter' || k === 'arrowup') { if (!e.repeat) action(); e.preventDefault(); }
   if (k === 'p') togglePause();
   if (k === 'm') { muted = !muted; lsSet('tiMuted', muted ? '1' : '0'); }
 });
@@ -958,7 +958,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES &amp; BONUSES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Arrows (or A / D) or the mouse: move the cannon. Space or click: fire.<br>Each wave shows a sentence with a gap, or an irregular verb question. Four aliens carry the answers: shoot the right one to clear the wave. The French translation appears afterwards.<br>A wrong alien is destroyed but costs 50 points, breaks your streak and pushes the others down. Streaks raise your multiplier up to x4.<br>Hit the red UFO for bonus points and a hint (a wrong alien is removed). Shields protect you from bombs but wear away.<br>If the aliens land or a bomb hits you, you lose a life. When you lose your last life, your wave is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one life.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the cannon. <b>Up arrow</b> (or space, or click): fire.<br>Each wave shows a sentence with a gap, or an irregular verb question. Four aliens carry the answers: shoot the right one to clear the wave. The French translation appears afterwards.<br>A wrong alien is destroyed but costs 50 points, breaks your streak and pushes the others down. Streaks raise your multiplier up to x4.<br>Hit the red UFO for bonus points and a hint (a wrong alien is removed). Shields protect you from bombs but wear away.<br>If the aliens land or a bomb hits you, you lose a life. When you lose your last life, your wave is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one life.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
