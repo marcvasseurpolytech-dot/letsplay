@@ -1006,6 +1006,13 @@ function update(dt) {
   }
   // chefs qui évoluent selon la question, évolution des insectes
   if (G.kind === 'q' && G.entered) {
+    if (G.state === 'play' && G.entered && !G.nextQ && !(G.hideT > 0) && G.kind === 'q' && G.en.some((o) => o.alive && o.type === 2) && !G.en.some((o) => o.alive && o.type < 2)) {
+      G.refT = (G.refT || 0) + dt;
+      if (G.refT > 1.2) {
+        G.refT = 0; popup(CX0, 300, 'REINFORCEMENTS', '#ffb04a');
+        buildStage(G.round).forEach((f) => { if (f.type === 1 && f.sy === 188) { f.st = 'ret'; f.x = f.sx; f.y = -20 - Math.random() * 40; f.delay = 0; G.en.push(f); } });
+      }
+    } else G.refT = 0;
     if (G.qi >= 1) { G.bossT -= dt; if (G.bossT <= 0) { G.bossT = Math.max(1.6, 3.4 - G.dir); const bs = G.en.filter((e) => e.alive && e.type === 2 && e.st === 'form' && !e.cap); if (bs.length) { const b = bs[Math.floor(Math.random() * bs.length)]; G.bossN++; if (G.qi === 2 && G.bossN % 3 === 0) ringShot(b); else enemyShot(b); tone(260, 140, 0.08, { type: 'square', vol: 0.08 }); } } }
     G.evoT -= dt; if (G.evoT <= 0) { G.evoT = Math.max(6, 13 - 3 * G.dir); evolveOne(); }
   }
