@@ -509,8 +509,23 @@ function pathAt(p, d) {
 }
 function entryPath(pat, s, slot, chal) {
   let pts;
-  if (pat === 0) pts = [[CX0 + s * 200, -30], [CX0 + s * 150, 140], [CX0 + s * 70, 330], [CX0 - s * 10, 410], [CX0 - s * 110, 330], [CX0 - s * 90, 240]];
-  else pts = [[CX0 + s * 340, 300], [CX0 + s * 220, 420], [CX0 + s * 90, 440], [CX0 - s * 20, 360], [CX0 - s * 40, 260]];
+  const X = CX0, sx = slot[0];
+  switch (pat) {
+    case 0: pts = [[X + s * 200, -30], [X + s * 150, 140], [X + s * 70, 330], [X - s * 10, 410], [X - s * 110, 330], [X - s * 90, 240]]; break;
+    case 1: pts = [[X + s * 340, 300], [X + s * 220, 420], [X + s * 90, 440], [X - s * 20, 360], [X - s * 40, 260]]; break;
+    case 2: pts = [[sx, -30], [sx + s * 70, 110], [sx - s * 70, 220], [sx + s * 50, 320]]; break;
+    case 3: pts = [[X, -30], [X + s * 150, 120], [X + s * 190, 260], [X + s * 100, 390], [X - s * 80, 400], [X - s * 190, 290], [X - s * 130, 160], [X, 150]]; break;
+    case 4: pts = [[X + s * 360, 570], [X + s * 230, 400], [X + s * 60, 300], [X - s * 80, 330], [X - s * 20, 250]]; break;
+    case 5: pts = [[X - s * 340, 20], [X + s * 100, 60], [X - s * 220, 120], [X + s * 260, 170], [X, 240]]; break;
+    case 6: pts = [[X + s * 300, -20], [X + s * 100, 160], [X - s * 100, 300], [X - s * 220, 200], [X - s * 100, 100], [X + s * 100, 240], [X + s * 220, 380], [X + s * 60, 380]]; break;
+    case 7: pts = [[X, -30], [X + s * 60, 120], [X + s * 270, 210], [X + s * 210, 340], [X + s * 20, 300]]; break;
+    case 8: pts = [[X + s * 400, 250], [X - s * 100, 280], [X - s * 300, 360], [X - s * 150, 420], [X, 300]]; break;
+    case 9: pts = [[sx, -30], [sx, 380], [sx + s * 90, 450], [sx + s * 130, 320]]; break;
+    case 10: pts = [[X + s * 340, -20], [X + s * 100, 250], [X - s * 150, 400], [X - s * 300, 200], [X - s * 100, 160]]; break;
+    case 11: pts = [[X + s * 380, 60], [X + s * 250, 300], [X, 430], [X - s * 250, 300], [X - s * 300, 130]]; break;
+    case 12: pts = [[sx + s * 80, -30], [sx - s * 80, 70], [sx + s * 80, 170], [sx - s * 80, 270], [sx + s * 60, 350]]; break;
+    default: pts = [[X + s * 400, 120], [X + s * 40, 190], [X - s * 200, 150], [X - s * 120, 280]];
+  }
   if (chal) pts = pts.concat([[CX0 + s * 60, 200], [CX0 + s * 200, 320], [CX0 + s * 340, 500]]);
   else pts.push(slot);
   return spline(pts);
@@ -565,6 +580,15 @@ function verbQuestion(variant) {
   return { kind: 'verb', tag, prompt, opts: shuffle([{ t: correct, ok: true }].concat(wrongs.map((t) => ({ t, ok: false })))), fill: v[0] + '  -  ' + v[1] + '  -  ' + v[2], fr: v[3], id: 'v:' + v[0] + ':' + variant, verb: v };
 }
 const isChal = (n) => n % 5 === 0;
+/* 20 arrival patterns: path template per group, order of arrival, side rule */
+const ENTRY = [
+  { t: [0, 1, 0, 1, 0], o: 'group' }, { t: [2, 2, 2, 2, 2], o: 'col' }, { t: [3, 3, 3, 3, 3], o: 'group' }, { t: [4, 4, 4, 4, 4], o: 'row' },
+  { t: [5, 5, 5, 5, 5], o: 'group' }, { t: [6, 6, 6, 6, 6], o: 'group' }, { t: [7, 7, 7, 7, 7], o: 'center' }, { t: [8, 8, 8, 8, 8], o: 'row' },
+  { t: [9, 9, 9, 9, 9], o: 'col' }, { t: [10, 10, 10, 10, 10], o: 'group' }, { t: [11, 11, 11, 11, 11], o: 'colrev' }, { t: [12, 12, 12, 12, 12], o: 'col' },
+  { t: [13, 13, 13, 13, 13], o: 'center' }, { t: [2, 4, 5, 7, 9], o: 'group' }, { t: [3, 6, 10, 11, 8], o: 'rand' }, { t: [12, 9, 12, 9, 12], o: 'edges' },
+  { t: [13, 7, 13, 7, 13], o: 'rand' }, { t: [0, 3, 6, 10, 13], o: 'group' }, { t: [1, 4, 8, 11, 12], o: 'center' }, { t: [5, 7, 9, 2, 3], o: 'rand' }
+];
+const entryRecipe = (n) => ENTRY[((n - 1) % 20 + 20) % 20];
 function makeQuestion(n) {
   if (n % 3 === 0 || !BANK.length) return verbQuestion((Math.floor(n / 3) - 1 + 4000) % 4);
   return gapQuestion();
@@ -579,7 +603,7 @@ function buildStage(n) {
   if (isChal(n)) {
     for (let g = 0; g < 3; g++) for (let i = 0; i < 8; i++) {
       const type = g === 1 ? 1 : (g === 0 ? 0 : 0), s = g === 0 ? 1 : -1;
-      en.push(mkEnemy(type, 0, 0, { st: 'wait', delay: g * 3.4 + i * 0.22, chal: true, grp: g, pat: g === 2 ? 1 : 0, side: s }));
+      en.push(mkEnemy(type, 0, 0, { st: 'wait', delay: g * 3.4 + i * 0.22, chal: true, grp: g, pat: entryRecipe(n).t[g], side: s }));
     }
     return en;
   }
@@ -594,7 +618,12 @@ function buildStage(n) {
   const groups = [[], [], [], [], []];
   en.forEach((e) => groups[e.grp].push(e));
   let t0 = 0;
-  groups.forEach((g, gi) => { g.forEach((e, i) => { e.delay = t0 + i * 0.06; e.pat = gi % 2; e.side = gi % 2 ? -1 : 1; }); t0 += g.length * 0.06 + 0.3; });
+  const R = entryRecipe(n);
+  if (R.o === 'group') groups.forEach((g, gi) => { g.forEach((e, i) => { e.delay = t0 + i * 0.06; e.pat = R.t[gi % R.t.length]; e.side = gi % 2 ? -1 : 1; }); t0 += g.length * 0.06 + 0.3; });
+  else {
+    const key = { col: (e) => e.sx, colrev: (e) => -e.sx, row: (e) => e.sy, center: (e) => Math.abs(e.sx - CX0), edges: (e) => -Math.abs(e.sx - CX0), rand: () => Math.random() }[R.o];
+    en.slice().sort((a, b) => key(a) - key(b)).forEach((e, i) => { e.delay = i * 0.062; e.pat = R.t[e.grp % R.t.length]; e.side = i % 2 ? -1 : 1; });
+  }
   return en;
 }
 const UPG = [
