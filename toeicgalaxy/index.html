@@ -78,7 +78,7 @@
 <body>
 <div id="wrap">
   <canvas id="c" width="800" height="600"></canvas>
-  <div id="hint">LEFT / RIGHT: move &nbsp; UP / SPACE / CLICK: fire &nbsp; X: charge &nbsp; hold fire 3 s: beam &nbsp; P: pause &nbsp; M: sound</div>
+  <div id="hint">LEFT / RIGHT: move &nbsp; UP / SPACE / CLICK: fire &nbsp; X: charge &nbsp; hold fire: charge beam &nbsp; P: pause &nbsp; M: sound</div>
 </div>
 <div id="pad"><div class="b" data-d="l">&#9664;</div><div class="b" data-d="r">&#9654;</div><div class="b" id="padFire">FIRE</div><div class="b" id="padChg">CHG</div></div>
 <div id="auth" class="ov"><div class="panel" id="authBox"></div></div>
@@ -357,7 +357,7 @@ const G = {
   state: 'title', score: 0, lives: 3, round: 1, hi: parseInt(lsGet('tgHi') || '0', 10) || 0, t: 0, stateT: 0,
   q: null, en: [], bul: [], ebul: [], parts: [], pops: [], stars: [], cx: CX0, tx: null, cool: 0, inv: 0, dual: false, capBoss: null, rescue: null,
   streak: 0, ok: 0, ko: 0, missed: [], learned: [], last: null, qT: 0, prevState: null, deadWhy: '', gain: 0, recent: [], spawnT: 0, entered: false,
-  qi: 0, qn: 0, up: { wpn: 'normal', lvl: 1, bits: 0, miss: false, beam: false }, perm: { rate: 0, chg: 0, wpn: 'normal', wl: 1, bits: 0, miss: false, beam: false, shield: 0 }, beamC: 0, beamFx: null, mdown: false, charge: 0, dir: 0, picks: 0, lvlWrong: 0, pickOpts: [], pickSel: 0, pickRects: [], missT: 1, bossT: 4, evoT: 10, bossN: 0, diveT: 3, caps: [], eff: { tri: 0, slow: 0, frz: 0, weak: 0, stop: 0 }, hideT: 0, hint: 0, meteor: 0, metT: 0, ufo: null, ufoT: 16, swapT: 9, kind: 'q', chalHits: 0, chalTot: 0, beamSnd: 0, clearMsg: '', ending: null
+  qi: 0, qn: 0, up: { wpn: 'normal', lvl: 1, bits: 0, miss: false, beam: false }, perm: { rate: 0, chg: 0, wpn: 'normal', wl: 1, bits: 0, miss: false, beam: false, shield: 0 }, beamC: 0, upT: 0, beamFx: null, mdown: false, charge: 0, dir: 0, picks: 0, lvlWrong: 0, pickOpts: [], pickSel: 0, pickRects: [], missT: 1, bossT: 4, evoT: 10, bossN: 0, diveT: 3, caps: [], eff: { tri: 0, slow: 0, frz: 0, weak: 0, stop: 0 }, hideT: 0, hint: 0, meteor: 0, metT: 0, ufo: null, ufoT: 16, swapT: 9, kind: 'q', chalHits: 0, chalTot: 0, beamSnd: 0, clearMsg: '', ending: null
 };
 let collection = (() => { try { return new Set(JSON.parse(lsGet('tgLearned') || '[]')); } catch (e) { return new Set(); } })();
 function saveCollection() { lsSet('tgLearned', JSON.stringify(Array.from(collection))); }
@@ -657,13 +657,14 @@ function maybeDrop(x, y, p) {
 }
 const WNAME = { red: 'RED LASER', blue: 'BLUE RICOCHET', yellow: 'YELLOW FAN' };
 function applyBase() {
-  const p = G.perm; G.up = { wpn: p.wpn, lvl: p.wl, bits: p.bits, miss: p.miss, beam: p.beam }; G.charge = 0; G.beamC = 0;
+  const p = G.perm; G.up = { wpn: p.wpn, lvl: p.wl, bits: p.bits, miss: p.miss, beam: p.beam }; G.charge = 0; G.beamC = 0; G.upT = 0;
 }
 function catchCap(c) {
   const e = G.eff; SND.capsule(); let m = '';
-  if (c.k === 'T') { e.tri = 9; m = 'TRIPLE SHOT'; } else if (c.k === 'Z') { G.inv = Math.max(G.inv, 5); m = 'SHIELD 5s'; }
-  else if (c.k === 'S') { e.slow = 7; m = 'ENEMIES SLOWED'; } else if (c.k === 'L') { G.lives = Math.min(5, G.lives + 1); m = '1UP'; }
+  if (c.k === 'T') { e.tri = 5; m = 'TRIPLE SHOT'; } else if (c.k === 'Z') { G.inv = Math.max(G.inv, 5); m = 'SHIELD 5s'; }
+  else if (c.k === 'S') { e.slow = 5; m = 'ENEMIES SLOWED'; } else if (c.k === 'L') { G.lives = Math.min(5, G.lives + 1); m = '1UP'; }
   else if (c.k === 'B') { e.frz = 1.3; m = 'SHIP JAMMED!'; } else if (c.k === 'F') { e.weak = 6; m = 'SLOW FIRE!'; }
+  else if ('RYCPOM'.indexOf(c.k) >= 0 && (G.upT = 5, false)) {}
   else if ('RYC'.indexOf(c.k) >= 0) {
     const w = { R: 'red', Y: 'yellow', C: 'blue' }[c.k], u = G.up;
     if (u.wpn === w) { u.lvl = Math.min(3, u.lvl + 1); } else { u.wpn = w; u.lvl = Math.max(1, G.perm.wpn === w ? G.perm.wl : 1); }
@@ -933,9 +934,12 @@ function update(dt) {
     else if (e.rebuild > 0) { e.rebuild -= dt; if (e.rebuild <= 0) { e.sh = 2; popup(e.x, e.y - 22, 'SHIELD BACK', '#9ad8ff'); } }
   });
   const held = KS[' '] || KS.arrowup || PADK.f || G.mdown;
-  if (held) fire();
   if (held && G.up.beam) { const pb = G.beamC; G.beamC = Math.min(3, G.beamC + dt); if (pb < 3 && G.beamC >= 3) SND.charge(true); }
-  else if (G.beamC > 0) { if (G.beamC >= 3) fireBeam(); G.beamC = 0; }
+  else {
+    if (G.beamC > 0) { if (G.beamC >= 3) fireBeam(); else if (G.beamC < 0.25) fire(); G.beamC = 0; }
+    if (held) fire();
+  }
+  if (G.upT > 0 && G.beamC <= 0) { G.upT -= dt; if (G.upT <= 0) { G.upT = 0; const p = G.perm; G.up = { wpn: p.wpn, lvl: p.wl, bits: p.bits, miss: p.miss, beam: p.beam }; popup(G.cx, CAN_Y - 30, 'UPGRADES OVER', '#ff7a7a'); } }
   if (KS.x || KS.c || PADK.c) { const pc = G.charge; G.charge = Math.min(1, G.charge + dt / (1.3 * Math.pow(0.8, G.perm.chg))); if (pc < 0.3 && G.charge >= 0.3) SND.charge(false); if (pc < 1 && G.charge >= 1) SND.charge(true); }
   else if (G.charge > 0) { if (G.charge >= 0.3) fireCharge(G.charge); G.charge = 0; }
   if (G.up.miss) { G.missT -= dt; if (G.missT <= 0 && G.en.some((e) => e.alive && e.st !== 'wait')) { G.missT = 1.1; G.mside = -(G.mside || 1); G.bul.push({ x: G.cx + G.mside * 14, y: CAN_Y - 10, vx: G.mside * 90, vy: -220, m: true, life: 2.6, col: '#ffb04a' }); SND.missile(); } }
@@ -1158,6 +1162,7 @@ function drawHud() {
   const u = G.up, parts = [];
   if (u.wpn !== 'normal') parts.push([WNAME[u.wpn] + ' LV' + u.lvl, { red: '#ff7a7a', blue: '#7ab8ff', yellow: '#ffe14d' }[u.wpn]]);
   if (u.bits) parts.push(['BITS ' + u.bits, '#7dffe0']); if (u.miss) parts.push(['MISSILES', '#ffb04a']); if (G.up.beam) parts.push([G.beamC >= 3 ? 'BEAM READY: RELEASE' : 'BEAM', '#ffa040']);
+  if (G.upT > 0) parts.push(['UPGRADES ' + G.upT.toFixed(1) + 's', '#7dff9b']);
   let x = FX + 10; parts.forEach((p) => { bold(p[0], x, FY + FH - 14, 10, p[1], 'left'); x += ctx.measureText(p[0]).width + 14; });
 }
 function drawPanel() {
@@ -1183,7 +1188,7 @@ function drawPanel() {
   txt('T triple Z shield S slow L 1up', x + 4, 460, 6, '#7dff9b'); txt('R red  Y fan  C bounce', x + 4, 472, 6, '#ffae7a');
   txt('P beam  O bits  M missiles', x + 4, 484, 6, '#9ad8ff'); txt('B jam  F slow fire (bad)', x + 4, 496, 6, '#ff8a8a');
   txt('WRONG: -50 + ALERT', x + 4, 510, 6, '#ff8a8a'); txt('BEAM = CAPTURE', x + 4, 521, 6, '#9ad0ff');
-  txt('UP fire  X charge  hold 3s beam', x + 4, 532, 6, '#cfd6ff'); txt('P pause  M sound', x + 4, 543, 6, '#6f78d8'); txt('? UFO = SURPRISE', x + 4, 554, 6, '#ffe14d');
+  txt('UP fire  X charge  hold = beam', x + 4, 532, 6, '#cfd6ff'); txt('P pause  M sound', x + 4, 543, 6, '#6f78d8'); txt('? UFO = SURPRISE', x + 4, 554, 6, '#ffe14d');
 }
 function banner(l1, l2, col) {
   ctx.fillStyle = 'rgba(4,4,20,.7)'; ctx.fillRect(FX, 330, FW, 86);
@@ -1436,7 +1441,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES &amp; BONUSES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage has 3 questions in a row (a sentence with a gap, or an irregular verb): after a right answer the correct sentence and its French stay on screen for a moment, then four new chiefs drop in with a new question while the remaining insects stay where they are (the missing ones come back). After the third question you move on to the next stage. Four green chiefs carry the answers. Each chief is protected by a shield bubble worth 10 hits (the ring around it shows what is left). If you stop firing for a moment the shield slowly rebuilds, and a broken shield comes back after a few seconds, so keep shooting. Then shoot the right chief twice (the first hit turns it blue) to answer the question. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>When a chief with a wrong irregular verb explodes, the three forms and the French appear and everything else disappears for 2 seconds so you can read them.<br>Insects dive and shoot. A chief may fire a tractor beam from the top of the screen and slide towards you: nothing can hurt you while it is active, so dodge it or shoot the chief. There is no beam when you have only one ship left. If you are captured, free the ship by shooting its captor: you get the lost ship back (+1 ship) and a dual fighter.<br>Now and then a mystery UFO (?) crosses the screen above your ship: shoot it for a random surprise (jackpot, time stop, triple shot, shields down, x-ray on the right answer, extra ship... or a meteor shower).<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br><b>Upgrades:</b> catch the capsules. R red laser (pierces), Y yellow fan, C blue ricochet (take the same colour again to level it up to 3), P the power beam (hold fire for 3 seconds, a gauge fills under your ship, then release: the beam strips 50% of the shield of the chiefs in its column and destroys the insects it crosses; hold the mouse button to keep firing), O a bit that fires with you, M homing missiles. Hold <b>X</b> to charge the wave cannon and release: it pierces a whole column and hurts shields. Dying costs you the capsules you picked up, but not the upgrades you chose. After each stage pick 1 of 3 permanent upgrades (2 picks if you made no mistake).<br>The enemies adapt: a streak of right answers raises the THREAT bar (more divers, faster shots), a lost ship lowers it. Insects evolve over time, golden ones split in two, chiefs start shooting from the second question and open a weak point on the right chief at the third.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage has 3 questions in a row (a sentence with a gap, or an irregular verb): after a right answer the correct sentence and its French stay on screen for a moment, then four new chiefs drop in with a new question while the remaining insects stay where they are (the missing ones come back). After the third question you move on to the next stage. Four green chiefs carry the answers. Each chief is protected by a shield bubble worth 10 hits (the ring around it shows what is left). If you stop firing for a moment the shield slowly rebuilds, and a broken shield comes back after a few seconds, so keep shooting. Then shoot the right chief twice (the first hit turns it blue) to answer the question. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>When a chief with a wrong irregular verb explodes, the three forms and the French appear and everything else disappears for 2 seconds so you can read them.<br>Insects dive and shoot. A chief may fire a tractor beam from the top of the screen and slide towards you: nothing can hurt you while it is active, so dodge it or shoot the chief. There is no beam when you have only one ship left. If you are captured, free the ship by shooting its captor: you get the lost ship back (+1 ship) and a dual fighter.<br>Now and then a mystery UFO (?) crosses the screen above your ship: shoot it for a random surprise (jackpot, time stop, triple shot, shields down, x-ray on the right answer, extra ship... or a meteor shower).<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br><b>Upgrades:</b> catch the capsules. R red laser (pierces), Y yellow fan, C blue ricochet (take the same colour again to level it up to 3), P the power beam (hold fire for 3 seconds, a gauge fills under your ship, then release: the beam strips 50% of the shield of the chiefs in its column and destroys the insects it crosses; while the beam is owned, holding fire no longer shoots, it only charges the beam, and a quick tap fires a normal shot; capsule upgrades last 5 seconds), O a bit that fires with you, M homing missiles. Hold <b>X</b> to charge the wave cannon and release: it pierces a whole column and hurts shields. Dying costs you the capsules you picked up, but not the upgrades you chose. After each stage pick 1 of 3 permanent upgrades (2 picks if you made no mistake).<br>The enemies adapt: a streak of right answers raises the THREAT bar (more divers, faster shots), a lost ship lowers it. Insects evolve over time, golden ones split in two, chiefs start shooting from the second question and open a weak point on the right chief at the third.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
