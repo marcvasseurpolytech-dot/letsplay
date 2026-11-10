@@ -508,8 +508,8 @@ function loseLife() {
   if (G.lives <= 0) { gameOver(); return; }
   G.state = 'dead'; G.stateT = 0;
 }
-function gameOver() {
-  G.state = 'gameover'; G.stateT = 0; SND.over();
+function gameOver(quiet) {
+  G.state = 'gameover'; G.stateT = 0; if (!quiet) SND.over();
   if (G.score > G.hi) { G.hi = G.score; lsSet('tnHi', String(G.hi)); }
   setCheckpoint();
   saveCollection(); profEnd();
@@ -520,7 +520,13 @@ function gameOver() {
     '<div class="row"><button class="btn" id="cont">CONTINUE FROM ROUND ' + G.round + '<br><small>answer 3 grammar questions (10 s each)</small></button><button class="btn ghost" id="again">NEW GAME</button></div>' +
     '<p class="credit">' + (PR.user ? 'Saved to your profile: ' + esc(PR.user.nom) : 'Guest mode: not saved online') + '</p>';
   document.getElementById('over').classList.add('on');
-  document.getElementById('again').onclick = () => { newGame(); };
+  document.getElementById('again').onclick = () => {
+    if (!PR.user) { newGame(); return; }
+    const row = document.getElementById('again').parentNode, cp = PR.cp;
+    row.innerHTML = '<p class="sum" style="color:#ff6a6a;width:100%"><b>WATCH OUT!</b> If you click YES, your saved game (round ' + cp.round + ', score ' + cp.score + ') will be erased for good.</p><button class="btn" id="yes">YES, ERASE AND START OVER</button><button class="btn ghost" id="no">NO, GO BACK</button>';
+    document.getElementById('yes').onclick = () => { newGame(); };
+    document.getElementById('no').onclick = () => { gameOver(true); };
+  };
   document.getElementById('cont').onclick = () => {
     const cp = PR.cp || { round: G.round, score: G.score };
     document.getElementById('over').classList.remove('on');
@@ -1231,8 +1237,8 @@ function renderAuth() {
       '<div class="stats"><div class="stat"><b>' + collection.size + ' / ' + VERBS.length + '</b><span>verbs broken</span></div>' +
       '<div class="stat"><b>' + PR.best + '</b><span>best score</span></div>' +
       '<div class="stat"><b>' + PR.maxRound + '</b><span>best round</span></div></div>' +
-      '<div class="row">' + (cp ? '<button class="btn" id="aCont">CONTINUE FROM ROUND ' + PR.cp.round + '<br><small>score ' + PR.cp.score + ' | answer 3 grammar questions</small></button>' : '') +
-      '<button class="btn' + (cp ? ' ghost' : '') + '" id="aNew">NEW GAME</button></div>' +
+      (PR.confirm && cp ? '<p class="msg" style="color:#ff6a6a;text-align:center"><b>WATCH OUT!</b> If you click YES, your saved game (round ' + PR.cp.round + ', score ' + PR.cp.score + ') will be erased for good.</p><div class="row"><button class="btn" id="aYes">YES, ERASE AND START OVER</button><button class="btn ghost" id="aNo">NO, GO BACK</button></div>' : '<div class="row">' + (cp ? '<button class="btn" id="aCont">CONTINUE FROM ROUND ' + PR.cp.round + '<br><small>score ' + PR.cp.score + ' | answer 3 grammar questions</small></button>' : '') +
+      '<button class="btn' + (cp ? ' ghost' : '') + '" id="aNew">NEW GAME</button></div>') +
       '<p class="msg" style="color:#a9b3c9">' + esc(PR.status) + '</p>' +
       '<details><summary>Verbs broken (' + collection.size + ' / ' + VERBS.length + ')</summary><div class="words">' +
       VERBS.slice().sort((p, q) => ((collection.has(q[0]) ? 1 : 0) - (collection.has(p[0]) ? 1 : 0))).map((v) => collection.has(v[0])
@@ -1275,14 +1281,16 @@ function renderAuth() {
     box.querySelectorAll('input').forEach((i) => i.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); }));
   }
   const gs = $('#aGuest'); if (gs) gs.addEventListener('click', () => { PR.guest = true; renderAuth(); });
-  const nw = $('#aNew'); if (nw) nw.addEventListener('click', () => { audio(); if (canStart() && G.state === 'title') newGame(); });
+  const nw = $('#aNew'); if (nw) nw.addEventListener('click', () => { audio(); if (!canStart() || G.state !== 'title') return; if (PR.user && hasCheckpoint()) { PR.confirm = true; renderAuth(); } else newGame(); });
+  const yes = $('#aYes'); if (yes) yes.addEventListener('click', () => { audio(); PR.confirm = false; if (canStart() && G.state === 'title') newGame(); });
+  const no = $('#aNo'); if (no) no.addEventListener('click', () => { PR.confirm = false; renderAuth(); });
   const ct = $('#aCont'); if (ct) ct.addEventListener('click', () => { audio(); if (canStart() && G.state === 'title') { const cp = PR.cp; openQuiz((w) => newGame(cp, w), null); } });
   const ou = $('#aOut'); if (ou) ou.addEventListener('click', logout);
 }
 function syncAuth() {
   const want = G.state === 'title' && !QZ;
   if (want === PR.shown) return;
-  PR.shown = want; if (want) PR.min = false;
+  PR.shown = want; if (want) { PR.min = false; PR.confirm = false; }
   document.getElementById('auth').classList[want ? 'add' : 'remove']('on');
   if (want) renderAuth();
 }
