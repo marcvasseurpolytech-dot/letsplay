@@ -514,7 +514,6 @@ function orderQuestion() {
 const isChal = (n) => n % 5 === 0;
 function makeQuestion(n) {
   if (n % 3 === 0 || !BANK.length) return verbQuestion((Math.floor(n / 3) - 1 + 4000) % 4);
-  if (n % 3 === 2) return orderQuestion();
   return gapQuestion();
 }
 
@@ -531,12 +530,12 @@ function buildStage(n) {
     }
     return en;
   }
-  const q = G.q, nBt = Math.min(16, 8 + 2 * Math.floor(n / 2)), nBe = Math.min(20, 10 + 2 * Math.floor(n / 2));
+  const q = G.q, nBt = 16, nBe = Math.min(30, 20 + 2 * Math.floor(n / 2));
   const bossX = [-150, -50, 50, 150];
-  q.opts.forEach((o, i) => en.push(mkEnemy(2, CX0 + bossX[i], 134, { ok: o.ok, ord: o.ord != null ? o.ord : (o.ok ? 0 : -1), t: o.t, grp: 0, idx: i, tsx: CX0 + bossX[i] })));
+  q.opts.forEach((o, i) => en.push(mkEnemy(2, CX0 + bossX[i], 134, { ok: o.ok, ord: o.ord != null ? o.ord : (o.ok ? 0 : -1), t: o.t, grp: 0, idx: i, tsx: CX0 + bossX[i], shield: true })));
   if (n >= 3) { const w = en.filter((e) => e.type === 2 && !e.ok); if (w.length) { const a = w[Math.floor(Math.random() * w.length)]; a.hp = 3; a.arm = true; } }
-  for (let i = 0; i < nBt; i++) { const row = Math.floor(i / 8), cnt = row === 0 ? Math.min(8, nBt) : nBt - 8; const c = i % 8; en.push(mkEnemy(1, CX0 + (c - (cnt - 1) / 2) * 42, 188 + row * 30, { grp: 1 + (i % 2) })); }
-  for (let i = 0; i < nBe; i++) { const row = Math.floor(i / 10), cnt = row === 0 ? Math.min(10, nBe) : nBe - 10; const c = i % 10; en.push(mkEnemy(0, CX0 + (c - (cnt - 1) / 2) * 40, 252 + row * 30, { grp: 3 + (i % 2) })); }
+  for (let i = 0; i < nBt; i++) { const row = Math.floor(i / 8), cnt = Math.min(8, nBt - row * 8); const c = i % 8; en.push(mkEnemy(1, CX0 + (c - (cnt - 1) / 2) * 42, 188 + row * 30, { grp: 1 + (i % 2) })); }
+  for (let i = 0; i < nBe; i++) { const row = Math.floor(i / 10), cnt = Math.min(10, nBe - row * 10); const c = i % 10; en.push(mkEnemy(0, CX0 + (c - (cnt - 1) / 2) * 40, 252 + row * 30, { grp: 3 + (i % 2) })); }
   // ordre d'entrée : par groupes, côtés alternés
   const groups = [[], [], [], [], []];
   en.forEach((e) => groups[e.grp].push(e));
@@ -547,7 +546,7 @@ function buildStage(n) {
 function startRound(n, redo) {
   G.round = n; G.kind = isChal(n) ? 'chal' : 'q';
   if (!redo || (!G.q && G.kind === 'q')) G.q = G.kind === 'chal' ? null : makeQuestion(n);
-  G.en = buildStage(n); G.bul = []; G.ebul = []; G.cx = CX0; G.cool = 0; G.qT = 0; G.spawnT = 0; G.entered = false; G.diveT = 4; G.chalHits = 0; G.chalTot = G.en.length;
+  G.en = buildStage(n); G.bul = []; G.ebul = []; G.cx = CX0; G.cool = 0; G.qT = 0; G.shT = 0; G.spawnT = 0; G.entered = false; G.diveT = 4; G.chalHits = 0; G.chalTot = G.en.length;
   G.capBoss = null; G.rescue = null; G.ending = null; G.step = 0; G.caps = []; G.eff = { tri: 0, slow: 0, frz: 0, weak: 0 }; G.swapT = 8 + Math.random() * 3;
   G.state = 'ready'; G.stateT = 0;
 }
@@ -596,6 +595,7 @@ function endStage(correct, e, msg) {
   }
 }
 function killEnemy(e, byShot, ram) {
+  if (e.type === 2 && !ram && e.shield && !e.chal) { e.shield = false; e.flash = 0.25; SND.armor(); return; }
   if (e.type === 2 && !ram && e.hp > 1 && !e.chal) { e.hp--; e.flash = 0.25; SND.hit2(); return; }
   e.alive = false; boom(e.x, e.y, e.type === 0 ? '#6a8cff' : e.type === 1 ? '#ff6a7a' : '#5dffb0', 22); SND.pop();
   const dv = e.st === 'dive' || e.st === 'ret' || e.st === 'beamgo' || e.st === 'beam';
@@ -734,6 +734,8 @@ function update(dt) {
   }
   if (st !== 'play') return;
   moveCannon(dt); G.qT += dt;
+  if (G.entered) G.shT = (G.shT || 0) + dt;
+  if (G.shT > 9) G.en.forEach((e) => { if (e.shield) { e.shield = false; if (e.alive) boom(e.x, e.y, '#9ad8ff', 8); } });
   if (KS[' '] || KS.arrowup || PADK.f) fire();
   updEnemies(dt); if (G.state !== 'play') return;
   G.caps.forEach((c) => { c.y += 110 * dt; if (Math.abs(c.x - G.cx) < 30 && Math.abs(c.y - CAN_Y) < 20) { c.dead = true; catchCap(c); } else if (c.y > FY + FH) c.dead = true; });
@@ -841,6 +843,7 @@ function drawEnemies() {
     ctx.restore();
     if (e.type === 2 && e.st !== 'entry') {
       const col = PCOL[e.idx];
+      if (e.shield) { ctx.save(); ctx.shadowColor = '#7fd4ff'; ctx.shadowBlur = 12; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(150,225,255,' + (0.6 + 0.3 * Math.sin(G.t * 8)) + ')'; ctx.fillStyle = 'rgba(110,200,255,.18)'; ctx.beginPath(); ctx.arc(e.x, e.y, 24, 0, 6.283); ctx.fill(); ctx.stroke(); ctx.restore(); }
       if (e.arm && e.hp > 1) { ctx.lineWidth = 2; ctx.strokeStyle = '#d8e4ff'; ctx.setLineDash([3, 2]); ctx.beginPath(); ctx.arc(e.x, e.y, 21, 0, 6.283); ctx.stroke(); ctx.setLineDash([]); }
       ctx.fillStyle = 'rgba(8,8,34,.92)'; rrp(ctx, e.x - 47, e.y + 15, 94, 18, 9); ctx.fill();
       ctx.lineWidth = e.arm && e.hp > 1 ? 2.5 : 1.5; ctx.strokeStyle = e.arm && e.hp > 1 ? '#d8e4ff' : col; rrp(ctx, e.x - 47, e.y + 15, 94, 18, 9); ctx.stroke();
@@ -1126,7 +1129,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES &amp; BONUSES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage shows a sentence with a gap, or an irregular verb question. Four green chiefs carry the answers. Shoot the right one twice (the first hit turns it blue) to clear the stage. The French translation appears afterwards.<br><b>KILL ORDER stages</b> (yellow frame): shoot the two right chiefs in the order shown (for example PRETERIT, then PAST PARTICIPLE). Shooting them in the wrong order loses the stage.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>Insects dive and shoot. Chiefs may use a tractor beam to capture your ship: free it by shooting its captor to get a dual fighter.<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage shows a sentence with a gap, or an irregular verb question. Four green chiefs carry the answers. At the start of each stage they are protected by a shield bubble (it absorbs one shot and disappears after about 9 seconds), so clear the small insects first if you like. Then shoot the right chief twice (the first hit turns it blue) to clear the stage. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>Insects dive and shoot. Chiefs may use a tractor beam to capture your ship: free it by shooting its captor to get a dual fighter.<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
