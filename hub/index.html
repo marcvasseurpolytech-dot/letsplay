@@ -131,6 +131,7 @@ var GAMES=[
   {id:'sc',name:'Scramble TOEIC',href:'../scramble/',desc:'Shoot the fuel tanks, collect words. Each loop changes the deck.',tags:['connectors','irregular verbs','vocabulary'],stat:function(d){return d?'Best score '+(d.scBest||0)+' | words '+nWords(d.sc)+' / 200':''}},
   {id:'tn',name:'TOEICnoid',href:'../toeicnoid/',desc:'Break the irregular verb bricks: 3 hits = preterit, past participle, French.',tags:['irregular verbs'],stat:function(d){return d?'Best score '+(d.tnBest||0)+' | verbs '+nWords(d.tn)+' / 93':''}},
   {id:'td',name:'TOEICdig',href:'../toeicdig/',desc:'Dig, pump the monsters 3 times: preterit, past participle, then BOOM and the French. Burst them in the French order for a bonus.',tags:['irregular verbs'],stat:function(d){return d?'Best score '+(d.tdBest||0)+' | verbs '+nWords(d.td)+' / 93':''}},
+  {id:'ti',name:'TOEICvaders',href:'../toeicvaders/',desc:'Shoot the alien that carries the right answer: grammar gaps and irregular verbs, with shields, a UFO hint and a streak multiplier.',tags:['grammar','irregular verbs'],stat:function(d){return d?'Best score '+(d.tiBest||0)+' | verbs '+nWords(d.ti)+' / 93':''}},
   {id:'wb',name:'Word Bridge',href:'../wordbridge/',desc:'Build the bridge with the right answers. Grammar and vocabulary levels.',tags:['connectors','verbs','word families','collocations'],stat:function(d){return d?'Best score '+(d.wbBest||0):''}},
   {id:'ae',name:'Arrow Escape',href:'../',desc:'Dodge, aim and answer TOEIC questions to escape.',tags:['TOEIC questions'],stat:function(d){return d?'Best score '+(d.best||0):''}},
   {id:'xm',name:'Christmas Village',href:'../noel/',desc:'A seasonal village game with mixed TOEIC exercises.',tags:['mixed practice'],stat:function(d){return d?'Best score '+(d.xmBest||0):''}}
@@ -159,7 +160,7 @@ function beep(f,d,type,f2){
   }catch(e){}
 }
 function coinSound(){beep(988,.09,'square');setTimeout(function(){beep(1319,.3,'square')},90)}
-function bestOf(g){var d=P.data;if(!d)return 0;var k={sc:'scBest',tn:'tnBest',td:'tdBest',wb:'wbBest',ae:'best',xm:'xmBest'}[g.id];return d[k]||0}
+function bestOf(g){var d=P.data;if(!d)return 0;var k={sc:'scBest',tn:'tnBest',td:'tdBest',ti:'tiBest',wb:'wbBest',ae:'best',xm:'xmBest'}[g.id];return d[k]||0}
 function sel(i,quiet){
   S=(i+GAMES.length)%GAMES.length;
   var rows=document.querySelectorAll('#menu .row');if(!rows.length)return;
