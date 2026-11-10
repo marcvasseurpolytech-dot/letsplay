@@ -575,17 +575,17 @@ function buildStage(n) {
     }
     return en;
   }
-  const q = G.q, nBt = 16, nBe = Math.min(30, 20 + 2 * Math.floor(n / 2));
+  const q = G.q, nBt = 24, nBe = Math.min(48, 32 + 2 * Math.floor(n / 2));
   const bossX = [-150, -50, 50, 150];
   q.opts.forEach((o, i) => en.push(mkEnemy(2, CX0 + bossX[i], 134, { ok: o.ok, t: o.t, grp: 0, idx: i, tsx: CX0 + bossX[i], shield: true })));
   if (n >= 3) { const w = en.filter((e) => e.type === 2 && !e.ok); if (w.length) { const a = w[Math.floor(Math.random() * w.length)]; a.hp = 3; a.arm = true; } }
-  for (let i = 0; i < nBt; i++) { const row = Math.floor(i / 8), cnt = Math.min(8, nBt - row * 8); const c = i % 8; en.push(mkEnemy(1, CX0 + (c - (cnt - 1) / 2) * 30, 188 + row * 22, { grp: 1 + (i % 2) })); }
-  for (let i = 0; i < nBe; i++) { const row = Math.floor(i / 10), cnt = Math.min(10, nBe - row * 10); const c = i % 10; en.push(mkEnemy(0, CX0 + (c - (cnt - 1) / 2) * 30, 232 + row * 22, { grp: 3 + (i % 2) })); }
+  for (let i = 0; i < nBt; i++) { const row = Math.floor(i / 12), cnt = Math.min(12, nBt - row * 12); const c = i % 12; en.push(mkEnemy(1, CX0 + (c - (cnt - 1) / 2) * 30, 188 + row * 22, { grp: 1 + (i % 2) })); }
+  for (let i = 0; i < nBe; i++) { const row = Math.floor(i / 16), cnt = Math.min(16, nBe - row * 16); const c = i % 16; en.push(mkEnemy(0, CX0 + (c - (cnt - 1) / 2) * 30, 232 + row * 22, { grp: 3 + (i % 2) })); }
   // ordre d'entrée : par groupes, côtés alternés
   const groups = [[], [], [], [], []];
   en.forEach((e) => groups[e.grp].push(e));
   let t0 = 0;
-  groups.forEach((g, gi) => { g.forEach((e, i) => { e.delay = t0 + i * 0.13; e.pat = gi % 2; e.side = gi % 2 ? -1 : 1; }); t0 += g.length * 0.13 + 0.5; });
+  groups.forEach((g, gi) => { g.forEach((e, i) => { e.delay = t0 + i * 0.06; e.pat = gi % 2; e.side = gi % 2 ? -1 : 1; }); t0 += g.length * 0.06 + 0.3; });
   return en;
 }
 function advance() { if (G.kind === 'q' && G.qi < 2) { G.qi++; startRound(G.round, false, true); } else startRound(G.round + 1); }
@@ -594,7 +594,7 @@ function startRound(n, redo, keep) {
   if (!keep) G.qi = 0;
   if (!redo || (!G.q && G.kind === 'q')) G.q = G.kind === 'chal' ? null : makeQuestion(G.qn = (G.qn || 0) + 1);
   G.en = buildStage(n); G.bul = []; G.ebul = []; G.cx = CX0; G.cool = 0; G.qT = 0; G.shT = 0; G.spawnT = 0; G.entered = false; G.diveT = 4; G.chalHits = 0; G.chalTot = G.en.length;
-  G.capBoss = null; G.rescue = null; G.ending = null; G.caps = []; G.eff = { tri: 0, slow: 0, frz: 0, weak: 0, stop: 0 }; G.hideT = 0; G.hint = 0; G.meteor = 0; G.ufo = null; G.swapT = 8 + Math.random() * 3;
+  G.capBoss = null; G.rescue = null; G.ending = null; G.caps = []; G.eff = { tri: 0, slow: 0, frz: 0, weak: 0, stop: 0 }; G.hideT = 0; G.nextQ = false; G.hint = 0; G.meteor = 0; G.ufo = null; G.swapT = 8 + Math.random() * 3;
   G.state = 'ready'; G.stateT = 0; G.cards = []; if (!keep) { G.bgT = 0; buildField(n); }
 }
 function demoStage() {
@@ -629,8 +629,26 @@ function hurt(why) {
   if (G.dual) { G.dual = false; G.inv = 1.8; return; }
   G.lives--; G.streak = 0; G.state = 'dead'; G.stateT = 0; G.bul = []; G.ebul = []; G.rescue = null;
 }
+function doNextQ() {
+  G.nextQ = false; G.qi++; G.q = makeQuestion(G.qn = (G.qn || 0) + 1); G.qT = 0; G.shT = 0; G.diveT = 3; G.capBoss = null; G.rescue = null;
+  const occ = G.en.filter((o) => o.alive && o.type < 2);
+  G.en = G.en.filter((o) => { if (o.type === 2) { if (o.alive) boom(o.x, o.y, '#ffd95c', 6); return false; } return o.alive; });
+  buildStage(G.round).forEach((f) => {
+    if (f.type === 2) { f.st = 'ret'; f.x = f.sx; f.y = -20; f.shield = true; G.en.push(f); }
+    else if (!occ.some((o) => Math.abs(o.sx - f.sx) < 2 && Math.abs(o.sy - f.sy) < 2)) { f.st = 'ret'; f.x = f.sx; f.y = -20 - Math.random() * 40; G.en.push(f); }
+  });
+  popup(CX0, 300, 'SENTENCE ' + (G.qi + 1) + ' / 3', '#9ad0ff'); G.pops[G.pops.length - 1].big = true; SND.dock();
+}
 function endStage(correct, e, msg) {
-  const q = G.q; G.state = 'clear'; G.stateT = 0; G.ebul = []; G.bul = [];
+  const q = G.q;
+  if (correct && G.kind === 'q' && G.qi < 2) {
+    G.streak++; const sp = Math.max(0, Math.round((20 - G.qT) * 8)), pts = (500 + sp) * mult();
+    G.score += pts; G.gain = pts; G.ok++; if (q.verb) { profWord(q.verb[0]); G.learned.push(q.verb); }
+    G.last = { ok: true, s: q.fill, fr: q.fr }; SND.good(); if (e) popup(e.x, e.y - 10, '+' + pts + (mult() > 1 ? ' (x' + mult() + ')' : ''), '#7dff9b');
+    if (q.kind === 'gap') { G.cards = (G.cards || []).filter((c) => !c.sent); G.cards.push({ x: CX0, y: 220, sent: q.fill, fr: q.fr, t: 0, ok: true }); }
+    G.ebul = []; G.bul = []; G.nextQ = true; G.hideT = 2.2; return;
+  }
+  G.state = 'clear'; G.stateT = 0; G.ebul = []; G.bul = [];
   G.en.forEach((o) => { if (o.alive) { boom(o.x, o.y, '#ffd95c', 6); o.alive = false; } });
   if (correct) {
     G.streak++; const sp = Math.max(0, Math.round((20 - G.qT) * 8)), pts = (500 + sp) * mult();
@@ -654,6 +672,11 @@ function verbCard(e) {
 }
 function drawCards() {
   (G.cards || []).forEach((c) => {
+    if (c.sent) {
+      const a = Math.min(1, c.t * 6, Math.max(0, (3.0 - c.t) * 2.5)), w = 500, ls = wrap(c.sent, w - 30, 16), fl = wrap(c.fr || '', w - 30, 13), h = 34 + ls.length * 22 + fl.length * 18, x = CX0 - w / 2, y = c.y;
+      ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = 'rgba(8,14,44,.95)'; rrp(ctx, x, y, w, h, 10); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#7dff9b'; rrp(ctx, x, y, w, h, 10); ctx.stroke();
+      txt('CORRECT', CX0, y + 12, 7, '#7dff9b', 'center'); ls.forEach((l, i) => bold(l, CX0, y + 34 + i * 22, 16, '#fff', 'center')); fl.forEach((l, i) => bold(l, CX0, y + 34 + ls.length * 22 + 6 + i * 18, 13, '#ffd23a', 'center')); ctx.restore(); return;
+    }
     const w = 214, h = 74, a = Math.min(1, c.t * 6, Math.max(0, (3.0 - c.t) * 2.5));
     const x = Math.max(FX + 6, Math.min(FX + FW - w - 6, c.x - w / 2)), y = Math.min(FY + FH - h - 10, c.y + 26);
     ctx.save(); ctx.globalAlpha = a;
@@ -773,7 +796,7 @@ function update(dt) {
   const st = G.state;
   if (st === 'title') { G.en.forEach((e) => { const p = formPos(e); e.x = p[0]; e.y = p[1]; }); return; }
   if (st === 'ready' || st === 'clear') moveCannon(dt);
-  if (st === 'play' && G.hideT > 0) { G.hideT -= dt; moveCannon(dt); return; }
+  if (st === 'play' && G.hideT > 0) { G.hideT -= dt; moveCannon(dt); if (G.hideT <= 0 && G.nextQ) doNextQ(); return; }
   if (G.rescue && (st === 'play' || st === 'clear')) {
     const r = G.rescue, dx = G.cx - r.x, dy = CAN_Y - r.y, L = Math.hypot(dx, dy), s = 260 * dt;
     if (L <= s + 6) { G.dual = true; G.rescue = null; SND.dock(); popup(G.cx, CAN_Y - 30, 'DUAL FIGHTER!', '#9ad0ff'); } else { r.x += dx / L * s; r.y += dy / L * s; }
@@ -1010,7 +1033,7 @@ function drawClear() {
 }
 function draw() {
   ctx.setTransform(SC, 0, 0, SC, 0, 0);
-  drawField(); drawQuestion(); if (!(G.hideT > 0)) drawEnemies(); drawHint(); drawUfo(); drawCards(); drawCaps(); drawPlayer(); drawShots(); drawPanel();
+  drawField(); drawQuestion(); if (!(G.hideT > 0)) { drawEnemies(); drawHint(); drawUfo(); } drawCards(); drawCaps(); drawPlayer(); drawShots(); drawPanel();
   G.pops.forEach((p) => { ctx.globalAlpha = Math.max(0, 1 - p.t / (p.big ? 2.2 : 1.4)); bold(p.s, p.x, p.y - p.t * 30, p.big ? 17 : 14, p.col, 'center', p.big ? FW - 20 : undefined); }); ctx.globalAlpha = 1;
   const st = G.state;
   if (st === 'ready') banner(G.kind === 'chal' ? 'BONUS STAGE' : 'STAGE ' + G.round + '   (' + (G.qi + 1) + '/3)', G.kind === 'chal' ? 'hit them all for a perfect bonus' : (G.q ? G.q.tag : ''), '#ffd23a');
@@ -1219,7 +1242,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES &amp; BONUSES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage has 3 questions in a row (a sentence with a gap, or an irregular verb): after a right answer you stay on the same stage and get another sentence. After the third one you move on to the next stage. Four green chiefs carry the answers. At the start of each stage they are protected by a shield bubble (it absorbs one shot and disappears after about 9 seconds), so clear the small insects first if you like. Then shoot the right chief twice (the first hit turns it blue) to answer the question. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>When a chief with a wrong irregular verb explodes, the three forms and the French appear and everything else disappears for 2 seconds so you can read them.<br>Insects dive and shoot. A chief may fire a tractor beam from the top of the screen and slide towards you: nothing can hurt you while it is active, so dodge it or shoot the chief. If you are captured, free the ship by shooting its captor to get a dual fighter.<br>Now and then a mystery UFO (?) crosses the screen above your ship: shoot it for a random surprise (jackpot, time stop, triple shot, shields down, x-ray on the right answer, extra ship... or a meteor shower).<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage has 3 questions in a row (a sentence with a gap, or an irregular verb): after a right answer the correct sentence and its French stay on screen for a moment, then four new chiefs drop in with a new question while the remaining insects stay where they are (the missing ones come back). After the third question you move on to the next stage. Four green chiefs carry the answers. At the start of each stage they are protected by a shield bubble (it absorbs one shot and disappears after about 9 seconds), so clear the small insects first if you like. Then shoot the right chief twice (the first hit turns it blue) to answer the question. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>When a chief with a wrong irregular verb explodes, the three forms and the French appear and everything else disappears for 2 seconds so you can read them.<br>Insects dive and shoot. A chief may fire a tractor beam from the top of the screen and slide towards you: nothing can hurt you while it is active, so dodge it or shoot the chief. If you are captured, free the ship by shooting its captor to get a dual fighter.<br>Now and then a mystery UFO (?) crosses the screen above your ship: shoot it for a random surprise (jackpot, time stop, triple shot, shields down, x-ray on the right answer, extra ship... or a meteor shower).<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
