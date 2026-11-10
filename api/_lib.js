@@ -207,6 +207,25 @@ function cleanScProgress(p) {
     destroyed: int(p.destroyed, 0, 1e6, 0), savedAt: int(p.savedAt, 0, 8.64e15, Date.now())
   };
 }
+// TOEICnoid : verbes cassés (compteur par infinitif), records, question de reprise (round + score) et score au QCM de grammaire
+function cleanTnProgress(p) {
+  if (!p || typeof p !== 'object') return null;
+  const words = {};
+  if (p.words && typeof p.words === 'object') {
+    Object.keys(p.words).slice(0, 300).forEach(k => {
+      if (/^[a-z][a-z' -]{0,20}$/.test(k)) words[k] = int(p.words[k], 1, 1e5, 1);
+    });
+  }
+  let cp = null;
+  if (p.cp && typeof p.cp === 'object' && typeof p.cp.round === 'number') {
+    cp = { round: int(p.cp.round, 1, 999, 1), score: int(p.cp.score, 0, 1e7, 0) };
+  }
+  return {
+    words, best: int(p.best, 0, 1e7, 0), runs: int(p.runs, 0, 1e6, 0), maxRound: int(p.maxRound, 1, 999, 1),
+    destroyed: int(p.destroyed, 0, 1e6, 0), qOk: int(p.qOk, 0, 1e6, 0), qN: int(p.qN, 0, 1e6, 0),
+    cp, savedAt: int(p.savedAt, 0, 8.64e15, Date.now())
+  };
+}
 function cleanXmProgress(p) {
   if (!p || typeof p !== 'object' || typeof p.day !== 'number' || typeof p.score !== 'number') return null;
   const cats = {};
@@ -246,5 +265,5 @@ function cleanXmProgress(p) {
 
 module.exports = {
   ghGet, ghPut, ghList, ghDelete, DIR, checkAdminPassword, issueAdminToken, isAdmin, pathOf, playerKey, codeHash, issueToken, keyFromRequest, safeEqual,
-  throttled, noteFailure, clearFailures, cleanProgress, cleanWbProgress, cleanXmProgress, cleanScProgress
+  throttled, noteFailure, clearFailures, cleanProgress, cleanWbProgress, cleanXmProgress, cleanScProgress, cleanTnProgress
 };

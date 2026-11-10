@@ -10,20 +10,52 @@
   #wrap { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
   canvas { display: block; background: #000; width: min(100vw, calc((100vh - 30px) * 4 / 3)); height: auto; touch-action: none; cursor: none; }
   #hint { font-size: 8px; color: #6f78d8; text-align: center; padding: 0 8px; line-height: 1.6; }
-  #over { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0, 0, 0, .72); z-index: 20; }
-  #over.on { display: flex; }
-  #over .panel { width: min(640px, 94vw); max-height: 90vh; overflow-y: auto; box-sizing: border-box; background: rgba(13, 27, 58, .98); border: 1px solid rgba(201, 162, 39, .7); border-radius: 12px; padding: 16px; font-family: "JetBrains Mono", "Courier New", monospace; color: #f5eedc; touch-action: pan-y; cursor: default; -webkit-user-select: text; user-select: text; }
-  #over h1 { font: 22px "Press Start 2P", monospace; color: #ffd23a; margin: 0 0 8px; text-align: center; }
-  #over .sum { text-align: center; font-size: 13px; color: #a9b3c9; margin: 0 0 10px; }
-  #over .sum b { color: #fff; }
-  #over table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  #over th { text-align: left; color: #c9a227; border-bottom: 1px solid rgba(245, 238, 220, .25); padding: 4px 6px; position: sticky; top: 0; background: #0d1b3a; }
-  #over td { padding: 3px 6px; border-bottom: 1px solid rgba(245, 238, 220, .08); }
-  #over td.i { color: #fff; font-weight: 700; }
-  #over td.f { color: #ffd23a; }
-  #over .btn { display: block; margin: 12px auto 0; font: 700 14px "JetBrains Mono", monospace; background: #c9a227; color: #0d1b3a; border: 0; border-radius: 8px; padding: 12px 22px; cursor: pointer; }
-  #over .none { text-align: center; color: #a9b3c9; font-size: 12px; padding: 10px; }
-  #over .credit { text-align: center; font-size: 10px; color: #6f7a99; margin-top: 10px; }
+  .ov { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0, 0, 0, .72); z-index: 20; }
+  .ov.on { display: flex; }
+  .ov .panel { width: min(640px, 94vw); max-height: 90vh; overflow-y: auto; box-sizing: border-box; background: rgba(13, 27, 58, .98); border: 1px solid rgba(201, 162, 39, .7); border-radius: 12px; padding: 16px; font-family: "JetBrains Mono", "Courier New", monospace; color: #f5eedc; touch-action: pan-y; cursor: default; -webkit-user-select: text; user-select: text; }
+  .ov h1 { font: 22px "Press Start 2P", monospace; color: #ffd23a; margin: 0 0 8px; text-align: center; }
+  .ov .sum { text-align: center; font-size: 13px; color: #a9b3c9; margin: 0 0 10px; }
+  .ov .sum b { color: #fff; }
+  .ov table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .ov th { text-align: left; color: #c9a227; border-bottom: 1px solid rgba(245, 238, 220, .25); padding: 4px 6px; position: sticky; top: 0; background: #0d1b3a; }
+  .ov td { padding: 3px 6px; border-bottom: 1px solid rgba(245, 238, 220, .08); }
+  .ov td.i { color: #fff; font-weight: 700; }
+  .ov td.f { color: #ffd23a; }
+  .ov .btn { display: block; margin: 12px auto 0; font: 700 14px "JetBrains Mono", monospace; background: #c9a227; color: #0d1b3a; border: 0; border-radius: 8px; padding: 12px 22px; cursor: pointer; }
+  .ov .none { text-align: center; color: #a9b3c9; font-size: 12px; padding: 10px; }
+  .ov .credit { text-align: center; font-size: 10px; color: #6f7a99; margin-top: 10px; }
+  .ov h2 { font: 700 15px "JetBrains Mono", monospace; color: #ffd23a; margin: 0 0 8px; text-align: center; }
+  .ov .sub { text-align: center; font-size: 12px; color: #a9b3c9; margin: 0 0 12px; line-height: 1.5; }
+  .ov .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .ov .tab { flex: 1; font: 700 12px "JetBrains Mono", monospace; color: #a9b3c9; background: transparent; border: 1px solid rgba(245, 238, 220, .25); border-radius: 6px; padding: 8px; cursor: pointer; }
+  .ov .tab.on { background: #c9a227; color: #0d1b3a; border-color: #c9a227; }
+  .ov input { width: 100%; box-sizing: border-box; font: 16px "JetBrains Mono", monospace; color: #f5eedc; background: #0d1b3a; border: 1px solid rgba(245, 238, 220, .3); border-radius: 8px; padding: 10px; margin: 5px 0; -webkit-user-select: text; user-select: text; }
+  .ov .btn.ghost { background: transparent; color: #c9a227; border: 1px solid #c9a227; }
+  .ov .btn.sm { padding: 7px 10px; font-size: 11px; margin: 0; }
+  .ov .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+  .ov .row .btn { flex: 1; margin: 0; min-width: 150px; }
+  .ov .msg { min-height: 16px; font-size: 12px; color: #e0584f; margin: 4px 0; }
+  .ov .who { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 8px; }
+  .ov .stats { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  .ov .stat { flex: 1; min-width: 90px; background: #16294f; border: 1px solid rgba(245, 238, 220, .14); border-radius: 8px; padding: 8px; text-align: center; }
+  .ov .stat b { display: block; font-size: 18px; color: #c9a227; }
+  .ov .stat span { font-size: 10px; color: #a9b3c9; }
+  .ov details { margin-top: 8px; border-top: 1px solid rgba(245, 238, 220, .12); padding-top: 8px; font-size: 12px; line-height: 1.5; }
+  .ov summary { cursor: pointer; font-weight: 700; color: #c9a227; }
+  .ov .words { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; margin-top: 6px; }
+  .ov .w.no { color: #6b7694; }
+  .ov .muted { color: #a9b3c9; font-size: 11px; }
+  .ov .dots { text-align: center; font-size: 20px; letter-spacing: 6px; color: #ffd23a; margin: 0 0 6px; }
+  .ov .qs { font-size: 17px; line-height: 1.55; margin: 12px 0 14px; color: #fff; text-align: center; }
+  .ov .gap { display: inline-block; min-width: 70px; border-bottom: 2px solid #ffd23a; color: #ffd23a; text-align: center; }
+  .ov .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ov .opt { font: 700 15px "JetBrains Mono", monospace; color: #f5eedc; background: #16294f; border: 1px solid rgba(245, 238, 220, .3); border-radius: 8px; padding: 12px 8px; cursor: pointer; }
+  .ov .opt:hover:not(:disabled) { border-color: #c9a227; }
+  .ov .opt.ok { background: #2e8b4f; border-color: #6fe09a; color: #fff; }
+  .ov .opt.no { background: #a8362e; border-color: #ff8a80; color: #fff; }
+  .ov .opt:disabled { cursor: default; }
+  .ov .fb { min-height: 52px; margin: 12px 0 0; text-align: center; font-size: 13px; line-height: 1.5; }
+  .ov .fb b.g { color: #6fe09a; } .ov .fb b.r { color: #ff8a80; } .ov .fb i { color: #a9b3c9; }
 </style>
 </head>
 <body>
@@ -31,7 +63,10 @@
   <canvas id="c" width="800" height="600"></canvas>
   <div id="hint">MOUSE / TOUCH / ARROWS: move &nbsp; SPACE / CLICK: launch and fire &nbsp; P: pause &nbsp; M: sound &nbsp; H: HD / retro</div>
 </div>
-<div id="over"><div class="panel" id="overBox"></div></div>
+<div id="auth" class="ov"><div class="panel" id="authBox"></div></div>
+<div id="quiz" class="ov"><div class="panel" id="quizBox"></div></div>
+<div id="over" class="ov"><div class="panel" id="overBox"></div></div>
+<script src="../wordbridge/bank.js"></script>
 
 <script>
 (() => {
@@ -413,16 +448,18 @@ function resetBall() {
   G.balls = [{ x: G.px + G.pw / 2, y: PY - 6, vx: 0, vy: 0, stuck: true, off: 0 }];
 }
 function startRound(n) {
-  G.round = n; G.bgIndex = (n - 1) % 4; buildLevel(n);
+  G.round = n; G.bgIndex = (n - 1) % 4; buildLevel(n); setCheckpoint();
   G.caps = []; G.enemies = []; G.bolts = []; G.parts = []; G.pops = []; G.found = null;
   G.mode = null; G.slowT = 0; G.heat = 0; G.pwTarget = 64; G.breakOpen = false; G.enemyT = 5 + Math.random() * 3;
   G.px = IX + IW / 2 - G.pw / 2; resetBall();
   G.state = 'ready'; G.stateT = 0; G.bannerT = 1.7; SND.start();
 }
-function newGame() {
-  G.score = 0; G.lives = 3; G.learned = []; G.pool = []; G.sel = null; G.round = 1;
-  document.getElementById('over').classList.remove('on');
-  startRound(1);
+function closeOverlays() { ['over', 'quiz', 'auth'].forEach((id) => document.getElementById(id).classList.remove('on')); }
+function newGame(cp) {
+  G.score = cp ? cp.score : 0; G.lives = 3; G.learned = []; G.pool = []; G.sel = null; G.found = null;
+  QZ = null; closeOverlays();
+  if (!cp) profStart();
+  startRound(cp ? cp.round : 1);
 }
 function loseLife() {
   G.lives--; SND.lose();
@@ -433,14 +470,21 @@ function loseLife() {
 function gameOver() {
   G.state = 'gameover'; G.stateT = 0; SND.over();
   if (G.score > G.hi) { G.hi = G.score; lsSet('tnHi', String(G.hi)); }
-  saveCollection();
+  PR.cp = { round: G.round, score: G.score };
+  saveCollection(); profEnd();
   const rows = G.learned.map((v) => '<tr><td class="i">' + esc(v[0]) + '</td><td>' + esc(v[1]) + '</td><td>' + esc(v[2]) + '</td><td class="f">' + esc(v[3]) + '</td></tr>').join('');
   document.getElementById('overBox').innerHTML =
     '<h1>GAME OVER</h1><p class="sum">Score <b>' + G.score + '</b> &nbsp;|&nbsp; Round <b>' + G.round + '</b> &nbsp;|&nbsp; Verbs broken <b>' + G.learned.length + '</b> &nbsp;|&nbsp; Collection <b>' + collection.size + ' / ' + VERBS.length + '</b></p>' +
     (rows ? '<table><thead><tr><th>Infinitive</th><th>Preterit</th><th>Past participle</th><th>Français</th></tr></thead><tbody>' + rows + '</tbody></table>' : '<p class="none">No verb broken this time. Hit each brick three times!</p>') +
-    '<button class="btn" id="again">PLAY AGAIN</button><p class="credit">A game by Marc VASSEUR / Polytech Lille</p>';
+    '<div class="row"><button class="btn" id="cont">CONTINUE FROM ROUND ' + G.round + '<br><small>answer 3 grammar questions</small></button><button class="btn ghost" id="again">NEW GAME</button></div>' +
+    '<p class="credit">' + (PR.user ? 'Saved to your profile: ' + esc(PR.user.nom) : 'Guest mode: not saved online') + '</p>';
   document.getElementById('over').classList.add('on');
   document.getElementById('again').onclick = () => { newGame(); };
+  document.getElementById('cont').onclick = () => {
+    const cp = PR.cp || { round: G.round, score: G.score };
+    document.getElementById('over').classList.remove('on');
+    openQuiz(() => newGame(cp), () => document.getElementById('over').classList.add('on'));
+  };
 }
 
 /* ------------------------------------------------------------
@@ -516,7 +560,7 @@ function hitBrick(b) {
     burst(cx, cy, b.col.light, 14, 190); burst(cx, cy, b.col.base, 8, 130);
     G.bricks.splice(G.bricks.indexOf(b), 1);
     if (!G.learned.some((l) => l[0] === v[0])) G.learned.push(v);
-    if (!collection.has(v[0])) { collection.add(v[0]); saveCollection(); }
+    profWord(v[0]);
     maybeCapsule(b);
   }
 }
@@ -966,7 +1010,6 @@ function drawTitle() {
     drawCapsule({ x: cx, y: cy, k: q[0], t: G.t });
     txt(q[1], cx + 30, cy + 1, 9, '#ffffff', 'left', '#000');
   });
-  if (Math.floor(G.t * 2) % 2 === 0) txt('CLICK OR PRESS SPACE TO START', W / 2, 548, 12, '#ffffff', 'center', '#000');
   txt('marc.vasseur@polytech-lille.fr', W / 2, 582, 8, '#9fa8ff', 'center', '#000');
 }
 
@@ -987,7 +1030,7 @@ function setMouse(e) {
 }
 function action() {
   audio();
-  if (G.state === 'title') { newGame(); return; }
+  if (G.state === 'title') return;
   if (G.state === 'gameover') return;
   if (G.state === 'paused') { G.state = G.prevState || 'play'; return; }
   fire();
@@ -995,8 +1038,9 @@ function action() {
 cv.addEventListener('pointermove', (e) => { setMouse(e); });
 cv.addEventListener('pointerdown', (e) => { setMouse(e); try { cv.setPointerCapture(e.pointerId); } catch (x) {} action(); e.preventDefault(); });
 window.addEventListener('keydown', (e) => {
+  if (e.target && /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(e.target.tagName)) return;
   keys[e.key] = true;
-  if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowUp') { if (G.state === 'gameover' && e.key === 'Enter') { newGame(); } else action(); e.preventDefault(); }
+  if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowUp') { action(); e.preventDefault(); }
   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.preventDefault();
   if (e.key === 'p' || e.key === 'P') togglePause();
   if (e.key === 'h' || e.key === 'H') { HD = !HD; lsSet('tnHD', HD ? '1' : '0'); applyQuality(); }
@@ -1017,15 +1061,214 @@ function frame(ts) {
   const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts; acc += dt;
   const H1 = 1 / 120;
   while (acc >= H1) { update(H1); acc -= H1; }
-  draw();
+  draw(); syncAuth();
   requestAnimationFrame(frame);
 }
+/* ------------------------------------------------------------
+   Profil élève (même compte que les autres jeux letsplay) : verbes cassés, records et point de reprise sauvegardés en ligne
+   ------------------------------------------------------------ */
+const API = (location.protocol === 'file:' || /claude/.test(location.hostname)) ? 'https://letsplay-nine.vercel.app/api/player' : '/api/player';
+const PR = { user: null, token: null, words: {}, best: 0, runs: 0, maxRound: 1, destroyed: 0, qOk: 0, qN: 0, cp: null, guest: false, draft: '', mode: 'login', msg: '', offline: false, dirty: false, timer: null, flight: false, status: '', shown: false, ready: false };
+function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+function apiPost(action, body) {
+  const h = { 'Content-Type': 'application/json' };
+  if (PR.token) h.Authorization = 'Bearer ' + PR.token;
+  try {
+    return fetch(API, { method: 'POST', headers: h, keepalive: true, body: JSON.stringify(Object.assign({ action, game: 'tn' }, body || {})) })
+      .then((r) => r.json().catch(() => ({})).then((j) => ({ ok: r.ok, status: r.status, j })))
+      .catch(() => ({ ok: false, status: 0, j: { error: 'No connection to the server.' } }));
+  } catch (e) { return Promise.resolve({ ok: false, status: 0, j: { error: 'No connection to the server.' } }); }
+}
+function localKey() { return 'tnProg:' + (PR.user ? PR.user.key : 'guest'); }
+function adopt(tn) {
+  let loc = null; try { loc = JSON.parse(lsGet(localKey()) || 'null'); } catch (e) {}
+  const words = {};
+  [tn && tn.words, loc && loc.words].forEach((w) => { if (w) Object.keys(w).forEach((k) => { words[k] = Math.max(words[k] || 0, w[k] | 0); }); });
+  PR.words = words;
+  ['best', 'runs', 'destroyed', 'qOk', 'qN'].forEach((k) => { PR[k] = Math.max((tn && tn[k]) | 0, (loc && loc[k]) | 0); });
+  PR.maxRound = Math.max(1, (tn && tn.maxRound) | 0, (loc && loc.maxRound) | 0);
+  let cp = null, at = -1;
+  [tn, loc].forEach((q) => { const t = Number(q && q.savedAt) || 0; if (q && q.cp && t >= at) { cp = q.cp; at = t; } });
+  if (cp) PR.cp = cp;
+  collection = new Set(Object.keys(PR.words));
+}
+function snapshot() {
+  PR.best = Math.max(PR.best, G.score); PR.maxRound = Math.max(PR.maxRound, G.round);
+  return { words: PR.words, best: PR.best, runs: PR.runs, maxRound: PR.maxRound, destroyed: PR.destroyed, qOk: PR.qOk, qN: PR.qN, cp: PR.cp, savedAt: Date.now() };
+}
+function scheduleSave() {
+  if (!PR.user) return;
+  lsSet(localKey(), JSON.stringify(snapshot()));
+  PR.dirty = true; PR.status = 'Saving soon...';
+  clearTimeout(PR.timer); PR.timer = setTimeout(flush, 6000);
+}
+function flush() {
+  clearTimeout(PR.timer);
+  if (!PR.user || !PR.token || !PR.dirty) return;
+  if (PR.flight) { PR.timer = setTimeout(flush, 2500); return; }
+  PR.dirty = false; PR.flight = true; PR.status = 'Saving...';
+  apiPost('save', { progress: snapshot() }).then((r) => {
+    PR.flight = false;
+    if (r.status === 401) { PR.token = null; saveSession(); PR.status = 'Session expired. Log in again to keep saving online.'; return; }
+    if (!r.ok) { PR.dirty = true; PR.status = 'Not saved online (kept on this device). Retrying.'; PR.timer = setTimeout(flush, 20000); return; }
+    PR.status = 'Saved to your profile.';
+    if (r.j && r.j.tn) adopt(r.j.tn);
+  });
+}
+function saveSession() { if (PR.user && PR.token) lsSet('letsplaySession', JSON.stringify({ user: PR.user, token: PR.token })); else lsDel('letsplaySession'); }
+function onAuth(j) { PR.user = j.user; PR.token = j.token; PR.msg = ''; PR.offline = false; adopt(j.tn); saveSession(); PR.ready = true; renderAuth(); }
+function logout() {
+  flush(); PR.user = null; PR.token = null; PR.words = {}; PR.best = 0; PR.runs = 0; PR.maxRound = 1; PR.destroyed = 0; PR.qOk = 0; PR.qN = 0; PR.cp = null; PR.guest = false;
+  try { collection = new Set(JSON.parse(lsGet('tnLearned') || '[]')); } catch (e) { collection = new Set(); }
+  saveSession(); renderAuth();
+}
+function profStart() { if (PR.user) { PR.runs++; scheduleSave(); } }
+function profWord(inf) {
+  collection.add(inf);
+  if (PR.user) { PR.words[inf] = (PR.words[inf] || 0) + 1; PR.destroyed++; scheduleSave(); } else saveCollection();
+}
+function setCheckpoint() { PR.cp = { round: G.round, score: G.score }; if (PR.user) scheduleSave(); }
+function profEnd() { if (PR.user) { lsSet(localKey(), JSON.stringify(snapshot())); PR.dirty = true; flush(); } }
+function restoreSession() {
+  let ss = null; try { ss = JSON.parse(lsGet('letsplaySession') || 'null'); } catch (e) {}
+  if (!ss || !ss.user || !ss.token) { PR.ready = true; renderAuth(); return; }
+  PR.user = ss.user; PR.token = ss.token;
+  adopt(null); PR.ready = true; renderAuth();
+  apiPost('load').then((r) => {
+    if (r.status === 401) { PR.user = null; PR.token = null; saveSession(); renderAuth(); return; }
+    if (r.ok) { adopt(r.j.tn); renderAuth(); if (PR.dirty) flush(); } else if (r.status === 0) { PR.offline = true; renderAuth(); }
+  });
+}
+function hasCheckpoint() { return !!(PR.cp && (PR.cp.round > 1 || PR.cp.score > 0)); }
+function canStart() { return PR.guest || !!PR.user; }
+function renderAuth() {
+  const box = document.getElementById('authBox');
+  if (!box) return;
+  const $ = (q) => box.querySelector(q);
+  let h = '<h1>TOEIC<span style="color:#fff">NOID</span></h1>';
+  if (PR.user) {
+    const cp = hasCheckpoint();
+    h += '<p class="sub">Break the irregular verb bricks: 3 hits = preterit, past participle, French.</p>' +
+      '<div class="who"><span>Logged in as <b>' + esc(PR.user.nom) + '</b></span><button class="btn sm ghost" id="aOut">Log out</button></div>' +
+      '<div class="stats"><div class="stat"><b>' + collection.size + ' / ' + VERBS.length + '</b><span>verbs broken</span></div>' +
+      '<div class="stat"><b>' + PR.best + '</b><span>best score</span></div>' +
+      '<div class="stat"><b>' + PR.maxRound + '</b><span>best round</span></div></div>' +
+      '<div class="row">' + (cp ? '<button class="btn" id="aCont">CONTINUE FROM ROUND ' + PR.cp.round + '<br><small>score ' + PR.cp.score + ' | answer 3 grammar questions</small></button>' : '') +
+      '<button class="btn' + (cp ? ' ghost' : '') + '" id="aNew">NEW GAME</button></div>' +
+      '<p class="msg" style="color:#a9b3c9">' + esc(PR.status) + '</p>' +
+      '<details><summary>Verbs broken (' + collection.size + ' / ' + VERBS.length + ')</summary><div class="words">' +
+      VERBS.slice().sort((p, q) => ((collection.has(q[0]) ? 1 : 0) - (collection.has(p[0]) ? 1 : 0))).map((v) => collection.has(v[0])
+        ? '<div class="w"><b>' + esc(v[0]) + '</b> ' + esc(v[1]) + ' ' + esc(v[2]) + ' <i style="color:#ffd23a;font-style:normal">' + esc(v[3]) + '</i></div>'
+        : '<div class="w no">' + esc(v[0]) + ' = ?</div>').join('') + '</div></details>';
+  } else if (PR.guest) {
+    h += '<p class="sub">Guest mode: nothing is saved online.</p><div class="row"><button class="btn" id="aNew">PLAY</button></div>';
+  } else {
+    const su = PR.mode === 'signup';
+    h += '<p class="sub">Log in to play. Your verbs and your round are saved.</p>' +
+      '<div class="tabs"><button class="tab' + (su ? '' : ' on') + '" data-t="login">Log in</button><button class="tab' + (su ? ' on' : '') + '" data-t="signup">Create my profile</button></div>' +
+      '<input id="fNom" placeholder="Your name (e.g. DUPONT Lea)" autocomplete="name" maxlength="40">' +
+      '<input id="fCode" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4-digit secret code" autocomplete="off">' +
+      '<p class="msg" id="aMsg">' + esc(PR.msg) + '</p>' +
+      '<div class="row"><button class="btn" id="aGo">' + (su ? 'Create profile' : 'Log in') + '</button></div>' +
+      (PR.offline ? '<div class="row"><button class="btn ghost" id="aGuest">Server unreachable: play as guest (not saved)</button></div>' : '') +
+      '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
+  }
+  h += '<details><summary>Directions</summary><p class="muted">Mouse, touch or arrow keys: move the paddle. Space or click: launch the ball and fire. P: pause. M: sound. H: HD / retro.<br>Every colored brick is an irregular verb: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the brick breaks). Silver bricks give points and may hide a bonus capsule.<br>When you lose your last life, your round is saved. To continue from that round, answer 3 grammar questions correctly.</p></details>';
+  box.innerHTML = h;
+  { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
+  box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
+  const go = $('#aGo');
+  if (go) {
+    const submit = () => {
+      const su = PR.mode === 'signup', body = { nom: $('#fNom').value.trim(), code: $('#fCode').value.trim() }, m = $('#aMsg');
+      if (!body.nom) { m.textContent = 'Please enter your name.'; return; }
+      if (!/^\d{4}$/.test(body.code)) { m.textContent = 'Your secret code must be exactly 4 digits.'; return; }
+      go.disabled = true; m.textContent = 'Please wait...';
+      apiPost(su ? 'signup' : 'login', body).then((r) => {
+        if (r.ok) { onAuth(r.j); return; }
+        go.disabled = false; PR.msg = r.j.error || 'Something went wrong.';
+        if (r.status === 0) PR.offline = true;
+        renderAuth();
+      });
+    };
+    go.addEventListener('click', submit);
+    box.querySelectorAll('input').forEach((i) => i.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); }));
+  }
+  const gs = $('#aGuest'); if (gs) gs.addEventListener('click', () => { PR.guest = true; renderAuth(); });
+  const nw = $('#aNew'); if (nw) nw.addEventListener('click', () => { audio(); if (canStart() && G.state === 'title') newGame(); });
+  const ct = $('#aCont'); if (ct) ct.addEventListener('click', () => { audio(); if (canStart() && G.state === 'title') { const cp = PR.cp; openQuiz(() => newGame(cp), null); } });
+  const ou = $('#aOut'); if (ou) ou.addEventListener('click', logout);
+}
+function syncAuth() {
+  const want = G.state === 'title' && !QZ;
+  if (want === PR.shown) return;
+  PR.shown = want;
+  document.getElementById('auth').classList[want ? 'add' : 'remove']('on');
+  if (want) renderAuth();
+}
+
+/* ------------------------------------------------------------
+   Quiz de reprise : 3 bonnes réponses de grammaire (phrases à trous, banque partagée avec Word Bridge)
+   ------------------------------------------------------------ */
+const QTYPES = ['c', 'v', 'f', 'p', 'x', 'l'];
+let QZ = null;
+function qPool() {
+  const B = window.WB_BANK;
+  if (!B || !B.NORMAL) return [];
+  return B.NORMAL.filter((q) => q.s && q.o && q.o.length >= 3 && q.s.indexOf('___') >= 0 && QTYPES.indexOf(q.t) >= 0);
+}
+function openQuiz(onDone, onCancel) {
+  const pool = shuffle(qPool());
+  if (!pool.length) { onDone(); return; }
+  QZ = { ok: 0, need: 3, pool, idx: 0, q: null, opts: [], answered: false, last: '', onDone, onCancel };
+  document.getElementById('auth').classList.remove('on'); PR.shown = false;
+  nextQuestion();
+  document.getElementById('quiz').classList.add('on');
+}
+function nextQuestion() {
+  let k = QZ.idx;
+  while (k < QZ.pool.length - 1 && QZ.pool[k].t === QZ.last) k++;      // varier les types de questions
+  const q = QZ.pool.splice(k, 1)[0];
+  QZ.q = q; QZ.last = q.t; QZ.opts = shuffle(q.o.slice()); QZ.answered = false;
+  renderQuiz();
+}
+function renderQuiz() {
+  const box = document.getElementById('quizBox'), q = QZ.q;
+  const sentence = esc(q.s).replace('___', '<span class="gap">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>');
+  let dots = ''; for (let i = 0; i < QZ.need; i++) dots += i < QZ.ok ? '&#9679;' : '&#9675;';
+  box.innerHTML = '<h2>BACK IN THE GAME</h2><p class="sub">Answer 3 grammar questions correctly to continue.</p><div class="dots">' + dots + '</div>' +
+    '<div class="qs">' + sentence + '</div><div class="opts">' + QZ.opts.map((o, i) => '<button class="opt" data-i="' + i + '">' + esc(o) + '</button>').join('') + '</div>' +
+    '<div class="fb" id="qfb"></div><div class="row"><button class="btn" id="qNext" style="display:none"></button>' + (QZ.onCancel !== undefined ? '<button class="btn ghost sm" id="qBack">Back</button>' : '') + '</div>';
+  box.querySelectorAll('.opt').forEach((b) => b.addEventListener('click', () => answerQuestion(parseInt(b.getAttribute('data-i'), 10))));
+  const bk = box.querySelector('#qBack'); if (bk) bk.addEventListener('click', closeQuiz);
+}
+function answerQuestion(i) {
+  if (!QZ || QZ.answered) return;
+  QZ.answered = true;
+  const q = QZ.q, good = QZ.opts[i] === q.o[0], box = document.getElementById('quizBox');
+  PR.qN++; if (good) { PR.qOk++; QZ.ok++; }
+  if (PR.user) scheduleSave();
+  box.querySelectorAll('.opt').forEach((b, k) => { b.disabled = true; if (QZ.opts[k] === q.o[0]) b.classList.add('ok'); else if (k === i) b.classList.add('no'); });
+  const dn = QZ.ok >= QZ.need;
+  box.querySelector('#qfb').innerHTML = (good ? '<b class="g">Correct!</b>' : '<b class="r">Not quite.</b> The answer is <b class="g">' + esc(q.o[0]) + '</b>.') + (q.fr ? '<br><i>' + esc(q.fr) + '</i>' : '');
+  const nx = box.querySelector('#qNext'); nx.style.display = ''; nx.innerHTML = dn ? 'CONTINUE' : (good ? 'NEXT QUESTION' : 'TRY ANOTHER QUESTION');
+  let dots = ''; for (let k = 0; k < QZ.need; k++) dots += k < QZ.ok ? '&#9679;' : '&#9675;';
+  box.querySelector('.dots').innerHTML = dots;
+  nx.addEventListener('click', () => { if (dn) { const f = QZ.onDone; QZ = null; document.getElementById('quiz').classList.remove('on'); f(); } else nextQuestion(); });
+}
+function closeQuiz() {
+  const cb = QZ && QZ.onCancel; QZ = null; document.getElementById('quiz').classList.remove('on');
+  if (cb) cb();
+}
 HD = lsGet('tnHD') !== '0'; applyQuality();
+restoreSession();
+try { window.addEventListener('pagehide', () => flush()); document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); }); } catch (e) {}
+
 function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('62px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tn = { setHD: (v) => { HD = v; applyQuality(); }, G, VERBS, LEVELS, update, draw, newGame, fire, startRound, hitBrick, remaining, collection, keys, SND };
+window.__tn = { PR, openQuiz, qState: () => QZ, answerQuestion, renderAuth, setHD: (v) => { HD = v; applyQuality(); }, G, VERBS, LEVELS, update, draw, newGame, fire, startRound, hitBrick, remaining, collection, keys, SND };
 })();
 </script>
 </body>
