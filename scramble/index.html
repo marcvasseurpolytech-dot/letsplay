@@ -146,14 +146,14 @@ function populate() {
       const mid = (floorAt(xx) + ceilAt(xx)) / 2;
       templates.push({ type: 'ufo', x: xx, w: 28, h: 12, y: mid - 6 + (i % 2 ? 26 : -26), ph: i * 1.3 });
     }
-    ux += rand(620, 860);
+    ux += rand(290, 430);
   }
   // météores du niveau 3 : boules de feu indestructibles
   let mx = S[2].start + 300;
   while (mx < S[3].start - 150) {
     const fl = floorAt(mx);
     templates.push({ type: 'meteor', x: Math.round(mx), w: 28, h: 16, y: Math.round(rand(TOP + 24, Math.min(400, fl - 70))) });
-    mx += rand(95, 175);
+    mx += rand(42, 82);
   }
   // la base ennemie : au sommet de la dernière tour
   const bx = Math.round(LV.baseX * KX - 45);
@@ -573,10 +573,15 @@ function hdUfo(c) {
   c.fillStyle = '#12162c'; c.fillRect(5, 7, 18, 1.1);
 }
 function hdMeteor(c) {
-  c.fillStyle = lg(c, 4, 0, 26, 16, [[0, '#b58560'], [0.5, '#7a4e2f'], [1, '#33200f']]);
-  poly(c, [[3, 3], [10, 0.5], [19, 1], [27, 4], [31, 9], [27, 14], [17, 15.6], [8, 14.6], [1, 10]]);
-  c.fillStyle = 'rgba(30,16,6,0.55)'; [[11, 6, 2.6], [20, 10, 3], [25, 5, 1.6], [7, 11, 1.6]].forEach((q) => { c.beginPath(); c.arc(q[0], q[1], q[2], 0, 6.3); c.fill(); });
-  c.fillStyle = 'rgba(255,230,190,0.25)'; [[10.3, 5.3, 1.4], [19.3, 9.2, 1.6]].forEach((q) => { c.beginPath(); c.arc(q[0], q[1], q[2], 0, 6.3); c.fill(); });
+  // halo chaud autour du noyau
+  const g = c.createRadialGradient(13, 8, 2, 13, 8, 15);
+  g.addColorStop(0, 'rgba(255,200,90,0.55)'); g.addColorStop(1, 'rgba(255,120,30,0)');
+  c.fillStyle = g; c.fillRect(0, 0, 32, 16);
+  // noyau rocheux, face avant (à gauche) chauffée à blanc par la friction
+  c.fillStyle = lg(c, 2, 0, 28, 0, [[0, '#fff3b0'], [0.18, '#ffb03a'], [0.45, '#8a4a22'], [1, '#2e180a']]);
+  poly(c, [[3, 4.5], [9, 1.6], [17, 1.2], [24, 3], [28, 7], [26.5, 12], [18, 14.8], [9.5, 14.2], [3, 11.5], [1.4, 8]]);
+  c.fillStyle = 'rgba(25,12,4,0.55)'; [[15, 5.5, 2.4], [21, 10.5, 2.8], [10, 11, 1.5], [24, 6, 1.3]].forEach((q) => { c.beginPath(); c.arc(q[0], q[1], q[2], 0, 6.3); c.fill(); });
+  c.fillStyle = 'rgba(255,235,170,0.35)'; c.beginPath(); c.ellipse(6, 7.5, 2.2, 4.5, 0, 0, 6.3); c.fill();
 }
 function buildSprites() {
   try {
@@ -886,11 +891,11 @@ function updatePlay() {
       }
     } else if (e.type === 'ufo') {
       if (e.x - camX < W + 40) {
-        e.x -= 0.7;
-        e.y = e.baseY + Math.sin((frame + e.ph) * 0.05) * 34;
+        e.x -= 2.1 + 0.15 * level;
+        e.y = e.baseY + Math.sin((frame + e.ph) * 0.075) * 34;
       }
     } else if (e.type === 'meteor') {
-      if (e.x - camX < W + 40) e.x -= 3.2 + 0.12 * level;      // file vers le vaisseau, indestructible
+      if (e.x - camX < W + 40) e.x -= 5.4 + 0.2 * level;      // file vers le vaisseau, indestructible
     }
   }
 
@@ -1089,6 +1094,36 @@ function drawShipSprite(x, y, withFlame) {
   spr(SPR.ship, ix, iy);
 }
 
+// traînée de comète : trois nappes qui ondulent (rouge, orange, or) et des braises qui s'envolent, aux couleurs des explosions du jeu
+function streak(x0, y0, len, wid, wob, stops) {
+  ctx.beginPath();
+  ctx.moveTo(x0, y0 - wid);
+  ctx.quadraticCurveTo(x0 + len * 0.5, y0 - wid * 0.5 + wob, x0 + len, y0 + wob * 0.7);
+  ctx.quadraticCurveTo(x0 + len * 0.5, y0 + wid * 0.5 + wob, x0, y0 + wid);
+  ctx.closePath();
+  ctx.fillStyle = lg(ctx, x0, 0, x0 + len, 0, stops); ctx.fill();
+}
+function meteorTrail(X, Y, ph) {
+  const t = frame * 0.22 + ph, wob = Math.sin(t) * 3.2, x0 = X + 20, y0 = Y + 8;
+  ctx.globalCompositeOperation = 'lighter';
+  streak(x0, y0, 120 + Math.sin(t * 1.3) * 10, 9, wob, [[0, 'rgba(232,52,42,0.7)'], [0.5, 'rgba(200,40,30,0.3)'], [1, 'rgba(120,20,20,0)']]);
+  streak(x0, y0, 86 + Math.sin(t * 1.7) * 8, 6, wob * 0.8, [[0, 'rgba(255,138,30,0.9)'], [0.6, 'rgba(255,110,30,0.35)'], [1, 'rgba(255,90,30,0)']]);
+  streak(x0, y0, 50 + Math.sin(t * 2.1) * 6, 3.4, wob * 0.5, [[0, 'rgba(255,250,220,1)'], [0.4, 'rgba(255,210,58,0.8)'], [1, 'rgba(255,210,58,0)']]);
+  for (let k = 0; k < 7; k++) {
+    const age = ((frame * 1.6 + k * 23 + ph * 9) % 64) / 64;
+    const sx = x0 + 6 + age * 110, sy = y0 + Math.sin(k * 2.3 + age * 7) * (3 + 9 * age);
+    ctx.fillStyle = k % 2 ? 'rgba(255,210,58,' + (1 - age) + ')' : 'rgba(255,138,30,' + (1 - age) + ')';
+    ctx.beginPath(); ctx.arc(sx, sy, 1.7 * (1 - age) + 0.4, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+function ufoTrail(X, Y, ph) {
+  const t = frame * 0.2 + ph, y0 = Y + 7;
+  ctx.globalCompositeOperation = 'lighter';
+  streak(X + 24, y0, 46, 3.2, Math.sin(t) * 1.5, [[0, 'rgba(112,240,255,0.55)'], [1, 'rgba(112,240,255,0)']]);
+  streak(X + 24, y0 + 1, 30, 1.8, Math.sin(t + 1) * 1.2, [[0, 'rgba(255,90,208,0.5)'], [1, 'rgba(255,90,208,0)']]);
+  ctx.globalCompositeOperation = 'source-over';
+}
 function drawEntities() {
   for (const e of entities) {
     if (!e.alive) continue;
@@ -1112,18 +1147,14 @@ function drawEntities() {
     } else if (e.type === 'mystery') {
       spr(SPR.mystery, X, Y);
     } else if (e.type === 'ufo') {
+      if (HD) ufoTrail(X, Y, e.ph);
       spr(SPR.ufo, X, Y);
       const cols = ['#ffd23a', '#ff5ad0', '#70f0ff'];
       for (let i = 0; i < 3; i++) { ctx.fillStyle = cols[(i + (frame >> 3)) % 3]; ctx.fillRect(X + 6 + i * 8, Y + 6, 4, 2); }
     } else if (e.type === 'meteor') {
-      spr(SPR.meteor, X, Y);
-      if (HD) {
-        const L = 26 + ((frame >> 1) & 3) * 4;
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = lg(ctx, X + 28, 0, X + 28 + L, 0, [[0, 'rgba(255,240,180,0.95)'], [0.3, 'rgba(255,140,30,0.8)'], [1, 'rgba(232,52,42,0)']]);
-        poly(ctx, [[X + 26, Y + 3], [X + 28 + L, Y + 8], [X + 26, Y + 13]]);
-        ctx.globalCompositeOperation = 'source-over';
-      } else {
+      if (HD) { meteorTrail(X, Y, e.ph); spr(SPR.meteor, X, Y); }
+      else {
+        spr(SPR.meteor, X, Y);
         ctx.fillStyle = (frame & 4) ? '#ff8a1e' : '#e8342a';
         ctx.fillRect(X + 32, Y + 6, 8 + ((frame >> 1) & 1) * 6, 4);
         ctx.fillStyle = '#ffd23a'; ctx.fillRect(X + 32, Y + 7, 4 + ((frame >> 2) & 1) * 4, 2);
