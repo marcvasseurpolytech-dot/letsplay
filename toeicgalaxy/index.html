@@ -72,15 +72,15 @@
     #pad #padFire { right: 18px; bottom: 34px; width: 92px; height: 92px; border-radius: 50%; background: rgba(220,50,60,.65); font: 12px "Press Start 2P", monospace; }
     #pad [data-d="l"] { left: 16px; bottom: 40px; width: 78px; } #pad [data-d="r"] { left: 108px; bottom: 40px; width: 78px; }
   }
-  @media (pointer: coarse) { #pad #padChg { right: 124px; bottom: 34px; width: 66px; height: 66px; border-radius: 50%; font: 10px "Press Start 2P", monospace; background: rgba(60,140,220,.65); } #pad #padPod { right: 30px; bottom: 140px; width: 66px; height: 66px; border-radius: 50%; font: 10px "Press Start 2P", monospace; background: rgba(230,140,40,.65); } }
+  @media (pointer: coarse) { #pad #padChg { right: 124px; bottom: 34px; width: 66px; height: 66px; border-radius: 50%; font: 10px "Press Start 2P", monospace; background: rgba(60,140,220,.65); } }
 </style>
 </head>
 <body>
 <div id="wrap">
   <canvas id="c" width="800" height="600"></canvas>
-  <div id="hint">LEFT / RIGHT: move &nbsp; UP / SPACE / CLICK: fire &nbsp; X: charge &nbsp; Z: force pod &nbsp; P: pause &nbsp; M: sound</div>
+  <div id="hint">LEFT / RIGHT: move &nbsp; UP / SPACE / CLICK: fire &nbsp; X: charge &nbsp; hold fire 3 s: beam &nbsp; P: pause &nbsp; M: sound</div>
 </div>
-<div id="pad"><div class="b" data-d="l">&#9664;</div><div class="b" data-d="r">&#9654;</div><div class="b" id="padFire">FIRE</div><div class="b" id="padChg">CHG</div><div class="b" id="padPod">POD</div></div>
+<div id="pad"><div class="b" data-d="l">&#9664;</div><div class="b" data-d="r">&#9654;</div><div class="b" id="padFire">FIRE</div><div class="b" id="padChg">CHG</div></div>
 <div id="auth" class="ov"><div class="panel" id="authBox"></div></div>
 <div id="quiz" class="ov"><div class="panel" id="quizBox"></div></div>
 <div id="over" class="ov"><div class="panel" id="overBox"></div></div>
@@ -357,7 +357,7 @@ const G = {
   state: 'title', score: 0, lives: 3, round: 1, hi: parseInt(lsGet('tgHi') || '0', 10) || 0, t: 0, stateT: 0,
   q: null, en: [], bul: [], ebul: [], parts: [], pops: [], stars: [], cx: CX0, tx: null, cool: 0, inv: 0, dual: false, capBoss: null, rescue: null,
   streak: 0, ok: 0, ko: 0, missed: [], learned: [], last: null, qT: 0, prevState: null, deadWhy: '', gain: 0, recent: [], spawnT: 0, entered: false,
-  qi: 0, qn: 0, up: { wpn: 'normal', lvl: 1, bits: 0, miss: false, force: false }, perm: { rate: 0, chg: 0, wpn: 'normal', wl: 1, bits: 0, miss: false, force: false, shield: 0 }, charge: 0, dir: 0, picks: 0, lvlWrong: 0, pickOpts: [], pickSel: 0, pickRects: [], missT: 1, forceO: null, bossT: 4, evoT: 10, bossN: 0, diveT: 3, caps: [], eff: { tri: 0, slow: 0, frz: 0, weak: 0, stop: 0 }, hideT: 0, hint: 0, meteor: 0, metT: 0, ufo: null, ufoT: 16, swapT: 9, kind: 'q', chalHits: 0, chalTot: 0, beamSnd: 0, clearMsg: '', ending: null
+  qi: 0, qn: 0, up: { wpn: 'normal', lvl: 1, bits: 0, miss: false, beam: false }, perm: { rate: 0, chg: 0, wpn: 'normal', wl: 1, bits: 0, miss: false, beam: false, shield: 0 }, beamC: 0, beamFx: null, mdown: false, charge: 0, dir: 0, picks: 0, lvlWrong: 0, pickOpts: [], pickSel: 0, pickRects: [], missT: 1, bossT: 4, evoT: 10, bossN: 0, diveT: 3, caps: [], eff: { tri: 0, slow: 0, frz: 0, weak: 0, stop: 0 }, hideT: 0, hint: 0, meteor: 0, metT: 0, ufo: null, ufoT: 16, swapT: 9, kind: 'q', chalHits: 0, chalTot: 0, beamSnd: 0, clearMsg: '', ending: null
 };
 let collection = (() => { try { return new Set(JSON.parse(lsGet('tgLearned') || '[]')); } catch (e) { return new Set(); } })();
 function saveCollection() { lsSet('tgLearned', JSON.stringify(Array.from(collection))); }
@@ -370,10 +370,8 @@ SND.ufo = (tick) => { if (tick) tone(900 + Math.random() * 300, 700, 0.05, { typ
 SND.mystery = () => { arp([392, 523, 659, 784, 1047, 1319, 1568, 2093], 0.045, { type: 'square', vol: 0.3 }); tone(1047, 1047, 0.4, { type: 'triangle', vol: 0.3, delay: 0.38 }); };
 SND.charge = (full) => { if (full) { tone(900, 1800, 0.12, { type: 'triangle', vol: 0.3 }); tone(1800, 1800, 0.1, { type: 'pulse', duty: 0.25, vol: 0.2, delay: 0.1 }); } else tone(500, 700, 0.06, { type: 'sine', vol: 0.2 }); };
 SND.wave = (full) => { noise(0.3, { f0: 6000, f1: 300, vol: 0.5 }); tone(full ? 160 : 260, 40, 0.4, { type: 'sawtooth', vol: 0.4 }); tone(full ? 1400 : 1000, 200, 0.35, { type: 'pulse', duty: 0.125, vol: 0.3 }); };
-SND.launch = () => { tone(300, 1200, 0.18, { type: 'square', vol: 0.25 }); noise(0.1, { f0: 5000, f1: 800, vol: 0.2 }); };
-SND.recall = () => { tone(1200, 400, 0.18, { type: 'triangle', vol: 0.25 }); };
+SND.beam2 = () => { noise(0.6, { f0: 7000, f1: 200, vol: 0.55 }); tone(120, 40, 0.6, { type: 'sawtooth', vol: 0.45 }); tone(1800, 300, 0.5, { type: 'pulse', duty: 0.125, vol: 0.3 }); tone(600, 1400, 0.3, { type: 'triangle', vol: 0.3 }); };
 SND.missile = () => { noise(0.12, { f0: 2500, f1: 600, vol: 0.18 }); tone(500, 300, 0.1, { type: 'sawtooth', vol: 0.12 }); };
-SND.orb = () => { tone(1200, 900, 0.05, { type: 'triangle', vol: 0.25 }); };
 SND.evolve = () => { arp([330, 440, 554, 659], 0.05, { type: 'square', vol: 0.22 }); };
 SND.pick = () => { arp([523, 659, 784, 1047], 0.06, { type: 'triangle', vol: 0.35 }); };
 SND.power = () => { arp([392, 523, 659, 784, 1047], 0.04, { type: 'pulse', duty: 0.25, vol: 0.3 }); };
@@ -607,16 +605,16 @@ const UPG = [
   { id: 'yellow', t: 'YELLOW FAN', d: 'Spread shot, wider at each level.', c: '#ffe14d', ok: () => G.perm.wpn !== 'yellow' || G.perm.wl < 3 },
   { id: 'bits', t: 'BIT', d: 'A satellite that shoots with you. Max 2.', c: '#7dffe0', ok: () => G.perm.bits < 2 },
   { id: 'miss', t: 'MISSILES', d: 'Homing missiles fire by themselves.', c: '#ffb04a', ok: () => !G.perm.miss },
-  { id: 'force', t: 'FORCE POD', d: 'Start every life with the Force. Z launches it, it blocks shots.', c: '#ffa040', ok: () => !G.perm.force },
+  { id: 'beam', t: 'POWER BEAM', d: 'Hold fire for 3 seconds then release: the beam strips 50% of the shield of the chiefs in its column.', c: '#ffa040', ok: () => !G.perm.beam },
   { id: 'shield', t: 'STAGE SHIELD', d: 'A short shield at the start of each stage.', c: '#7dff9b', ok: () => G.perm.shield < 2 },
   { id: 'life', t: 'EXTRA SHIP', d: 'One more ship right now.', c: '#ff8ab4', ok: () => G.lives < 5 }
 ];
 function applyUpg(id) {
   const p = G.perm, u = G.up;
-  if (id === 'rate') p.rate++; else if (id === 'chg') p.chg++; else if (id === 'bits') p.bits++; else if (id === 'miss') p.miss = true; else if (id === 'force') p.force = true; else if (id === 'shield') p.shield++; else if (id === 'life') G.lives = Math.min(5, G.lives + 1);
+  if (id === 'rate') p.rate++; else if (id === 'chg') p.chg++; else if (id === 'bits') p.bits++; else if (id === 'miss') p.miss = true; else if (id === 'beam') p.beam = true; else if (id === 'shield') p.shield++; else if (id === 'life') G.lives = Math.min(5, G.lives + 1);
   else { if (p.wpn === id) p.wl = Math.min(3, p.wl + 1); else { p.wpn = id; p.wl = 1; } }
   if (p.wpn !== 'normal') { if (u.wpn === p.wpn) u.lvl = Math.max(u.lvl, p.wl); else { u.wpn = p.wpn; u.lvl = p.wl; } }
-  u.bits = Math.max(u.bits, p.bits); u.miss = u.miss || p.miss; if (p.force && !G.forceO) { u.force = true; G.forceO = mkForce(); }
+  u.bits = Math.max(u.bits, p.bits); u.miss = u.miss || p.miss; u.beam = u.beam || p.beam;
 }
 function newPickOpts() { G.pickOpts = shuffle(UPG.filter((u) => u.ok())).slice(0, 3); G.pickSel = Math.min(1, G.pickOpts.length - 1); }
 function openPick() {
@@ -632,6 +630,7 @@ function pickChoose(i) {
 }
 function advance() { if (G.kind === 'q' && G.qi < 2) { G.qi++; startRound(G.round, false, true); } else openPick(); }
 function startRound(n, redo, keep) {
+  G.beamC = 0;
   G.round = n; G.kind = (!keep && isChal(n)) ? 'chal' : 'q';
   if (!keep) { G.qi = 0; G.lvlWrong = 0; G.inv = Math.max(G.inv, G.perm.shield ? 2.5 + 2 * G.perm.shield : 0); }
   G.charge = 0;
@@ -657,9 +656,8 @@ function maybeDrop(x, y, p) {
   G.caps.push({ x, y, k });
 }
 const WNAME = { red: 'RED LASER', blue: 'BLUE RICOCHET', yellow: 'YELLOW FAN' };
-function mkForce() { return { mode: 'att', x: G.cx, y: CAN_Y - 30, hp: 8, t: 0, hov: 0 }; }
 function applyBase() {
-  const p = G.perm; G.up = { wpn: p.wpn, lvl: p.wl, bits: p.bits, miss: p.miss, force: p.force }; G.forceO = p.force ? mkForce() : null; G.charge = 0;
+  const p = G.perm; G.up = { wpn: p.wpn, lvl: p.wl, bits: p.bits, miss: p.miss, beam: p.beam }; G.charge = 0; G.beamC = 0;
 }
 function catchCap(c) {
   const e = G.eff; SND.capsule(); let m = '';
@@ -670,7 +668,7 @@ function catchCap(c) {
     const w = { R: 'red', Y: 'yellow', C: 'blue' }[c.k], u = G.up;
     if (u.wpn === w) { u.lvl = Math.min(3, u.lvl + 1); } else { u.wpn = w; u.lvl = Math.max(1, G.perm.wpn === w ? G.perm.wl : 1); }
     m = WNAME[w] + ' LV' + u.lvl; SND.power();
-  } else if (c.k === 'P') { if (G.up.force && G.forceO) { G.forceO.hp = 8; G.score += 300; m = 'FORCE REPAIRED +300'; } else { G.up.force = true; G.forceO = mkForce(); m = 'FORCE POD! (Z = LAUNCH)'; } SND.power(); }
+  } else if (c.k === 'P') { if (G.up.beam) { G.score += 300; m = 'BEAM +300'; } else { G.up.beam = true; m = 'BEAM! HOLD FIRE 3 s, THEN RELEASE'; } SND.power(); }
   else if (c.k === 'O') { if (G.up.bits < 2) { G.up.bits++; m = 'BIT ' + G.up.bits + '/2'; } else { G.score += 300; m = 'BITS FULL +300'; } SND.power(); }
   else if (c.k === 'M') { if (!G.up.miss) { G.up.miss = true; m = 'HOMING MISSILES'; } else { G.score += 300; m = 'MISSILES +300'; } SND.power(); }
   popup(G.cx, CAN_Y - 30, m, 'BF'.indexOf(c.k) >= 0 ? '#ff7a7a' : '#7dff9b');
@@ -793,11 +791,10 @@ function shootFrom(x, y, plain) {
 }
 function fire() {
   const u = G.up, tri = G.eff.tri > 0, base = tri ? 6 : G.dual ? 4 : 2, wex = u.wpn === 'normal' ? 0 : 10;
-  if (G.cool > 0 || G.bul.filter((b) => !b.m && !b.big).length >= base + wex + u.bits * 2 + (G.forceO ? 2 : 0)) return;
+  if (G.cool > 0 || G.bul.filter((b) => !b.m && !b.big).length >= base + wex + u.bits * 2) return;
   (G.dual ? [G.cx - 14, G.cx + 14] : [G.cx]).forEach((x) => shootFrom(x, CAN_Y - 18));
   if (tri) [-18, 18].forEach((d) => G.bul.push({ x: G.cx + d, y: CAN_Y - 14 }));
   for (let i = 0; i < u.bits; i++) G.bul.push({ x: G.cx + (i ? 34 : -34), y: CAN_Y - 4, s: true });
-  if (G.forceO && G.forceO.mode === 'att') shootFrom(G.forceO.x, G.forceO.y - 8);
   G.cool = (G.eff.weak > 0 ? 1.0 : G.dual ? 0.3 : 0.17) * (G.eff.weak > 0 ? 1 : Math.pow(0.88, G.perm.rate)); SND.shoot();
 }
 function fireCharge(c) {
@@ -806,18 +803,11 @@ function fireCharge(c) {
   SND.wave(full); G.cool = Math.max(G.cool, 0.25);
 }
 function nearestEnemy(x, y) { let b = null, bd = 1e9; G.en.forEach((e) => { if (!e.alive || e.st === 'wait') return; const d = Math.hypot(e.x - x, e.y - y); if (d < bd) { bd = d; b = e; } }); return b; }
-function forceToggle() {
-  const o = G.forceO; if (!o || G.state !== 'play') return;
-  if (o.mode === 'att') { o.mode = 'out'; SND.launch(); } else if (o.mode === 'out' || o.mode === 'hov') { o.mode = 'back'; SND.recall(); }
-}
-function updForce(dt) {
-  const o = G.forceO; if (!o) return; o.t += dt;
-  if (o.mode === 'att') { o.x += (G.cx - o.x) * Math.min(1, dt * 18); o.y = CAN_Y - 30; }
-  else if (o.mode === 'out') { o.y -= 520 * dt; o.x += Math.sin(o.t * 8) * 60 * dt; if (o.y <= FY + 110) { o.mode = 'hov'; o.hov = 0; } }
-  else if (o.mode === 'hov') { o.hov += dt; o.x += (G.cx - o.x) * dt * 0.8; if (o.hov > 1.4) { o.mode = 'back'; SND.recall(); } }
-  else { const dx = G.cx - o.x, dy = CAN_Y - 30 - o.y, L = Math.hypot(dx, dy), sp = 640 * dt; if (L <= sp + 4) { o.mode = 'att'; o.x = G.cx; o.y = CAN_Y - 30; } else { o.x += dx / L * sp; o.y += dy / L * sp; } }
-  G.en.forEach((e) => { if (!e.alive || e.st === 'wait' || e.chal) return; if (Math.hypot(e.x - o.x, e.y - o.y) < (e.type === 2 ? 24 : 20) && G.t - (e.orbT || 0) > 0.16) { e.orbT = G.t; killEnemy(e, true, false, 2); } });
-  G.ebul.forEach((b) => { if (!b.dead && Math.hypot(b.x - o.x, b.y - o.y) < 17) { b.dead = true; o.hp--; SND.orb(); boom(b.x, b.y, '#ffb040', 4); if (o.hp <= 0 && G.forceO === o) { boom(o.x, o.y, '#ffd23a', 24); G.forceO = null; G.up.force = false; popup(o.x, o.y - 16, 'FORCE LOST', '#ff7a7a'); } } });
+function fireBeam() {
+  const x = G.cx; G.beamFx = { x, t: 0 }; SND.beam2();
+  G.en.slice().forEach((e) => { if (e.alive && e.st !== 'wait' && Math.abs(e.x - x) <= 36) killEnemy(e, true, false, 5); });
+  if (G.ufo && Math.abs(G.ufo.x - x) < 40) ufoHit();
+  G.cool = Math.max(G.cool, 0.3);
 }
 function formPos(e) {
   const k = G.entered ? 1 : 0, sw = Math.sin(G.t * 0.55) * 22 * k, br = 1 + 0.07 * Math.sin(G.t * 1.2) * k;
@@ -898,6 +888,7 @@ function update(dt) {
   G.parts.forEach((p) => { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; }); G.parts = G.parts.filter((p) => p.t < p.life);
   G.bgT = (G.bgT || 0) + dt; (G.cards || []).forEach((c) => { c.t += dt; }); G.cards = (G.cards || []).filter((c) => c.t < 3.0);
   G.pops.forEach((p) => { p.t += dt; }); G.pops = G.pops.filter((p) => p.t < (p.big ? 2.2 : 1.4));
+  if (G.beamFx) { G.beamFx.t += dt; if (G.beamFx.t > 0.5) G.beamFx = null; }
   G.stars.forEach((s) => { s.y += s.v * dt; if (s.y > FY + FH) s.y = FY; });
   if (G.cool > 0) G.cool -= dt; if (G.inv > 0) G.inv -= dt;
   ['tri', 'slow', 'frz', 'weak', 'stop'].forEach((k) => { if (G.eff[k] > 0) G.eff[k] -= dt; });
@@ -941,11 +932,13 @@ function update(dt) {
     if (e.sh > 0) { if (e.sh < 10 && G.t - e.lastHit > 1.5) e.sh = Math.min(10, e.sh + 1.2 * dt); }
     else if (e.rebuild > 0) { e.rebuild -= dt; if (e.rebuild <= 0) { e.sh = 2; popup(e.x, e.y - 22, 'SHIELD BACK', '#9ad8ff'); } }
   });
-  if (KS[' '] || KS.arrowup || PADK.f) fire();
+  const held = KS[' '] || KS.arrowup || PADK.f || G.mdown;
+  if (held) fire();
+  if (held && G.up.beam) { const pb = G.beamC; G.beamC = Math.min(3, G.beamC + dt); if (pb < 3 && G.beamC >= 3) SND.charge(true); }
+  else if (G.beamC > 0) { if (G.beamC >= 3) fireBeam(); G.beamC = 0; }
   if (KS.x || KS.c || PADK.c) { const pc = G.charge; G.charge = Math.min(1, G.charge + dt / (1.3 * Math.pow(0.8, G.perm.chg))); if (pc < 0.3 && G.charge >= 0.3) SND.charge(false); if (pc < 1 && G.charge >= 1) SND.charge(true); }
   else if (G.charge > 0) { if (G.charge >= 0.3) fireCharge(G.charge); G.charge = 0; }
   if (G.up.miss) { G.missT -= dt; if (G.missT <= 0 && G.en.some((e) => e.alive && e.st !== 'wait')) { G.missT = 1.1; G.mside = -(G.mside || 1); G.bul.push({ x: G.cx + G.mside * 14, y: CAN_Y - 10, vx: G.mside * 90, vy: -220, m: true, life: 2.6, col: '#ffb04a' }); SND.missile(); } }
-  updForce(dt);
   updEnemies(dt); if (G.state !== 'play') return;
   G.caps.forEach((c) => { c.y += 110 * dt; if (Math.abs(c.x - G.cx) < 30 && Math.abs(c.y - CAN_Y) < 20) { c.dead = true; catchCap(c); } else if (c.y > FY + FH) c.dead = true; });
   G.caps = G.caps.filter((c) => !c.dead);
@@ -1130,10 +1123,9 @@ function drawPlayer() {
   if (G.dual) { drawShip(G.cx - 16, CAN_Y, '#ff5a5a', true); drawShip(G.cx + 16, CAN_Y, '#ff5a5a', true); } else drawShip(G.cx, CAN_Y, '#ff5a5a', true);
   if (G.rescue) drawShip(G.rescue.x, G.rescue.y, '#ff5a5a', true);
   for (let i = 0; i < G.up.bits; i++) { const bx = G.cx + (i ? 34 : -34), by = CAN_Y + 2 + Math.sin(G.t * 4 + i * 2) * 3; ctx.save(); ctx.shadowColor = '#7dffe0'; ctx.shadowBlur = 10; const g = ctx.createRadialGradient(bx - 1, by - 1, 1, bx, by, 6); g.addColorStop(0, '#fff'); g.addColorStop(1, '#2ac8b0'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by, 5.5, 0, 6.283); ctx.fill(); ctx.restore(); }
-  const o = G.forceO;
-  if (o) {
-    ctx.save(); ctx.shadowColor = '#ffa040'; ctx.shadowBlur = 16; const g = ctx.createRadialGradient(o.x - 3, o.y - 3, 1, o.x, o.y, 12); g.addColorStop(0, '#fff'); g.addColorStop(0.5, '#ffb050'); g.addColorStop(1, '#b03800'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x, o.y, 11, 0, 6.283); ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,220,140,' + (0.5 + 0.4 * Math.sin(G.t * 10)) + ')'; ctx.beginPath(); ctx.arc(o.x, o.y, 15 + Math.sin(G.t * 8) * 1.5, 0, 6.283); ctx.stroke(); ctx.restore();
+  if (G.up.beam && G.beamC > 0.05) {
+    const c = G.beamC / 3, full = c >= 1; ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(G.cx - 24, CAN_Y + 30, 48, 5); ctx.fillStyle = full ? (Math.floor(G.t * 12) % 2 ? '#fff' : '#ffa040') : '#ff7a2a'; ctx.fillRect(G.cx - 24, CAN_Y + 30, 48 * c, 5);
+    if (full) { ctx.save(); ctx.strokeStyle = 'rgba(255,170,70,' + (0.5 + 0.4 * Math.sin(G.t * 14)) + ')'; ctx.lineWidth = 3; ctx.shadowColor = '#ffa040'; ctx.shadowBlur = 14; ctx.beginPath(); ctx.arc(G.cx, CAN_Y - 2, 24, 0, 6.283); ctx.stroke(); ctx.restore(); }
   }
   if (G.charge > 0.04) {
     const c = G.charge, full = c >= 1; ctx.save(); ctx.shadowColor = '#9ad8ff'; ctx.shadowBlur = 14; ctx.fillStyle = full ? 'rgba(220,245,255,.95)' : 'rgba(150,215,255,.8)'; ctx.beginPath(); ctx.arc(G.cx, CAN_Y - 24, 3 + c * 9 + (full ? Math.sin(G.t * 30) * 1.5 : 0), 0, 6.283); ctx.fill(); ctx.restore();
@@ -1150,6 +1142,12 @@ function drawBullet(b) {
   else ctx.fillRect(b.x - 1.5, b.y - 8, 3, 15);
   ctx.restore();
 }
+function drawBeamFx() {
+  const f = G.beamFx; if (!f) return; const a = 1 - f.t / 0.5, w = 36 * (0.4 + 0.6 * a);
+  ctx.save(); ctx.globalAlpha = Math.max(0, a); const g = ctx.createLinearGradient(f.x - w, 0, f.x + w, 0);
+  g.addColorStop(0, 'rgba(255,120,30,0)'); g.addColorStop(0.3, 'rgba(255,190,90,.9)'); g.addColorStop(0.5, '#fff'); g.addColorStop(0.7, 'rgba(255,190,90,.9)'); g.addColorStop(1, 'rgba(255,120,30,0)');
+  ctx.fillStyle = g; ctx.shadowColor = '#ffa040'; ctx.shadowBlur = 20; ctx.fillRect(f.x - w, 60, w * 2, CAN_Y - 18 - 60); ctx.restore();
+}
 function drawShots() {
   if (G.hideT > 0) { G.parts.forEach((p) => { ctx.globalAlpha = Math.max(0, 1 - p.t / p.life); ctx.fillStyle = p.col; ctx.fillRect(p.x, p.y, p.s, p.s); }); ctx.globalAlpha = 1; return; }
   G.bul.forEach(drawBullet);
@@ -1159,7 +1157,7 @@ function drawShots() {
 function drawHud() {
   const u = G.up, parts = [];
   if (u.wpn !== 'normal') parts.push([WNAME[u.wpn] + ' LV' + u.lvl, { red: '#ff7a7a', blue: '#7ab8ff', yellow: '#ffe14d' }[u.wpn]]);
-  if (u.bits) parts.push(['BITS ' + u.bits, '#7dffe0']); if (u.miss) parts.push(['MISSILES', '#ffb04a']); if (G.forceO) parts.push(['FORCE ' + G.forceO.hp, '#ffa040']);
+  if (u.bits) parts.push(['BITS ' + u.bits, '#7dffe0']); if (u.miss) parts.push(['MISSILES', '#ffb04a']); if (G.up.beam) parts.push([G.beamC >= 3 ? 'BEAM READY: RELEASE' : 'BEAM', '#ffa040']);
   let x = FX + 10; parts.forEach((p) => { bold(p[0], x, FY + FH - 14, 10, p[1], 'left'); x += ctx.measureText(p[0]).width + 14; });
 }
 function drawPanel() {
@@ -1183,9 +1181,9 @@ function drawPanel() {
   } else { bold('Shoot the chief', x + 8, 330, 11, '#9aa'); bold('with the answer!', x + 8, 346, 11, '#9aa'); }
   txt('CAPSULES', x + 4, 448, 6, '#9aa');
   txt('T triple Z shield S slow L 1up', x + 4, 460, 6, '#7dff9b'); txt('R red  Y fan  C bounce', x + 4, 472, 6, '#ffae7a');
-  txt('P pod  O bits  M missiles', x + 4, 484, 6, '#9ad8ff'); txt('B jam  F slow fire (bad)', x + 4, 496, 6, '#ff8a8a');
+  txt('P beam  O bits  M missiles', x + 4, 484, 6, '#9ad8ff'); txt('B jam  F slow fire (bad)', x + 4, 496, 6, '#ff8a8a');
   txt('WRONG: -50 + ALERT', x + 4, 510, 6, '#ff8a8a'); txt('BEAM = CAPTURE', x + 4, 521, 6, '#9ad0ff');
-  txt('UP fire  X charge  Z pod', x + 4, 532, 6, '#cfd6ff'); txt('P pause  M sound', x + 4, 543, 6, '#6f78d8'); txt('? UFO = SURPRISE', x + 4, 554, 6, '#ffe14d');
+  txt('UP fire  X charge  hold 3s beam', x + 4, 532, 6, '#cfd6ff'); txt('P pause  M sound', x + 4, 543, 6, '#6f78d8'); txt('? UFO = SURPRISE', x + 4, 554, 6, '#ffe14d');
 }
 function banner(l1, l2, col) {
   ctx.fillStyle = 'rgba(4,4,20,.7)'; ctx.fillRect(FX, 330, FW, 86);
@@ -1221,7 +1219,7 @@ function drawClear() {
 }
 function draw() {
   ctx.setTransform(SC, 0, 0, SC, 0, 0);
-  drawField(); drawQuestion(); if (!(G.hideT > 0)) { drawEnemies(); drawHint(); drawUfo(); } drawCards(); drawCaps(); drawPlayer(); drawShots(); drawPanel(); drawHud();
+  drawField(); drawQuestion(); if (!(G.hideT > 0)) { drawEnemies(); drawHint(); drawUfo(); } drawCards(); drawCaps(); drawPlayer(); drawBeamFx(); drawShots(); drawPanel(); drawHud();
   G.pops.forEach((p) => { ctx.globalAlpha = Math.max(0, 1 - p.t / (p.big ? 2.2 : 1.4)); bold(p.s, p.x, p.y - p.t * 30, p.big ? 17 : 14, p.col, 'center', p.big ? FW - 20 : undefined); }); ctx.globalAlpha = 1;
   const st = G.state;
   if (st === 'ready') banner(G.kind === 'chal' ? 'BONUS STAGE' : 'STAGE ' + G.round + '   (' + (G.qi + 1) + '/3)', G.kind === 'chal' ? 'hit them all for a perfect bonus' : (G.q ? G.q.tag : ''), '#ffd23a');
@@ -1237,7 +1235,7 @@ function draw() {
 function closeOverlays() { ['over', 'quiz', 'auth'].forEach((id) => document.getElementById(id).classList.remove('on')); }
 function newGame(cp, wrong) {
   G.score = cp ? cp.score : 0; G.lives = cp ? Math.max(1, 3 - (wrong | 0)) : 3; G.learned = []; G.missed = []; G.last = null; G.streak = 0; G.ok = 0; G.ko = 0; G.recent = []; G.q = null; G.cx = CX0; G.inv = 0; G.dual = false; G.capBoss = null; G.rescue = null;
-  QZ = null; closeOverlays(); G.perm = { rate: 0, chg: 0, wpn: 'normal', wl: 1, bits: 0, miss: false, force: false, shield: 0 }; applyBase(); G.dir = 0; G.picks = 0; G.lvlWrong = 0; G.bul = [];
+  QZ = null; closeOverlays(); G.perm = { rate: 0, chg: 0, wpn: 'normal', wl: 1, bits: 0, miss: false, beam: false, shield: 0 }; applyBase(); G.dir = 0; G.picks = 0; G.lvlWrong = 0; G.bul = [];
   if (!cp) profStart();
   startRound(cp ? cp.round : 1);
   if (cp && wrong) popup(CX0, 300, wrong + (wrong > 1 ? ' SHIPS LOST' : ' SHIP LOST') + ' (QUIZ)', '#ff7a7a');
@@ -1279,17 +1277,18 @@ window.addEventListener('keydown', (e) => {
   if (['arrowleft', 'arrowright', 'arrowup', ' '].includes(k)) e.preventDefault();
   if (k === ' ' || k === 'enter' || k === 'arrowup') { if (!e.repeat) action(); e.preventDefault(); }
   if (G.state === 'pick') { if (k === '1' || k === '2' || k === '3') pickChoose(+k - 1); else if (k === 'arrowleft' || k === 'a' || k === 'q') G.pickSel = Math.max(0, G.pickSel - 1); else if (k === 'arrowright' || k === 'd') G.pickSel = Math.min(G.pickOpts.length - 1, G.pickSel + 1); }
-  if (k === 'z' && !e.repeat) forceToggle();
   if (k === 'p') togglePause();
   if (k === 'm') { muted = !muted; lsSet('tgMuted', muted ? '1' : '0'); }
 });
 window.addEventListener('keyup', (e) => { KS[e.key.toLowerCase()] = false; });
-window.addEventListener('blur', () => { Object.keys(KS).forEach((k) => { KS[k] = false; }); });
+window.addEventListener('pointerup', () => { G.mdown = false; });
+window.addEventListener('pointercancel', () => { G.mdown = false; });
+window.addEventListener('blur', () => { G.mdown = false; Object.keys(KS).forEach((k) => { KS[k] = false; }); });
 function lx(e) { const r = cv.getBoundingClientRect(); return (e.clientX - r.left) / r.width * W; }
 cv.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') G.tx = lx(e); });
 cv.addEventListener('pointerdown', (e) => {
   if (G.state === 'pick') { const r = cv.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W, py = (e.clientY - r.top) / r.height * H; const i = G.pickRects.findIndex((q) => px >= q[0] && px <= q[0] + q[2] && py >= q[1] && py <= q[1] + q[3]); if (i >= 0) { G.pickSel = i; pickChoose(i); } e.preventDefault(); return; }
-  if (e.pointerType === 'mouse') G.tx = lx(e); action(); e.preventDefault(); });
+  if (e.pointerType === 'mouse') { G.tx = lx(e); G.mdown = true; } action(); e.preventDefault(); });
 function togglePause() {
   if (G.state === 'paused') { G.state = G.prevState || 'play'; }
   else if (G.state === 'play' || G.state === 'ready') { G.prevState = G.state; G.state = 'paused'; }
@@ -1302,9 +1301,8 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && (G.
     b.addEventListener('pointerdown', (e) => { PADK[d] = true; G.tx = null; audio(); e.preventDefault(); });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => b.addEventListener(ev, () => { PADK[d] = false; }));
   });
-  const pc = pad.querySelector('#padChg'), pp = pad.querySelector('#padPod');
+  const pc = pad.querySelector('#padChg');
   if (pc) { pc.addEventListener('pointerdown', (e) => { PADK.c = true; audio(); e.preventDefault(); }); ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => pc.addEventListener(ev, () => { PADK.c = false; })); }
-  if (pp) pp.addEventListener('pointerdown', (e) => { forceToggle(); audio(); e.preventDefault(); });
   const pb = pad.querySelector('#padFire');
   if (pb) { pb.addEventListener('pointerdown', (e) => { PADK.f = true; action(); audio(); e.preventDefault(); }); ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => pb.addEventListener(ev, () => { PADK.f = false; })); }
 })();
@@ -1438,7 +1436,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES &amp; BONUSES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage has 3 questions in a row (a sentence with a gap, or an irregular verb): after a right answer the correct sentence and its French stay on screen for a moment, then four new chiefs drop in with a new question while the remaining insects stay where they are (the missing ones come back). After the third question you move on to the next stage. Four green chiefs carry the answers. Each chief is protected by a shield bubble worth 10 hits (the ring around it shows what is left). If you stop firing for a moment the shield slowly rebuilds, and a broken shield comes back after a few seconds, so keep shooting. Then shoot the right chief twice (the first hit turns it blue) to answer the question. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>When a chief with a wrong irregular verb explodes, the three forms and the French appear and everything else disappears for 2 seconds so you can read them.<br>Insects dive and shoot. A chief may fire a tractor beam from the top of the screen and slide towards you: nothing can hurt you while it is active, so dodge it or shoot the chief. There is no beam when you have only one ship left. If you are captured, free the ship by shooting its captor: you get the lost ship back (+1 ship) and a dual fighter.<br>Now and then a mystery UFO (?) crosses the screen above your ship: shoot it for a random surprise (jackpot, time stop, triple shot, shields down, x-ray on the right answer, extra ship... or a meteor shower).<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br><b>Upgrades:</b> catch the capsules. R red laser (pierces), Y yellow fan, C blue ricochet (take the same colour again to level it up to 3), P the Force pod (<b>Z</b> launches and recalls it, it blocks shots and burns what it touches), O a bit that fires with you, M homing missiles. Hold <b>X</b> to charge the wave cannon and release: it pierces a whole column and hurts shields. Dying costs you the capsules you picked up, but not the upgrades you chose. After each stage pick 1 of 3 permanent upgrades (2 picks if you made no mistake).<br>The enemies adapt: a streak of right answers raises the THREAT bar (more divers, faster shots), a lost ship lowers it. Insects evolve over time, golden ones split in two, chiefs start shooting from the second question and open a weak point on the right chief at the third.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage has 3 questions in a row (a sentence with a gap, or an irregular verb): after a right answer the correct sentence and its French stay on screen for a moment, then four new chiefs drop in with a new question while the remaining insects stay where they are (the missing ones come back). After the third question you move on to the next stage. Four green chiefs carry the answers. Each chief is protected by a shield bubble worth 10 hits (the ring around it shows what is left). If you stop firing for a moment the shield slowly rebuilds, and a broken shield comes back after a few seconds, so keep shooting. Then shoot the right chief twice (the first hit turns it blue) to answer the question. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>When a chief with a wrong irregular verb explodes, the three forms and the French appear and everything else disappears for 2 seconds so you can read them.<br>Insects dive and shoot. A chief may fire a tractor beam from the top of the screen and slide towards you: nothing can hurt you while it is active, so dodge it or shoot the chief. There is no beam when you have only one ship left. If you are captured, free the ship by shooting its captor: you get the lost ship back (+1 ship) and a dual fighter.<br>Now and then a mystery UFO (?) crosses the screen above your ship: shoot it for a random surprise (jackpot, time stop, triple shot, shields down, x-ray on the right answer, extra ship... or a meteor shower).<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br><b>Upgrades:</b> catch the capsules. R red laser (pierces), Y yellow fan, C blue ricochet (take the same colour again to level it up to 3), P the power beam (hold fire for 3 seconds, a gauge fills under your ship, then release: the beam strips 50% of the shield of the chiefs in its column and destroys the insects it crosses; hold the mouse button to keep firing), O a bit that fires with you, M homing missiles. Hold <b>X</b> to charge the wave cannon and release: it pierces a whole column and hurts shields. Dying costs you the capsules you picked up, but not the upgrades you chose. After each stage pick 1 of 3 permanent upgrades (2 picks if you made no mistake).<br>The enemies adapt: a streak of right answers raises the THREAT bar (more divers, faster shots), a lost ship lowers it. Insects evolve over time, golden ones split in two, chiefs start shooting from the second question and open a weak point on the right chief at the third.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
@@ -1550,7 +1548,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('62px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tg = { PR, openQuiz, qState: () => QZ, answerQuestion, renderAuth, G, VERBS, BANK, update, draw, newGame, action, startRound, makeQuestion, verbQuestion, gapQuestion, killEnemy, hurt, startDive, ufoHit, startKami, forceToggle, applyUpg, openPick, pickChoose, fireCharge, evolveOne, enemyShot, ringShot, splitGold, UPG, catchCap, maybeDrop, KS, fire, collection, SND };
+window.__tg = { PR, openQuiz, qState: () => QZ, answerQuestion, renderAuth, G, VERBS, BANK, update, draw, newGame, action, startRound, makeQuestion, verbQuestion, gapQuestion, killEnemy, hurt, startDive, ufoHit, startKami,  applyUpg, openPick, pickChoose, fireCharge,fireBeam, evolveOne, enemyShot, ringShot, splitGold, UPG, catchCap, maybeDrop, KS, fire, collection, SND };
 })();
 </script>
 </body>
