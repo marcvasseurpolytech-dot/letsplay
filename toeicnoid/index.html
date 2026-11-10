@@ -12,6 +12,9 @@
   #hint { font-size: 8px; color: #6f78d8; text-align: center; padding: 0 8px; line-height: 1.6; }
   .ov { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0, 0, 0, .72); z-index: 20; }
   .ov.on { display: flex; }
+  .ov.min { background: none; align-items: flex-start; pointer-events: none; }
+  .ov.min .panel { width: auto; max-height: none; padding: 6px 8px; margin-top: 6px; pointer-events: auto; }
+  .ov.min .btn { margin: 0; }
   .ov .panel { width: min(640px, 94vw); max-height: 90vh; overflow-y: auto; box-sizing: border-box; background: rgba(13, 27, 58, .98); border: 1px solid rgba(201, 162, 39, .7); border-radius: 12px; padding: 16px; font-family: "JetBrains Mono", "Courier New", monospace; color: #f5eedc; touch-action: pan-y; cursor: default; -webkit-user-select: text; user-select: text; }
   .ov h1 { font: 22px "Press Start 2P", monospace; color: #ffd23a; margin: 0 0 8px; text-align: center; }
   .ov .sum { text-align: center; font-size: 13px; color: #a9b3c9; margin: 0 0 10px; }
@@ -1214,6 +1217,12 @@ function renderAuth() {
   const box = document.getElementById('authBox');
   if (!box) return;
   const $ = (q) => box.querySelector(q);
+  const ov = document.getElementById('auth'); ov.classList.toggle('min', !!PR.min);
+  if (PR.min) {
+    box.innerHTML = '<button class="btn sm" id="aMax">&#9660; ' + (PR.user ? 'PLAY / CONTINUE' : (PR.guest ? 'PLAY' : 'LOG IN / PLAY')) + '</button>';
+    $('#aMax').addEventListener('click', () => { PR.min = false; renderAuth(); });
+    return;
+  }
   let h = '<h1>TOEIC<span style="color:#fff">NOID</span></h1>';
   if (PR.user) {
     const cp = hasCheckpoint();
@@ -1242,10 +1251,12 @@ function renderAuth() {
       (PR.offline ? '<div class="row"><button class="btn ghost" id="aGuest">Server unreachable: play as guest (not saved)</button></div>' : '') +
       '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
+  h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES &amp; BONUSES</button></div>';
   h += '<details><summary>Directions</summary><p class="muted">Mouse, touch or arrow keys: move the paddle. Space or click: launch the ball and fire. P: pause. M: sound. H: HD / retro.<br>Every colored brick is an irregular verb: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the brick breaks). Silver bricks give points and may hide a bonus capsule.<br>When you lose your last life, your round is saved. To continue from that round, answer 3 grammar questions correctly.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
+  const ru = $('#aRules'); if (ru) ru.addEventListener('click', () => { PR.min = true; renderAuth(); });
   const go = $('#aGo');
   if (go) {
     const submit = () => {
@@ -1271,7 +1282,7 @@ function renderAuth() {
 function syncAuth() {
   const want = G.state === 'title' && !QZ;
   if (want === PR.shown) return;
-  PR.shown = want;
+  PR.shown = want; if (want) PR.min = false;
   document.getElementById('auth').classList[want ? 'add' : 'remove']('on');
   if (want) renderAuth();
 }
