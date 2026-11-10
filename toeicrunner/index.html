@@ -14,14 +14,15 @@ const LV = [
   { prompt: 'Collect only PAST PARTICIPLES of irregular verbs', fr: 'Participes passés de verbes irréguliers', good: ['given', 'written', 'taken', 'spoken', 'chosen'], bad: ['gave', 'wrote', 'took'],
     lad: [[0, 4], [0, 19], [1, 10], [1, 22], [2, 6], [2, 16]], pits: [[1, 13, 16]], rope: [[1, 13, 16]], gold: [[0, 9], [0, 15], [1, 7], [1, 21], [2, 14], [2, 3], [3, 12], [3, 22]], guards: [[1, 22], [0, 18]], start: [3, 1], door: 23 },
   { prompt: 'Collect only words of CONTRAST', fr: 'Mots qui expriment l’opposition', good: ['however', 'although', 'whereas', 'nevertheless', 'despite'], bad: ['because', 'therefore', 'moreover'],
-    lad: [[0, 2], [0, 12], [1, 8], [1, 20], [2, 14], [2, 4]], pits: [[2, 16, 19]], rope: [[2, 16, 19]], gold: [[0, 6], [0, 18], [1, 5], [1, 22], [2, 11], [2, 22], [3, 9], [3, 19]], guards: [[0, 20], [1, 18]], start: [3, 1], door: 22 },
+    lad: [[0, 2], [0, 12], [1, 8], [1, 20], [2, 14], [2, 4]], pits: [[2, 16, 19]], rope: [[2, 16, 19]], gold: [[0, 6], [0, 18], [1, 5], [1, 21], [2, 11], [2, 21], [3, 9], [3, 19]], guards: [[0, 20], [1, 18]], start: [3, 1], door: 22 },
   { prompt: 'Collect only synonyms of INCREASE', fr: 'Synonymes de « augmenter »', good: ['rise', 'grow', 'climb', 'surge', 'expand'], bad: ['decline', 'drop', 'shrink'],
-    lad: [[0, 7], [0, 17], [1, 3], [1, 13], [1, 23], [2, 9], [2, 19]], pits: [[0, 10, 13]], rope: [[0, 10, 13]], gold: [[0, 4], [0, 21], [1, 10], [1, 20], [2, 6], [2, 16], [3, 2], [3, 12]], guards: [[0, 21], [1, 22], [2, 20]], start: [3, 1], door: 23 },
+    lad: [[0, 7], [0, 17], [1, 3], [1, 13], [1, 23], [2, 9], [2, 19]], pits: [[0, 10, 13]], rope: [[0, 10, 13]], gold: [[0, 4], [0, 21], [1, 10], [1, 20], [2, 6], [2, 16], [3, 2], [3, 12]], guards: [[0, 21], [1, 21], [2, 20]], start: [3, 1], door: 23 },
   { prompt: 'Collect only NOUNS (not verbs)', fr: 'Uniquement des noms', good: ['decision', 'manager', 'deadline', 'employee', 'supplier'], bad: ['decide', 'approve', 'deliver'],
     lad: [[0, 3], [0, 12], [0, 21], [1, 7], [1, 17], [2, 1], [2, 11], [2, 23]], pits: [[1, 9, 14], [2, 18, 21]], rope: [[1, 9, 14], [2, 18, 21]], gold: [[0, 8], [0, 17], [1, 4], [1, 22], [2, 3], [2, 14], [3, 6], [3, 20]], guards: [[0, 20], [1, 22], [2, 23]], start: [3, 1], door: 23 }
 ];
 LV.push(Object.assign({}, LV[1], { prompt: 'PRETERIT of: \u00e9crire, prendre, voir, savoir, aller', fr: 'Pr\u00e9t\u00e9rit anglais (pas le participe pass\u00e9) des verbes fran\u00e7ais', good: ['wrote', 'took', 'saw', 'knew', 'went'], bad: ['written', 'taken', 'seen'] }));
 LV.push(Object.assign({}, LV[3], { prompt: 'PAST PARTICIPLE of: donner, faire, parler, choisir, aller', fr: 'Participe pass\u00e9 anglais (pas le pr\u00e9t\u00e9rit) des verbes fran\u00e7ais', good: ['given', 'done', 'spoken', 'chosen', 'gone'], bad: ['gave', 'did', 'spoke'] }));
+LV.forEach((l, i) => { l.pits = (l.pits || []).concat(i % 2 ? [[1, 0, 2], [2, 22, 24]] : [[1, 22, 24], [2, 0, 2]]); });
 const S = { st: 'title', t: 0, lv: 0, lives: 3, time: 180, g: null, holes: new Map(), slots: [], got: 0, need: 5, p: null, gs: [], door: null, open: false, keys: {}, msg: '', msgT: 0, wrong: 0, score: 0, okT: 0, deadT: 0 };
 window.S = S;
 const rnd = (a, b) => a + Math.random() * (b - a), shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -70,7 +71,19 @@ function loadLevel() {
   S.p = { tx: lv.start[1], ty: FL[lv.start[0]], mv: null, dir: 1, f: 0 };
   S.gs = lv.guards.map(([f, x]) => ({ tx: x, ty: FL[f], mv: null, spd: 2.7 + S.lv * 0.3, pt: rnd(0, 0.3), dir: 1, holeT: 0, home: [f, x] }));
   S.door = { x: lv.door, y: FL[0] };
-  S.acc = placeAcc(lv);
+  S.acc = placeAcc(lv); S.hammer = placeHammer(); S.hammerT = 0;
+}
+function placeHammer() {
+  const seen = new Set(), q = [[S.p.tx, S.p.ty]]; seen.add(S.p.tx + ',' + S.p.ty);
+  while (q.length) { const [x, y] = q.shift(); for (const [dx, dy] of moves(x, y, S.p)) { const k = (x + dx) + ',' + (y + dy); if (!seen.has(k)) { seen.add(k); q.push([x + dx, y + dy]); } } }
+  const cands = [];
+  for (let f = 1; f < 3; f++) for (let x = 3; x < 22; x++) {
+    const y = FL[f]; if (ch(x, y) !== ' ' || !solid(x, y + 1) || !seen.has(x + ',' + y)) continue;
+    if (S.slots.some((o) => o.y === y && Math.abs(o.x - x) < 2) || (S.acc || []).some((a) => a.y === y && Math.abs(a.x - x) < 2) || S.gs.some((g) => g.ty === y && Math.abs(g.tx - x) < 4)) continue;
+    cands.push({ x, y });
+  }
+  const c = cands.length ? cands[Math.floor(Math.random() * cands.length)] : { x: 12, y: FL[1] };
+  return { x: c.x, y: c.y, taken: false };
 }
 function placeAcc(lv) {
   const seen = new Set(), q = [[S.p.tx, S.p.ty]]; seen.add(S.p.tx + ',' + S.p.ty);
@@ -90,6 +103,7 @@ function newGame() { profStart(); S.lv = 0; S.lives = 3; S.wrong = 0; S.score = 
 function die(why) { if (S.st !== 'play') return; S.st = 'dead'; S.deadT = 0; S.lives--; S.why = why; if (S.lives <= 0) profEnd(); }
 function arrive(e) {
   if (e === S.p) {
+    if (S.hammer && !S.hammer.taken && S.hammer.x === e.tx && S.hammer.y === e.ty) { S.hammer.taken = true; S.hammerT = 10; S.score += 100; say('HAMMER! Smash the guards for 10 s', 2.2); }
     const ac = (S.acc || []).find((a) => !a.taken && a.x === e.tx && a.y === e.ty); if (ac) { ac.taken = true; S.score += 200; say(ac.k.toUpperCase() + ' +200', 1.2); }
     const sl = S.slots.find((s) => !s.taken && s.x === e.tx && s.y === e.ty);
     if (sl) { sl.taken = true; profPick(sl.w, sl.ok); if (sl.ok) { S.got++; S.score += 100; say('"' + sl.w + '"  OK!  ' + S.got + ' / ' + S.need, 1.6); if (S.got >= S.need) { S.open = true; say('ALL WORDS FOUND! Run to the EXIT door at the top.', 3.5); } } else { S.wrong++; S.time -= 12; S.shake = 0.3; say('"' + sl.w + '" is WRONG: -12 s', 2); } }
@@ -125,6 +139,7 @@ function update(dt) {
   if (S.st === 'dead') { S.deadT += dt; return; }
   if (S.st !== 'play') return;
   const p = S.p, k = S.keys;
+  if (S.hammerT > 0) S.hammerT -= dt;
   S.time -= dt; if (S.time <= 0) { S.time = 0; die('time'); return; }
   // holes refill
   for (const [key, t] of S.holes) {
@@ -156,17 +171,18 @@ function update(dt) {
   S.gs.forEach((g) => {
     step(g, dt);
     if (isHole(g.tx, g.ty) && !g.mv) g.holeT += dt; else if (!isHole(g.tx, g.ty)) g.holeT = 0;
-    if (!g.mv) {
+    if (!g.mv) think: {
       const mv = moves(g.tx, g.ty, g);
-      if (!mv.length) return;
-      if (mv.length === 1 && mv[0][1] === 1 && !canStand(g.tx, g.ty)) { startMove(g, 0, 1); return; }
-      if (S.gDelay > 0) return;
-      g.pt -= dt; if (g.pt > 0) return; g.pt = 0.12;
+      if (!mv.length) break think;
+      if (mv.length === 1 && mv[0][1] === 1 && !canStand(g.tx, g.ty)) { startMove(g, 0, 1); break think; }
+      if (S.gDelay > 0) break think;
+      g.pt -= dt; if (g.pt > 0) break think; g.pt = 0.12;
       let d = bfs(g.tx, g.ty, p.tx, p.ty, g);
       if (!d) { const w = mv.filter((m) => m[1] === 0); if (w.length) d = w[Math.floor(Math.random() * w.length)]; }
       if (d && mv.some((m) => m[0] === d[0] && m[1] === d[1])) startMove(g, d[0], d[1]);
     }
     const gx = g.tx + (g.mv ? g.mv.dx * g.mv.p : 0), gy = g.ty + (g.mv ? g.mv.dy * g.mv.p : 0), px = p.tx + (p.mv ? p.mv.dx * p.mv.p : 0), py = p.ty + (p.mv ? p.mv.dy * p.mv.p : 0);
+    if (S.hammerT > 0 && Math.abs(gx - px) < 1.3 && Math.abs(gy - py) < 0.7) { respawn(g); S.score += 300; S.shake = 0.2; say('SMASH! +300', 1); return; }
     const air = p.mv && p.mv.jump && p.mv.p > 0.2 && p.mv.p < 0.8;
     if (!air && !(isHole(g.tx, g.ty) && !g.mv) && Math.abs(gx - px) < 0.6 && Math.abs(gy - py) < 0.6) die('guard');
   });
@@ -207,7 +223,13 @@ function girder(px, py, th, under) {
   for (const rx of [2, TS - 6]) { R(px + rx, py + 4, 4, 4, th.rv); R(px + rx, py + TS - 10, 4, 4, th.rv); }
 }
 function barrel(x, y, th) { R(x, y - 24, 22, 24, '#a1683c'); R(x + 2, y - 24, 18, 3, '#6d3b33'); R(x, y - 18, 22, 3, '#4b2a22'); R(x, y - 8, 22, 3, '#4b2a22'); R(x + 2, y - 3, 18, 3, '#6d3b33'); R(x + 8, y - 15, 6, 5, th.rope); }
-function oil(x, y, th) { R(x + 4, y - 30, 24, 30, '#3c5fd1'); R(x + 4, y - 30, 24, 4, '#8fb0ff'); R(x + 4, y - 20, 24, 3, '#1f2f80'); R(x + 4, y - 8, 24, 3, '#1f2f80'); T('OIL', x + 16, y - 11, 8, '#fff', 'center'); const fl = Math.floor(S.t * 8) % 2; R(x + 8, y - 40 - fl * 3, 6, 10 + fl * 3, '#ff9a3c'); R(x + 16, y - 44 + fl * 3, 6, 14 - fl * 3, '#ff5a2a'); R(x + 12, y - 36, 4, 6, '#ffe14d'); }
+function oil(x, y, th) { R(x + 4, y - 30, 24, 30, '#3c5fd1'); R(x + 4, y - 30, 24, 4, '#8fb0ff'); R(x + 4, y - 20, 24, 3, '#1f2f80'); R(x + 4, y - 8, 24, 3, '#1f2f80'); const fl = Math.floor(S.t * 8) % 2; R(x + 8, y - 40 - fl * 3, 6, 10 + fl * 3, '#ff9a3c'); R(x + 16, y - 44 + fl * 3, 6, 14 - fl * 3, '#ff5a2a'); R(x + 12, y - 36, 4, 6, '#ffe14d'); }
+function mallet(cx, fy, dir, swing) {
+  if (!swing) { R(cx - 2, fy - 16, 4, 16, '#a1683c'); R(cx - 9, fy - 24, 18, 9, '#b8b8b8'); R(cx - 9, fy - 24, 18, 2, '#fff'); R(cx - 9, fy - 17, 18, 2, '#6c6c6c'); return; }
+  const up = Math.floor(S.t * 8) % 2;
+  if (up) { R(cx + dir * 8 - 2, fy - 46, 4, 18, '#a1683c'); R(cx + dir * 8 - 9, fy - 56, 18, 10, '#b8b8b8'); R(cx + dir * 8 - 9, fy - 56, 18, 2, '#fff'); }
+  else { R(cx + dir * 12, fy - 22, 22 * dir > 0 ? 18 : -18, 4, '#a1683c'); const hx = cx + dir * 30; R(hx - 5, fy - 32, 10, 20, '#b8b8b8'); R(hx - 5, fy - 32, 2, 20, '#fff'); }
+}
 function acc(k, cx, fy) {
   if (k === 'hat') { R(cx - 10, fy - 6, 20, 4, '#ff7acb'); R(cx - 6, fy - 14, 12, 8, '#ff7acb'); R(cx - 6, fy - 8, 12, 2, '#fff'); }
   else if (k === 'umbrella') { R(cx - 10, fy - 20, 20, 6, '#53d6e0'); R(cx - 7, fy - 24, 14, 4, '#53d6e0'); R(cx - 1, fy - 14, 2, 12, '#ccc'); R(cx - 4, fy - 4, 5, 2, '#ccc'); R(cx - 10, fy - 15, 4, 2, '#fff'); R(cx + 2, fy - 15, 4, 2, '#fff'); }
@@ -224,7 +246,7 @@ function draw() {
   R(0, 0, W, H, C.bg);
   if (S.st === 'title') {
     T('TOEICrunner', W / 2, 140, 44, C.gold, 'center'); T('a Lode Runner style prototype', W / 2, 175, 16, C.lb, 'center');
-    ['Collect the gold bars that carry the RIGHT words.', 'Wrong words cost you 12 seconds. Then run to the EXIT.', '', 'Z Q S D: climb up, run left, go down, run right', 'LEFT CLICK: dig a hole in the direction you face', 'RIGHT CLICK: jump 2 tiles (over a hole or a guard)', '(keyboard: LEFT / RIGHT arrows dig, SPACE jumps)', 'A guard that falls in a hole is trapped for a few seconds.', 'Do not fall in your own hole when it closes!'].forEach((l, i) => T(l, W / 2, 232 + i * 25, 16, C.wh, 'center'));
+    ['Collect the gold bars that carry the RIGHT words.', 'Wrong words cost you 12 seconds. Then run to the EXIT.', '', 'Z Q S D: climb up, run left, go down, run right', 'LEFT CLICK: dig a hole in the direction you face', 'RIGHT CLICK: jump 2 tiles (over a hole or a guard)', '(keyboard: LEFT / RIGHT arrows dig, SPACE jumps)', 'Grab the HAMMER: smash the guards for points!', 'A guard that falls in a hole is trapped for a few seconds.', 'Do not fall in your own hole when it closes!'].forEach((l, i) => T(l, W / 2, 222 + i * 24, 16, C.wh, 'center'));
     T(PR.user ? 'Player: ' + PR.user.nom + '   Best score: ' + PR.best + '   Words: ' + Object.keys(PR.words).length : 'Guest mode: log in on the arcade hub to save your score', W / 2, 455, 13, PR.user ? C.gr : C.lb, 'center');
     if (Math.floor(S.t * 2) % 2) T('PRESS ANY KEY', W / 2, 490, 20, C.gold, 'center');
     ctx.restore(); return;
@@ -232,7 +254,7 @@ function draw() {
   const lv = LV[Math.min(S.lv, LV.length - 1)];
   R(0, 0, W, 76, '#201a60'); R(0, 74, W, 3, C.lb);
   T(lv.prompt, W / 2, 30, 19, C.wh, 'center'); T(lv.fr, W / 2, 52, 13, C.cy, 'center');
-  T('LEVEL ' + (S.lv + 1) + '/' + LV.length + '   WORDS ' + S.got + '/' + S.need, 14, 68, 13, C.gr); T('LIVES ' + S.lives, W / 2 + 110, 68, 13, C.pk, 'center');
+  T('LEVEL ' + (S.lv + 1) + '/' + LV.length + '   WORDS ' + S.got + '/' + S.need + (S.hammerT > 0 ? '   HAMMER ' + Math.ceil(S.hammerT) : ''), 14, 68, 13, S.hammerT > 0 ? C.gold : C.gr); T('LIVES ' + S.lives, W / 2 + 110, 68, 13, C.pk, 'center');
   T('TIME ' + Math.floor(S.time / 60) + ':' + String(Math.floor(S.time % 60)).padStart(2, '0'), W - 14, 68, 13, S.time < 30 ? C.rd : C.gold, 'right');
   const th = TH[S.lv % TH.length];
   for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
@@ -250,6 +272,7 @@ function draw() {
   const bx = 0, by = OY + 1 * TS + yoffTile(0, 1) + TS;
   [[6, 0], [28, 0], [17, -22]].forEach(([dx, dy]) => barrel(bx + dx, by + dy, th));
   oil(24 * TS, OY + 13 * TS + yoffTile(24, 13) + TS, th);
+  if (S.hammer && !S.hammer.taken) { const hx = S.hammer.x * TS + 16, hy = OY + (S.hammer.y + 1) * TS + yoffEnt(S.hammer.x + 0.5, S.hammer.y); mallet(hx, hy, 0, false); }
   // accessoires bonus
   (S.acc || []).forEach((a) => { if (!a.taken) acc(a.k, a.x * TS + 16, OY + (a.y + 1) * TS + yoffEnt(a.x + 0.5, a.y)); });
   // door
@@ -261,8 +284,9 @@ function draw() {
   // guards
   S.gs.forEach((g) => { const gxf = g.tx + (g.mv ? g.mv.dx * g.mv.p : 0), gyf = g.ty + (g.mv ? g.mv.dy * g.mv.p : 0), px = gxf * TS, py = OY + gyf * TS + yoffEnt(gxf + 0.5, gyf); const hole = isHole(g.tx, g.ty) && !g.mv; man(px, py + (hole ? 6 : 0), g.dir, C.rd, S.t * 8, ch(g.tx, g.ty) === 'H'); if (hole) R(px + 4, py - 2, 24, 4, C.gold); });
   // player
-  if (S.st !== 'dead' || Math.floor(S.deadT * 10) % 2) { const p = S.p, pxf = p.tx + (p.mv ? p.mv.dx * p.mv.p : 0), pyf = p.ty + (p.mv ? p.mv.dy * p.mv.p : 0), px = pxf * TS, py = OY + pyf * TS + yoffEnt(pxf + 0.5, pyf); man(px, py - (p.mv && p.mv.jump ? Math.sin(Math.PI * p.mv.p) * 18 : 0), p.dir, C.wh, p.mv ? p.f : 0, ch(p.tx, p.ty) === 'H' && p.mv && p.mv.dy); }
-  if (S.msgT > 0 && S.msg) { R(60, 484, W - 120, 30, 'rgba(32,26,96,.92)'); T(S.msg, W / 2, 505, 14, C.gold, 'center'); }
+  if (S.st !== 'dead' || Math.floor(S.deadT * 10) % 2) { const p = S.p, pxf = p.tx + (p.mv ? p.mv.dx * p.mv.p : 0), pyf = p.ty + (p.mv ? p.mv.dy * p.mv.p : 0), px = pxf * TS, py = OY + pyf * TS + yoffEnt(pxf + 0.5, pyf); if (S.hammerT > 0 && (S.hammerT > 2 || Math.floor(S.t * 10) % 2)) mallet(px + 16, py + TS - 2, p.dir, true);
+    man(px, py - (p.mv && p.mv.jump ? Math.sin(Math.PI * p.mv.p) * 18 : 0), p.dir, C.wh, p.mv ? p.f : 0, ch(p.tx, p.ty) === 'H' && p.mv && p.mv.dy); }
+  if (S.msgT > 0 && S.msg) { R(70, OY + 3, W - 140, 26, 'rgba(32,26,96,.92)'); T(S.msg, W / 2, OY + 21, 14, C.gold, 'center'); }
   if (S.st === 'dead') { R(180, 200, 440, 120, '#201a60'); T(S.why === 'time' ? 'TIME IS UP' : S.why === 'hole' ? 'BURIED ALIVE!' : 'CAUGHT!', W / 2, 250, 30, C.rd, 'center'); T(S.lives > 0 ? S.lives + ' ' + (S.lives > 1 ? 'lives' : 'life') + ' left' : 'no life left', W / 2, 282, 15, C.wh, 'center'); if (S.deadT > 1) T('PRESS ANY KEY', W / 2, 308, 13, C.gold, 'center'); }
   if (S.st === 'ok') { S.okT += 1 / 60; R(120, 190, 560, 150, '#201a60'); T('LEVEL COMPLETE', W / 2, 245, 30, C.gr, 'center'); T('Score ' + S.score, W / 2, 285, 16, C.wh, 'center'); if (Math.floor(S.t * 2) % 2) T('PRESS ANY KEY', W / 2, 320, 14, C.gold, 'center'); }
   if (S.st === 'over') { R(160, 200, 480, 130, '#201a60'); T('GAME OVER', W / 2, 255, 34, C.rd, 'center'); T('Score ' + S.score, W / 2, 292, 16, C.wh, 'center'); T('PRESS ANY KEY', W / 2, 318, 13, C.gold, 'center'); }
