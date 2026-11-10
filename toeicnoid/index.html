@@ -948,22 +948,26 @@ function drawTitle() {
   gl.addColorStop(0, '#ffffff'); gl.addColorStop(0.5, '#ffffff'); gl.addColorStop(0.52, '#9090ff'); gl.addColorStop(1, '#2c2cd0');
   ctx.fillStyle = gl; ctx.fillText('TOEICNOID', W / 2, 90);
   txt('IRREGULAR VERBS BREAKOUT', W / 2, 146, 12, '#ffff98', 'center', '#000');
-  // nom de l'auteur
-  txt('A GAME BY', W / 2, 188, 9, '#9fa8ff', 'center', '#000');
-  ctx.save(); if (HD) { ctx.shadowColor = '#ffd23a'; ctx.shadowBlur = 18; }
-  txt('MARC VASSEUR', W / 2, 220, 28, '#ffd23a', 'center', '#6a4a00'); ctx.restore();
-  txt('POLYTECH LILLE', W / 2, 252, 12, '#ffffff', 'center', '#000');
+  // auteur (discret)
+  txt('A game by Marc VASSEUR / Polytech Lille', W / 2, 190, 10, '#c8ccff', 'center', '#000');
   // démonstration de brique
   const st = Math.floor(G.t / 1.4) % 4;
-  const demo = { x: W / 2 - 48, y: 282, w: BW, h: BH, ch: 'c', col: COL.c, hits: Math.min(st, 2), flash: st === 3 ? 1 : 0, gold: false, arm: false, v: st === 3 ? ['go', 'went', 'aller', 'aller'] : ['go', 'went', 'gone', 'aller'] };
+  const demo = { x: W / 2 - 48, y: 226, w: BW, h: BH, ch: 'c', col: COL.c, hits: Math.min(st, 2), flash: st === 3 ? 1 : 0, gold: false, arm: false, v: st === 3 ? ['go', 'went', 'aller', 'aller'] : ['go', 'went', 'gone', 'aller'] };
   drawBrick(demo);
-  txt(['the brick shows the INFINITIVE', 'hit 1: PRETERIT', 'hit 2: PAST PARTICIPLE', 'hit 3: FRENCH'][st], W / 2, 336, 10, '#94e089', 'center', '#000');
+  txt(['the brick shows the INFINITIVE', 'hit 1: PRETERIT', 'hit 2: PAST PARTICIPLE', 'hit 3: FRENCH'][st], W / 2, 280, 10, '#94e089', 'center', '#000');
   const rows = ['Every brick is an irregular verb.', 'Break it with 3 hits.', 'Silver bricks give points and may hide a bonus.'];
-  rows.forEach((r, i) => txt(r, W / 2, 380 + i * 24, 10, '#e0e0ff', 'center', '#000'));
-  txt('Capsules: S C E D L B P', W / 2, 470, 9, '#9af0f4', 'center', '#000');
-  if (Math.floor(G.t * 2) % 2 === 0) txt('CLICK OR PRESS SPACE TO START', W / 2, 520, 12, '#ffffff', 'center', '#000');
-  txt('marc.vasseur@polytech-lille.fr', W / 2, 568, 8, '#9fa8ff', 'center', '#000');
-  txt('H: HD / retro', W / 2, 584, 8, '#6f78d8', 'center', '#000');
+  rows.forEach((r, i) => txt(r, W / 2, 318 + i * 20, 10, '#e0e0ff', 'center', '#000'));
+  // bonus : description des capsules
+  txt('BONUS CAPSULES', W / 2, 400, 10, '#ffd23a', 'center', '#000');
+  const BON = [['S', 'SLOW: slower ball'], ['C', 'CATCH: sticky paddle'], ['E', 'EXPAND: wider paddle'], ['D', 'DISRUPT: 3 balls'], ['L', 'LASER: shoot the bricks'], ['B', 'BREAK: open the exit'], ['P', 'PLAYER: extra life']];
+  BON.forEach((q, i) => {
+    const col = i < 4 ? 0 : 1, row = i < 4 ? i : i - 4;
+    const cx = col ? 424 : 156, cy = 430 + row * 26;
+    drawCapsule({ x: cx, y: cy, k: q[0], t: G.t });
+    txt(q[1], cx + 30, cy + 1, 9, '#ffffff', 'left', '#000');
+  });
+  if (Math.floor(G.t * 2) % 2 === 0) txt('CLICK OR PRESS SPACE TO START', W / 2, 548, 12, '#ffffff', 'center', '#000');
+  txt('marc.vasseur@polytech-lille.fr', W / 2, 582, 8, '#9fa8ff', 'center', '#000');
 }
 
 function draw() {
