@@ -219,6 +219,11 @@ function cleanTnProgress(p) {
   let cp = null;
   if (p.cp && typeof p.cp === 'object' && typeof p.cp.round === 'number') {
     cp = { round: int(p.cp.round, 1, 999, 1), score: int(p.cp.score, 0, 1e7, 0) };
+    if (Array.isArray(p.cp.br)) {
+      cp.br = p.cp.br.slice(0, 60).filter(a => Array.isArray(a) && a.length >= 5).map(a => [
+        int(a[0], 0, 5, 0), int(a[1], 0, 15, 0), int(a[2], -1, 300, -1), int(a[3], 0, 2, 0), int(a[4], 0, 1, 0)
+      ]);
+    }
   }
   return {
     words, best: int(p.best, 0, 1e7, 0), runs: int(p.runs, 0, 1e6, 0), maxRound: int(p.maxRound, 1, 999, 1),
