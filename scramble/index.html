@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>Scramble (remake)</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Press+Start+2P&display=swap">
 <style>
   html, body { margin: 0; height: 100%; background: #04050a; color: #cfe; font-family: "Press Start 2P", "Courier New", monospace; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
   #wrap { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
@@ -20,10 +20,37 @@
   #touch button { background: #12203f; color: #bcd; border: 2px solid #3b5fa8; border-radius: 10px; font: bold 12px "Press Start 2P", "Courier New", monospace; touch-action: none; }
   #touch button:active, #touch button.down { background: #2c4d94; }
   .act button { width: 84px; height: 84px; border-radius: 50%; font-size: 10px; }
+  #auth { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 20; pointer-events: none; }
+  #auth.on { display: flex; }
+  #auth .panel { pointer-events: auto; width: min(480px, 94vw); max-height: 90vh; overflow-y: auto; box-sizing: border-box; background: rgba(13, 27, 58, .97); border: 1px solid rgba(201, 162, 39, .6); border-radius: 12px; padding: 16px; font-family: "JetBrains Mono", "Courier New", monospace; color: #f5eedc; -webkit-user-select: text; user-select: text; touch-action: pan-y; box-shadow: 0 10px 50px rgba(0, 0, 0, .6); }
+  #auth h1 { font: 22px "Press Start 2P", monospace; color: #ffd23a; margin: 0 0 6px; text-align: center; }
+  #auth h1 span { color: #fff; }
+  #auth .sub { text-align: center; font-size: 11px; color: #a9b3c9; margin: 0 0 12px; }
+  #auth .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  #auth .tab { flex: 1; font: 700 12px "JetBrains Mono", monospace; color: #a9b3c9; background: transparent; border: 1px solid rgba(245, 238, 220, .25); border-radius: 6px; padding: 8px; cursor: pointer; }
+  #auth .tab.on { background: #c9a227; color: #0d1b3a; border-color: #c9a227; }
+  #auth input { width: 100%; box-sizing: border-box; font: 16px "JetBrains Mono", monospace; color: #f5eedc; background: #0d1b3a; border: 1px solid rgba(245, 238, 220, .3); border-radius: 8px; padding: 10px; margin: 5px 0; -webkit-user-select: text; user-select: text; }
+  #auth .btn { font: 700 12px "JetBrains Mono", monospace; background: transparent; color: #c9a227; border: 1px solid #c9a227; border-radius: 6px; padding: 9px 12px; cursor: pointer; }
+  #auth .btn.solid { background: #c9a227; color: #0d1b3a; }
+  #auth .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+  #auth .row .btn.big { flex: 1; font-size: 15px; padding: 12px; }
+  #auth .msg { min-height: 16px; font-size: 12px; color: #e0584f; margin: 4px 0; }
+  #auth .who { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
+  #auth .stats { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  #auth .stat { flex: 1; min-width: 90px; background: #16294f; border: 1px solid rgba(245, 238, 220, .14); border-radius: 8px; padding: 8px; text-align: center; }
+  #auth .stat b { display: block; font-size: 18px; color: #c9a227; }
+  #auth .stat span { font-size: 10px; color: #a9b3c9; }
+  #auth details { margin-top: 8px; border-top: 1px solid rgba(245, 238, 220, .12); padding-top: 8px; font-size: 12px; line-height: 1.5; }
+  #auth summary { cursor: pointer; font-weight: 700; color: #c9a227; }
+  #auth .words { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; margin-top: 6px; }
+  #auth .w.ok b { color: #fff; } #auth .w.ok i { color: #ffd23a; font-style: normal; }
+  #auth .w.no { color: #6b7694; }
+  #auth .muted { color: #a9b3c9; font-size: 11px; }
   #hint { font-size: 9px; color: #6f86b3; text-align: center; padding: 0 8px; line-height: 1.6; }
 </style>
 </head>
 <body>
+<div id="auth"><div class="panel" id="authBox"></div></div>
 <div id="wrap">
   <canvas id="c" width="800" height="480"></canvas>
   <div id="hint">WASD / ZQSD: move &nbsp; ←: laser &nbsp; →: bomb &nbsp; P: pause &nbsp; M: sound &nbsp; H: HD / retro</div>
@@ -370,11 +397,13 @@ const KEYMAP = {
   Space: 'fire', KeyX: 'bomb'
 };
 window.addEventListener('keydown', (e) => {
+  if (e.target && e.target.tagName === 'INPUT') return;
   ac();
   const k = KEYMAP[e.code];
   if (k) { kbd[k] = true; e.preventDefault(); return; }
   if (e.repeat) return;
-  if (e.code === 'Enter') { if (state === 'title' || state === 'over') startGame(); e.preventDefault(); }
+  if (e.code === 'Enter') { if ((state === 'title' || state === 'over') && canStart()) startGame(); e.preventDefault(); }
+  else if (e.code === 'Escape' && state === 'over') { state = 'title'; e.preventDefault(); }
   else if (e.code === 'KeyP') { togglePause(); e.preventDefault(); }
   else if (e.code === 'KeyM') { muted = !muted; e.preventDefault(); }
   else if (e.code === 'KeyH') { toggleHD(); e.preventDefault(); }
@@ -403,7 +432,7 @@ touchBox.querySelectorAll('button').forEach((b) => {
 });
 canvas.addEventListener('pointerdown', () => {
   ac();
-  if (state === 'title' || state === 'over') startGame();
+  if (state === 'over' && canStart()) startGame();
   else if (paused) paused = false;
 });
 try { if (document.fonts && document.fonts.load) document.fonts.load('12px "Press Start 2P"').then(() => { if (typeof buildSprites === 'function' && SPR) buildSprites(); }); } catch (e) {}
@@ -647,7 +676,7 @@ function startGame() {
   bullets = []; bombs = []; booms = []; parts = []; pops = []; cards = []; vocab = []; learned = [];
   state = 'play'; paused = false;
   lastSec = 0; banner = { t: 120, txt: SECTIONS[0].name };
-  sfx.start();
+  sfx.start(); profStart(); syncAuth();
 }
 
 function resetShipAt(cam) {
@@ -686,6 +715,7 @@ function card(e, cx) {
   if (e.word === undefined) return;
   const c = CONNECTORS[e.word];
   if (!learned.some((l) => l.en === c[0])) learned.push({ en: c[0], fr: c[1] });
+  profWord(c[0]);
   cards.push({ x: cx - camX, y: clamp(e.y - 26, TOP + 30, BOT - 40), x0: 0, y0: 0, t: 0, en: c[0], fr: c[1], life: 54 });
   if (cards.length > 8) cards.shift();
 }
@@ -740,6 +770,7 @@ function killShip() {
    ============================================================ */
 function update() {
   frame++;
+  syncAuth();
   if (state === 'title' || state === 'over') {
     setEngine(false);
     camX += 1.4; if (camX > MAXCAM) camX = 0;
@@ -754,7 +785,7 @@ function update() {
     updateWorldOnly();
     if (--timer <= 0) {
       lives--;
-      if (lives <= 0) { state = 'over'; saveHi(); sfx.over(); }
+      if (lives <= 0) { state = 'over'; saveHi(); sfx.over(); profEnd(); }
       else {
         const cpX = Math.max(0, SECTIONS[sectionOf(camX + SEE)].start - SEE);   // on repart du début du niveau
         camX = Math.min(cpX, MAXCAM);
@@ -1394,15 +1425,7 @@ function draw() {
     drawHud();
     ctx.fillStyle = state === 'over' ? 'rgba(0,0,0,.8)' : 'rgba(0,0,0,.62)'; ctx.fillRect(0, TOP, W, BOT - TOP);
     if (state === 'title') {
-      centerText('SCRAMBLE', 160, 64, '#ffd23a');
-      centerText('R E M A K E', 196, 14, '#70f0ff');
-      centerText('Arcade layout: mountains, cavern, meteors, city, maze, base.', 240, 10, '#d8e4ff');
-      centerText('LASER: rockets, UFOs and fuel tanks', 272, 10, '#9fb4ff');
-      centerText('BOMBS: mystery targets and the base (2 at a time)', 292, 10, '#9fb4ff');
-      centerText('Meteors cannot be destroyed: dodge them!', 312, 10, '#ff9a6a');
-      centerText('Every fuel tank carries a connector:', 348, 10, '#ffd23a');
-      centerText('destroy it to see the French translation!', 368, 10, '#ffd23a');
-      if ((frame >> 5) & 1) centerText(isTouch ? 'TAP THE SCREEN' : 'PRESS ENTER OR CLICK', 420, 16, '#ffffff');
+      // le menu (profil, connecteurs, consignes) est une fenêtre HTML au-dessus du jeu
     } else {
       const n = learned.length;
       centerText('GAME OVER', n ? 100 : 210, 40, '#ff5a4a');
@@ -1419,7 +1442,8 @@ function draw() {
         });
         if (n > 28) centerText('+ ' + (n - 28) + ' MORE', 408, 8, '#9fb4ff');
       }
-      if ((frame >> 5) & 1) centerText(isTouch ? 'TAP THE SCREEN' : 'PRESS ENTER OR CLICK', n ? 438 : 330, 14, '#ffffff');
+      if (PR.user) centerText(PR.status || '', n ? 152 : 290, 8, '#9fb4ff');
+      if ((frame >> 5) & 1) centerText(isTouch ? 'TAP THE SCREEN TO PLAY AGAIN' : 'ENTER: PLAY AGAIN    ESC: MENU', n ? 438 : 330, 12, '#ffffff');
     }
     drawScanlines();
     return;
@@ -1451,6 +1475,155 @@ function draw() {
   if (muted) { ctx.textAlign = 'right'; ctx.font = '8px ' + FONT; ctx.fillStyle = '#6f86b3'; ctx.fillText('SOUND OFF', W - 10, BOT - 8); }
   drawScanlines();
 }
+
+/* ============================================================
+   Profil élève (même compte que Arrow Escape, Word Bridge, Christmas Village)
+   : nom + code à 4 chiffres, connecteurs collectés sauvegardés en ligne
+   ============================================================ */
+const API = (typeof location !== 'undefined' && (location.protocol === 'file:' || /claude/.test(location.hostname))) ? 'https://letsplay-nine.vercel.app/api/player' : '/api/player';
+const PR = { user: null, token: null, words: {}, best: 0, runs: 0, maxLoop: 1, destroyed: 0, guest: false, draft: '', mode: 'login', msg: '', offline: false, dirty: false, timer: null, flight: false, status: '', shown: false, ready: false };
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const lsDel = (k) => { try { localStorage.removeItem(k); } catch (e) {} };
+const escH = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+function canStart() { return PR.guest || !!PR.user; }
+function nCollected() { return CONNECTORS.filter((c) => PR.words[c[0]] > 0).length; }
+function apiPost(action, body) {
+  const h = { 'Content-Type': 'application/json' };
+  if (PR.token) h.Authorization = 'Bearer ' + PR.token;
+  try {
+    return fetch(API, { method: 'POST', headers: h, keepalive: true, body: JSON.stringify(Object.assign({ action, game: 'sc' }, body || {})) })
+      .then((r) => r.json().catch(() => ({})).then((j) => ({ ok: r.ok, status: r.status, j })))
+      .catch(() => ({ ok: false, status: 0, j: { error: 'No connection to the server.' } }));
+  } catch (e) { return Promise.resolve({ ok: false, status: 0, j: { error: 'No connection to the server.' } }); }
+}
+function localKey() { return 'scProg:' + (PR.user ? PR.user.key : 'guest'); }
+function adopt(sc) {
+  // fusion serveur + copie locale : on ne perd jamais un connecteur
+  let loc = null; try { loc = JSON.parse(lsGet(localKey()) || 'null'); } catch (e) {}
+  const words = {};
+  [sc && sc.words, loc && loc.words].forEach((w) => { if (w) Object.keys(w).forEach((k) => { words[k] = Math.max(words[k] || 0, w[k] | 0); }); });
+  PR.words = words;
+  PR.best = Math.max((sc && sc.best) | 0, (loc && loc.best) | 0);
+  PR.runs = Math.max((sc && sc.runs) | 0, (loc && loc.runs) | 0);
+  PR.maxLoop = Math.max(1, (sc && sc.maxLoop) | 0, (loc && loc.maxLoop) | 0);
+  PR.destroyed = Math.max((sc && sc.destroyed) | 0, (loc && loc.destroyed) | 0);
+}
+function snapshot() {
+  PR.best = Math.max(PR.best, score);
+  PR.maxLoop = Math.max(PR.maxLoop, level + 1);
+  return { words: PR.words, best: PR.best, runs: PR.runs, maxLoop: PR.maxLoop, destroyed: PR.destroyed, savedAt: Date.now() };
+}
+function scheduleSave() {
+  if (!PR.user) return;
+  lsSet(localKey(), JSON.stringify(snapshot()));
+  PR.dirty = true; PR.status = 'Saving soon...';
+  clearTimeout(PR.timer); PR.timer = setTimeout(flush, 6000);
+}
+function flush() {
+  clearTimeout(PR.timer);
+  if (!PR.user || !PR.token || !PR.dirty) return;
+  if (PR.flight) { PR.timer = setTimeout(flush, 2500); return; }
+  PR.dirty = false; PR.flight = true; PR.status = 'Saving...';
+  apiPost('save', { progress: snapshot() }).then((r) => {
+    PR.flight = false;
+    if (r.status === 401) { PR.token = null; saveSession(); PR.status = 'Session expired. Log in again to keep saving online.'; return; }
+    if (!r.ok) { PR.dirty = true; PR.status = 'Not saved online (kept on this device). Retrying.'; PR.timer = setTimeout(flush, 20000); return; }
+    PR.status = 'Saved to your profile.';
+    if (r.j && r.j.sc) adopt(r.j.sc);
+  });
+}
+function saveSession() { if (PR.user && PR.token) lsSet('letsplaySession', JSON.stringify({ user: PR.user, token: PR.token })); else lsDel('letsplaySession'); }
+function onAuth(j) {
+  PR.user = j.user; PR.token = j.token; PR.msg = ''; PR.offline = false;
+  adopt(j.sc); saveSession(); PR.ready = true; renderAuth();
+}
+function logout() { flush(); PR.user = null; PR.token = null; PR.words = {}; PR.best = 0; PR.runs = 0; PR.maxLoop = 1; PR.destroyed = 0; PR.guest = false; saveSession(); renderAuth(); }
+// appelé à chaque partie : début, connecteur collecté, fin
+function profStart() { if (PR.user) { PR.runs++; scheduleSave(); } }
+function profWord(en) { if (!PR.user) return; PR.words[en] = (PR.words[en] || 0) + 1; PR.destroyed++; scheduleSave(); }
+function profEnd() { if (PR.user) { lsSet(localKey(), JSON.stringify(snapshot())); PR.dirty = true; flush(); } }
+function restoreSession() {
+  let ss = null; try { ss = JSON.parse(lsGet('letsplaySession') || 'null'); } catch (e) {}
+  if (!ss || !ss.user || !ss.token) { PR.ready = true; renderAuth(); return; }
+  PR.user = ss.user; PR.token = ss.token;
+  adopt(null);                                    // copie locale d'abord (affichage immédiat)
+  PR.ready = true; renderAuth();
+  apiPost('load').then((r) => {
+    if (r.status === 401) { PR.user = null; PR.token = null; saveSession(); renderAuth(); return; }
+    if (r.ok) { adopt(r.j.sc); renderAuth(); if (PR.dirty) flush(); } else if (r.status === 0) { PR.offline = true; renderAuth(); }
+  });
+}
+function renderAuth() {
+  let box = null;
+  try { box = document.getElementById('authBox'); } catch (e) {}
+  if (!box || !box.addEventListener) return;
+  const $ = (q) => box.querySelector(q);
+  let h = '<h1>SCRAMBLE <span>TOEIC</span></h1>';
+  if (PR.user) {
+    const tot = CONNECTORS.length, n = nCollected();
+    h += '<p class="sub">Shoot the fuel tanks, collect the logical connectors.</p>' +
+      '<div class="who"><span>Logged in as <b>' + escH(PR.user.nom) + '</b></span><button class="btn" id="aOut">Log out</button></div>' +
+      '<div class="stats"><div class="stat"><b>' + n + ' / ' + tot + '</b><span>connectors collected</span></div>' +
+      '<div class="stat"><b>' + PR.best + '</b><span>best score</span></div>' +
+      '<div class="stat"><b>' + PR.runs + '</b><span>games played</span></div></div>' +
+      '<div class="row"><button class="btn solid big" id="aPlay">PLAY</button></div>' +
+      '<p class="msg" style="color:#a9b3c9">' + escH(PR.status) + '</p>' +
+      '<details><summary>My connectors (' + n + ' / ' + tot + ')</summary><div class="words">' +
+      CONNECTORS.slice().sort((p, q) => ((PR.words[q[0]] > 0) - (PR.words[p[0]] > 0))).map((c) => PR.words[c[0]] > 0
+        ? '<div class="w ok"><b>' + escH(c[0]) + '</b> <i>= ' + escH(c[1]) + '</i> <span class="muted">x' + PR.words[c[0]] + '</span></div>'
+        : '<div class="w no">' + escH(c[0]) + ' = ?</div>').join('') + '</div></details>';
+  } else if (PR.guest) {
+    h += '<p class="sub">Guest mode: nothing is saved.</p><div class="row"><button class="btn solid big" id="aPlay">PLAY</button></div>';
+  } else {
+    const su = PR.mode === 'signup';
+    h += '<p class="sub">Log in to play. Your collected connectors are saved.</p>' +
+      '<div class="tabs"><button class="tab' + (su ? '' : ' on') + '" data-t="login">Log in</button><button class="tab' + (su ? ' on' : '') + '" data-t="signup">Create my profile</button></div>' +
+      '<input id="fNom" placeholder="Your name (e.g. DUPONT Lea)" autocomplete="name" maxlength="40">' +
+      '<input id="fCode" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4-digit secret code" autocomplete="off">' +
+      '<p class="msg" id="aMsg">' + escH(PR.msg) + '</p>' +
+      '<div class="row"><button class="btn solid big" id="aGo">' + (su ? 'Create profile' : 'Log in') + '</button></div>' +
+      (PR.offline ? '<div class="row"><button class="btn" id="aGuest">Server unreachable: play as guest (not saved)</button></div>' : '') +
+      '<p class="muted">It is the same profile as in Arrow Escape, Word Bridge and Christmas Village.</p>';
+  }
+  h += '<details><summary>Directions</summary><p>LEFT arrow: laser (rockets, UFOs, fuel tanks). RIGHT arrow: bomb (two at a time). ZQSD / WASD: move. P: pause. M: sound. H: HD / retro.<br>Every fuel tank carries a logical connector on a flag. Destroy it to collect the word and its French translation. Meteors cannot be destroyed: dodge them. Do not run out of fuel!</p></details>';
+  box.innerHTML = h;
+  { const fn = box.querySelector('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
+  box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
+  const go = $('#aGo');
+  if (go) {
+    const submit = () => {
+      const su = PR.mode === 'signup', body = { nom: $('#fNom').value.trim(), code: $('#fCode').value.trim() }, m = $('#aMsg');
+      if (!body.nom) { m.textContent = 'Please enter your name.'; return; }
+      if (!/^\d{4}$/.test(body.code)) { m.textContent = 'Your secret code must be exactly 4 digits.'; return; }
+      go.disabled = true; m.textContent = 'Please wait...';
+      apiPost(su ? 'signup' : 'login', body).then((r) => {
+        if (r.ok) { onAuth(r.j); return; }
+        go.disabled = false; PR.msg = r.j.error || 'Something went wrong.';
+        if (r.status === 0) PR.offline = true;
+        renderAuth();
+      });
+    };
+    go.addEventListener('click', submit);
+    box.querySelectorAll('input').forEach((i) => i.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); }));
+  }
+  const gs = $('#aGuest'); if (gs) gs.addEventListener('click', () => { PR.guest = true; renderAuth(); });
+  const pl = $('#aPlay'); if (pl) pl.addEventListener('click', () => { ac(); if (canStart() && state === 'title') startGame(); });
+  const ou = $('#aOut'); if (ou) ou.addEventListener('click', logout);
+}
+// la fenêtre n'est visible que sur l'écran titre
+function syncAuth() {
+  const want = state === 'title';
+  if (want === PR.shown) return;
+  PR.shown = want;
+  try { const a = document.getElementById('auth'); if (a && a.classList) a.classList[want ? 'add' : 'remove']('on'); } catch (e) {}
+  if (want) renderAuth();
+}
+restoreSession();
+try {
+  window.addEventListener('pagehide', () => flush());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+} catch (e) {}
 
 /* ============================================================
    Boucle principale (pas fixe de 1/60 s)

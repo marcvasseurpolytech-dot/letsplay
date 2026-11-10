@@ -193,6 +193,20 @@ function cleanWbProgress(p) {
 // Noel (village de Noel) : progression stockee a part (champs xm / xmBest du meme profil).
 const ID = /^[a-z0-9_]{1,24}$/;
 const ids = (a, max) => Array.isArray(a) ? Array.from(new Set(a.filter(x => typeof x === 'string' && ID.test(x)))).slice(0, max) : [];
+// Scramble : connecteurs collectés (compteur par mot) et records
+function cleanScProgress(p) {
+  if (!p || typeof p !== 'object') return null;
+  const words = {};
+  if (p.words && typeof p.words === 'object') {
+    Object.keys(p.words).slice(0, 400).forEach(k => {
+      if (/^[a-z][a-z' .-]{0,30}$/.test(k)) words[k] = int(p.words[k], 1, 1e5, 1);
+    });
+  }
+  return {
+    words, best: int(p.best, 0, 1e7, 0), runs: int(p.runs, 0, 1e6, 0), maxLoop: int(p.maxLoop, 1, 999, 1),
+    destroyed: int(p.destroyed, 0, 1e6, 0), savedAt: int(p.savedAt, 0, 8.64e15, Date.now())
+  };
+}
 function cleanXmProgress(p) {
   if (!p || typeof p !== 'object' || typeof p.day !== 'number' || typeof p.score !== 'number') return null;
   const cats = {};
@@ -232,5 +246,5 @@ function cleanXmProgress(p) {
 
 module.exports = {
   ghGet, ghPut, ghList, ghDelete, DIR, checkAdminPassword, issueAdminToken, isAdmin, pathOf, playerKey, codeHash, issueToken, keyFromRequest, safeEqual,
-  throttled, noteFailure, clearFailures, cleanProgress, cleanWbProgress, cleanXmProgress
+  throttled, noteFailure, clearFailures, cleanProgress, cleanWbProgress, cleanXmProgress, cleanScProgress
 };

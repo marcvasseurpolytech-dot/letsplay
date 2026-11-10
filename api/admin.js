@@ -56,6 +56,10 @@ module.exports = async (req, res) => {
           gifts: (d.xm.stats || {}).gifts || 0, giftsOk: (d.xm.stats || {}).giftsOk || 0,
           items: (d.xm.own || []).length, coins: d.xm.coins || 0, advent: (d.xm.adv || []).length,
           byCat: (d.xm.stats || {}).byCat || {}
+        } : null,
+        sc: d.sc ? {
+          best: d.scBest || 0, updatedAt: d.scUpdatedAt || null, runs: d.sc.runs || 0, maxLoop: d.sc.maxLoop || 1,
+          destroyed: d.sc.destroyed || 0, words: d.sc.words || {}
         } : null
       };
     });
