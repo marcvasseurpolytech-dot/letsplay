@@ -317,6 +317,7 @@ const cv = document.getElementById('c');
 const ctx = cv.getContext('2d');
 cv.width = W * SC; cv.height = H * SC;
 const ACOL = ['#5dffb0', '#ff77d0', '#ffd95c', '#7db8ff'];
+const SLX = 104, SLY = 62;                               // alignement serré des aliens
 
 function mk(w, h) { const c = document.createElement('canvas'); c.width = w * SC; c.height = h * SC; const x = c.getContext('2d'); x.setTransform(SC, 0, 0, SC, 0, 0); return [c, x]; }
 function rrp(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
@@ -356,7 +357,7 @@ const G = {
   state: 'title', score: 0, lives: 3, round: 1, hi: parseInt(lsGet('tiHi') || '0', 10) || 0, t: 0, stateT: 0,
   q: null, aliens: [], fx: CX0 - 150, fy: 134, dir: 1, bullets: [], bombs: [], shields: [], ufo: null, ufoT: 12, bombT: 2,
   parts: [], pops: [], cx: CX0, tx: null, cool: 0, inv: 0, streak: 0, ok: 0, ko: 0, missed: [], learned: [], last: null, qT: 0, marchAcc: 0, marchI: 0,
-  prevState: null, deadWhy: '', gain: 0, stars: [], recent: []
+  prevState: null, deadWhy: '', gain: 0, stars: [], recent: [], step: 0, caps: [], eff: { tri: 0, slow: 0, frz: 0, weak: 0 }, swapT: 9, kamT: 11
 };
 let collection = (() => { try { return new Set(JSON.parse(lsGet('tiLearned') || '[]')); } catch (e) { return new Set(); } })();
 function saveCollection() { lsSet('tiLearned', JSON.stringify(Array.from(collection))); }
@@ -480,8 +481,19 @@ function verbQuestion(variant) {
     fill: v[0] + '  -  ' + v[1] + '  -  ' + v[2], fr: v[3], id: 'v:' + v[0] + ':' + variant, verb: v
   };
 }
+function orderQuestion() {
+  let cand = VERBS.filter((v) => v[1] !== v[2] && v[1] !== v[0] && v[2] !== v[0] && v[1].length <= 14 && !G.recent.includes(v[0]));
+  const fresh = cand.filter((v) => !collection.has(v[0])); if (fresh.length && Math.random() < 0.7) cand = fresh;
+  const v = cand[Math.floor(Math.random() * cand.length)];
+  G.recent.push(v[0]); if (G.recent.length > 12) G.recent.shift();
+  const others = VERBS.filter((o) => o !== v);
+  const used = [v[1], v[2]], dec = [v[0]].concat(uniqPick(others.map((o) => o[Math.random() < 0.5 ? 1 : 2]), used.concat([v[0]]), 1));
+  const opts = shuffle([{ t: v[1], ok: true, ord: 0 }, { t: v[2], ok: true, ord: 1 }].concat(dec.map((t) => ({ t, ok: false, ord: -1 }))));
+  return { kind: 'verb', tag: 'KILL ORDER', prompt: 'Verb *' + v[0].toUpperCase() + '*', order: ['PRETERIT', 'PAST PARTICIPLE'], opts, fill: v[0] + '  -  ' + v[1] + '  -  ' + v[2], fr: v[3], id: 'o:' + v[0], verb: v };
+}
 function makeQuestion(n) {
   if (n % 3 === 0 || !BANK.length) return verbQuestion((Math.floor(n / 3) - 1 + 4000) % 4);
+  if (n % 3 === 2) return orderQuestion();
   return gapQuestion();
 }
 
@@ -489,20 +501,23 @@ function makeQuestion(n) {
 function slotCol(i, n) { return (n === 3 && i === 2) ? 0.5 : i % 2; }
 function buildAliens(q) {
   const n = q.opts.length;
-  return q.opts.map((o, i) => ({ t: o.t, ok: o.ok, col: slotCol(i, n), row: n === 3 && i === 2 ? 1 : Math.floor(i / 2), type: i, alive: true, flash: 0 }));
+  const al = q.opts.map((o, i) => { const c = slotCol(i, n), r = n === 3 && i === 2 ? 1 : Math.floor(i / 2); return { t: o.t, ok: o.ok, ord: o.ord != null ? o.ord : (o.ok ? 0 : -1), col: c, row: r, tc: c, tr: r, type: i, alive: true, flash: 0, hp: 1, kami: false, kx: 0, ky: 0, kt: 0 }; });
+  if (G.round >= 3) { const w = al.filter((a) => !a.ok); if (w.length) w[Math.floor(Math.random() * w.length)].hp = 2; }
+  return al;
 }
-const alX = (a) => G.fx + 75 + a.col * 150, alY = (a) => G.fy + 42 + a.row * 84;
+const alX = (a) => a.kami ? a.kx : G.fx + SLX / 2 + a.col * SLX, alY = (a) => a.kami ? a.ky : G.fy + 28 + a.row * SLY;
 function startRound(n, redo) {
   G.round = n;
   if (!redo || !G.q) G.q = makeQuestion(n);
   if (!G.shields.length || (!redo && n % 4 === 1)) mkShields();
-  G.aliens = buildAliens(G.q); G.fx = CX0 - 150; G.fy = 134; G.dir = Math.random() < 0.5 ? -1 : 1;
+  G.aliens = buildAliens(G.q); G.fx = CX0 - SLX; G.fy = 134; G.dir = Math.random() < 0.5 ? -1 : 1;
+  G.step = 0; G.caps = []; G.eff = { tri: 0, slow: 0, frz: 0, weak: 0 }; G.swapT = 8 + Math.random() * 3; G.kamT = 10 + Math.random() * 4;
   G.bullets = []; G.bombs = []; G.ufo = null; G.ufoT = 9 + Math.random() * 9; G.bombT = 2.2; G.qT = 0; G.cool = 0; G.marchAcc = 0;
   G.state = 'ready'; G.stateT = 0;
 }
 function demoWave() {
   G.q = { kind: 'gap', tag: 'FILL THE GAP', prompt: 'Please ___ the form before Friday.', opts: [{ t: 'submit', ok: true }, { t: 'submits', ok: false }, { t: 'submitted', ok: false }, { t: 'submitting', ok: false }], fill: '', fr: '', id: 'demo', verb: null };
-  G.aliens = buildAliens(G.q); G.fx = CX0 - 150; G.fy = 150; mkShields();
+  G.aliens = buildAliens(G.q); G.fx = CX0 - SLX; G.fy = 150; mkShields();
 }
 function popup(x, y, s, col) { G.pops.push({ x, y, s, col: col || '#fff', t: 0 }); }
 function boom(x, y, col, n) {
@@ -511,32 +526,65 @@ function boom(x, y, col, n) {
 function stepDown(px) { G.fy += px; checkInvade(); }
 function checkInvade() {
   if (G.state !== 'play') return;
-  for (const a of G.aliens) if (a.alive && alY(a) + 38 >= INVADE_Y) { killPlayer('invaded'); return; }
+  for (const a of G.aliens) if (a.alive && !a.kami && alY(a) + 30 >= INVADE_Y) { killPlayer('invaded'); return; }
 }
 function killPlayer(why) {
   if (G.state !== 'play' || (G.inv > 0 && why !== 'invaded')) return;
   G.lives--; G.streak = 0; G.state = 'dead'; G.stateT = 0; G.deadWhy = why; SND.lose();
   boom(G.cx, CAN_Y, '#7df9ff', 34); G.bombs = []; G.bullets = [];
 }
+function maybeDrop(x, y) {
+  if (Math.random() > 0.45) return;
+  const r = Math.random();
+  const k = r < 0.07 ? 'L' : r < 0.30 ? 'T' : r < 0.46 ? 'R' : r < 0.62 ? 'S' : r < 0.82 ? 'B' : 'F';
+  G.caps.push({ x, y, k });
+}
+function catchCap(c) {
+  const e = G.eff; SND.capsule(); let m = '';
+  if (c.k === 'T') { e.tri = 9; m = 'TRIPLE SHOT'; } else if (c.k === 'R') { mkShieldsFix(); m = 'SHIELDS REPAIRED'; }
+  else if (c.k === 'S') { e.slow = 7; m = 'ALIENS SLOWED'; } else if (c.k === 'L') { G.lives = Math.min(5, G.lives + 1); m = '1UP'; }
+  else if (c.k === 'B') { e.frz = 1.3; m = 'CANNON JAMMED!'; } else { e.weak = 6; m = 'SLOW FIRE!'; }
+  popup(G.cx, CAN_Y - 30, m, 'RTSL'.indexOf(c.k) >= 0 ? '#7dff9b' : '#ff7a7a');
+}
+function mkShieldsFix() {
+  G.shields.forEach((s) => { SMASK.forEach((row, r) => row.split('').forEach((ch, c) => { if (ch === 'x') s.cells[r * 14 + c] = 1; })); });
+}
+function winWave(a, x, y) {
+  G.streak++;
+  const sp = Math.max(0, Math.round((10 - G.qT) * 5)), pts = (100 + sp) * mult() * (G.q.order ? 2 : 1);
+  G.score += pts; G.gain = pts; G.ok++;
+  if (G.q.verb) { profWord(G.q.verb[0]); G.learned.push(G.q.verb); }
+  G.last = { ok: true, s: G.q.fill, fr: G.q.fr }; G.clearMsg = 'CORRECT!  +' + pts + (mult() > 1 ? '  (x' + mult() + ')' : '');
+  popup(x, y - 10, '+' + pts, '#7dff9b'); SND.good();
+  G.state = 'clear'; G.stateT = 0; G.bombs = []; G.bullets = []; G.ufo = null; G.caps = [];
+  G.aliens.forEach((o) => { if (o.alive) o.flash = 1; });
+}
+function failWave(msg, x, y) {
+  G.streak = 0; G.ko++; G.score = Math.max(0, G.score - 50);
+  if (!G.missed.some((m) => m.id === G.q.id)) G.missed.push({ id: G.q.id, s: G.q.fill, fr: G.q.fr, kind: G.q.kind });
+  G.last = { ok: false, s: G.q.fill, fr: G.q.fr }; G.clearMsg = msg; G.gain = 0;
+  popup(x, y - 10, 'WRONG -50', '#ff6b6b'); SND.wrong();
+  G.state = 'clear'; G.stateT = 0; G.bombs = []; G.bullets = []; G.ufo = null; G.caps = [];
+}
 function hitAlien(a) {
+  if (a.hp > 1) { a.hp--; a.flash = 0.3; SND.armor(); return; }
   a.alive = false; const x = alX(a), y = alY(a);
   boom(x, y, ACOL[a.type % 4], 26);
-  if (a.ok) {
-    G.streak++;
-    const sp = Math.max(0, Math.round((10 - G.qT) * 5)), pts = (100 + sp) * mult();
-    G.score += pts; G.gain = pts; G.ok++;
-    if (G.q.verb) { profWord(G.q.verb[0]); G.learned.push(G.q.verb); }
-    G.last = { ok: true, s: G.q.kind === 'verb' ? G.q.fill : G.q.fill, fr: G.q.fr };
-    popup(x, y - 10, '+' + pts, '#7dff9b'); SND.good();
-    G.state = 'clear'; G.stateT = 0; G.bombs = []; G.bullets = []; G.ufo = null;
-    G.aliens.forEach((o) => { if (o.alive) o.flash = 1; });
-  } else {
-    G.streak = 0; G.ko++; G.score = Math.max(0, G.score - 50);
-    if (!G.missed.some((m) => m.id === G.q.id)) G.missed.push({ id: G.q.id, s: G.q.fill, fr: G.q.fr, kind: G.q.kind });
-    G.last = { ok: false, s: G.q.fill, fr: G.q.fr };
-    popup(x, y - 10, 'WRONG -50', '#ff6b6b'); SND.wrong();
-    stepDown(14);
-  }
+  if (a.kami) { G.score += 25; popup(x, y - 10, '+25', '#cfe'); SND.pop(); return; }
+  const q = G.q;
+  if (q.order) {
+    if (a.ord === G.step) {
+      G.step++;
+      if (G.step >= q.order.length) { winWave(a, x, y); return; }
+      G.score += 100 * mult(); popup(x, y - 10, 'ORDER OK: ' + G.step + '/' + q.order.length, '#7dff9b'); SND.good(); maybeDrop(x, y); return;
+    }
+    if (a.ord >= 0) { failWave('WRONG ORDER!', x, y); return; }
+  } else if (a.ok) { winWave(a, x, y); return; }
+  G.streak = 0; G.ko++; G.score = Math.max(0, G.score - 50);
+  if (!G.missed.some((m) => m.id === q.id)) G.missed.push({ id: q.id, s: q.fill, fr: q.fr, kind: q.kind });
+  G.last = { ok: false, s: q.fill, fr: q.fr };
+  popup(x, y - 10, 'WRONG -50', '#ff6b6b'); SND.wrong();
+  stepDown(14); maybeDrop(x, y);
 }
 function ufoHint() {
   const w = G.aliens.filter((a) => a.alive && !a.ok);
@@ -549,24 +597,28 @@ function ufoHint() {
 /* ---------- mise à jour ---------- */
 const KS = {}; const PADK = { l: false, r: false, f: false };
 function moveCannon(dt) {
+  if (G.eff.frz > 0) return;
   const d = ((KS.arrowright || KS.d || PADK.r) ? 1 : 0) - ((KS.arrowleft || KS.a || KS.q || PADK.l) ? 1 : 0);
   if (d) { G.cx += d * 300 * dt; G.tx = null; }
   else if (G.tx != null) { const dx = G.tx - G.cx, st = 520 * dt; G.cx += Math.abs(dx) < st ? dx : Math.sign(dx) * st; }
   G.cx = clamp(G.cx, FX + 24, FX + FW - 24);
 }
 function moveFormation(dt) {
-  const alive = G.aliens.filter((a) => a.alive); if (!alive.length) return;
-  const sp = 24 + Math.min(G.round, 24) * 2.6 + (4 - alive.length) * 9;
+  const alive = G.aliens.filter((a) => a.alive && !a.kami); if (!alive.length) return;
+  G.aliens.forEach((a) => { a.col += (a.tc - a.col) * Math.min(1, dt * 7); a.row += (a.tr - a.row) * Math.min(1, dt * 7); });
+  const sp = (24 + Math.min(G.round, 24) * 2.6 + (4 - alive.length) * 9) * (G.eff.slow > 0 ? 0.45 : 1);
   G.fx += G.dir * sp * dt; G.marchAcc += sp * dt;
   if (G.marchAcc > 26) { G.marchAcc = 0; SND.march(G.marchI++); }
-  let mn = 1e9, mx = -1e9; alive.forEach((a) => { const x = alX(a); mn = Math.min(mn, x - 62); mx = Math.max(mx, x + 62); });
+  let mn = 1e9, mx = -1e9; alive.forEach((a) => { const x = alX(a); mn = Math.min(mn, x - 50); mx = Math.max(mx, x + 50); });
   if (G.dir > 0 && mx > FX + FW - 4) { G.fx -= mx - (FX + FW - 4); G.dir = -1; stepDown(20); }
   else if (G.dir < 0 && mn < FX + 4) { G.fx += FX + 4 - mn; G.dir = 1; stepDown(20); }
-  alive.forEach((a) => clearShieldRect(alX(a) - 56, alY(a) - 20, alX(a) + 56, alY(a) + 38));
+  alive.forEach((a) => clearShieldRect(alX(a) - 48, alY(a) - 14, alX(a) + 48, alY(a) + 30));
 }
 function fire() {
-  if (G.cool > 0 || G.bullets.length >= 2) return;
-  G.bullets.push({ x: G.cx, y: CAN_Y - 16 }); G.cool = 0.2; SND.shoot();
+  const tri = G.eff.tri > 0;
+  if (G.cool > 0 || G.bullets.length >= (tri ? 6 : 2)) return;
+  if (tri) { [-14, 0, 14].forEach((d) => G.bullets.push({ x: G.cx + d, y: CAN_Y - 16 })); } else G.bullets.push({ x: G.cx, y: CAN_Y - 16 });
+  G.cool = G.eff.weak > 0 ? 1.0 : 0.2; SND.shoot();
 }
 function update(dt) {
   if (G.state === 'paused') return;
@@ -576,6 +628,7 @@ function update(dt) {
   G.stars.forEach((s) => { s.y += s.v * dt; if (s.y > FY + FH) s.y = FY; });
   G.aliens.forEach((a) => { if (a.flash > 0) a.flash = Math.max(0, a.flash - dt); });
   if (G.cool > 0) G.cool -= dt; if (G.inv > 0) G.inv -= dt;
+  ['tri', 'slow', 'frz', 'weak'].forEach((k) => { if (G.eff[k] > 0) G.eff[k] -= dt; });
   const st = G.state;
   if (st === 'title') { moveFormation(dt); return; }
   if (st === 'ready' || st === 'clear') moveCannon(dt);
@@ -593,6 +646,30 @@ function update(dt) {
   moveCannon(dt); G.qT += dt;
   if (KS[' '] || KS.arrowup || PADK.f) fire();
   moveFormation(dt); if (G.state !== 'play') return;
+  // échanges de positions et kamikaze
+  const live = G.aliens.filter((a) => a.alive && !a.kami);
+  G.swapT -= dt;
+  if (G.swapT <= 0) {
+    G.swapT = 7 + Math.random() * 4;
+    if (G.round >= 2 && live.length >= 2) { const p = shuffle(live.slice()); const a = p[0], b = p[1]; const c = a.tc, r = a.tr; a.tc = b.tc; a.tr = b.tr; b.tc = c; b.tr = r; popup(CX0, 120, 'SWAP!', '#9ad0ff'); SND.ufo(); }
+  }
+  G.kamT -= dt;
+  if (G.kamT <= 0) {
+    G.kamT = 9 + Math.random() * 5;
+    const cand = live.filter((a) => !a.ok); const nk = G.aliens.filter((a) => a.alive && a.kami).length;
+    if (G.round >= 3 && cand.length && live.length >= 3 && !nk) { const a = cand[Math.floor(Math.random() * cand.length)]; a.kx = alX(a); a.ky = alY(a); a.kami = true; a.kt = 0; a.kb = a.kx; SND.dive && SND.dive(); popup(a.kx, a.ky - 14, 'KAMIKAZE!', '#ff9a6a'); }
+  }
+  G.aliens.forEach((a) => {
+    if (!a.alive || !a.kami) return;
+    a.kt += dt; a.ky += (150 + G.round * 4) * dt; a.kb += (G.cx - a.kb) * 0.7 * dt; a.kx = clamp(a.kb + Math.sin(a.kt * 6) * 48, FX + 20, FX + FW - 20);
+    clearShieldRect(a.kx - 14, a.ky - 10, a.kx + 14, a.ky + 12);
+    if (Math.abs(a.kx - G.cx) < 24 && Math.abs(a.ky - CAN_Y) < 18) { a.alive = false; boom(a.kx, a.ky, '#ff9a6a', 20); killPlayer('kamikaze'); }
+    else if (a.ky > FY + FH) { a.alive = false; }
+  });
+  if (G.state !== 'play') return;
+  // capsules
+  G.caps.forEach((c) => { c.y += 110 * dt; if (Math.abs(c.x - G.cx) < 28 && Math.abs(c.y - CAN_Y) < 18) { c.dead = true; catchCap(c); } else if (c.y > FY + FH) c.dead = true; });
+  G.caps = G.caps.filter((c) => !c.dead);
   // soucoupe
   G.ufoT -= dt;
   if (!G.ufo && G.ufoT <= 0) { const d = Math.random() < 0.5 ? 1 : -1; G.ufo = { x: d > 0 ? FX - 30 : FX + FW + 30, d }; G.ufoT = 14 + Math.random() * 10; }
@@ -625,7 +702,7 @@ function update(dt) {
     }
     for (const a of G.aliens) {
       if (!a.alive) continue; const x = alX(a), y = alY(a);
-      if (Math.abs(b.x - x) < 56 && b.y > y - 20 && b.y < y + 38) { b.dead = true; hitAlien(a); return; }
+      if (Math.abs(b.x - x) < (a.kami ? 18 : 47) && b.y > y - 15 && b.y < (a.kami ? y + 12 : y + 29)) { b.dead = true; hitAlien(a); return; }
     }
   });
   G.bullets = G.bullets.filter((b) => !b.dead);
@@ -648,9 +725,20 @@ function drawField() {
 }
 function drawQuestion() {
   const q = G.q; if (!q) return;
-  ctx.fillStyle = 'rgba(20,24,80,.92)'; rrp(ctx, FX + 6, FY + 6, FW - 12, 52, 8); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,225,77,.55)'; ctx.lineWidth = 1.5; rrp(ctx, FX + 6, FY + 6, FW - 12, 52, 8); ctx.stroke();
-  txt(q.tag, FX + 14, FY + 14, 7, '#7d8cff');
+  const ord = !!q.order, bh = ord ? 70 : 52;
+  ctx.fillStyle = 'rgba(20,24,80,.92)'; rrp(ctx, FX + 6, FY + 6, FW - 12, bh, 8); ctx.fill();
+  ctx.strokeStyle = ord ? 'rgba(255,225,77,.95)' : 'rgba(255,225,77,.55)'; ctx.lineWidth = ord ? 2.5 : 1.5; rrp(ctx, FX + 6, FY + 6, FW - 12, bh, 8); ctx.stroke();
+  txt(ord ? 'KILL ORDER: SHOOT THE ANSWERS IN THIS ORDER' : q.tag, FX + 14, FY + 14, 7, ord ? '#ffe14d' : '#7d8cff');
+  if (ord) {
+    richLine('Verb *' + q.verb[0].toUpperCase() + '*', CX0, FY + 33, 17, '#fff');
+    q.order.forEach((lab, i) => {
+      const x0 = CX0 - 190 + i * 200, done = G.step > i, cur = G.step === i;
+      ctx.fillStyle = done ? 'rgba(40,160,90,.55)' : cur ? 'rgba(255,225,77,.25)' : 'rgba(255,255,255,.06)'; rrp(ctx, x0, FY + 46, 180, 22, 11); ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = done ? '#7dff9b' : cur ? '#ffe14d' : 'rgba(255,255,255,.3)'; rrp(ctx, x0, FY + 46, 180, 22, 11); ctx.stroke();
+      bold((done ? '\u2713 ' : (i + 1) + '. ') + lab, x0 + 90, FY + 57.5, 12, done ? '#7dff9b' : cur ? '#ffe14d' : '#9aa', 'center', 170);
+    });
+    return;
+  }
   const big = q.kind === 'verb';
   const size = big ? 18 : 14, lines = wrap(q.prompt.replace('___', '_____'), FW - 40, size);
   const lh = size + 4, y0 = FY + 36 - (lines.length - 1) * lh / 2 + (lines.length > 1 ? 4 : 2);
@@ -664,13 +752,29 @@ function drawAliens() {
     ctx.save();
     if (G.state === 'clear' && !a.ok) ctx.globalAlpha = Math.max(0.15, 0.8 - G.stateT);
     ctx.shadowColor = col; ctx.shadowBlur = 14;
-    ctx.drawImage(alienSprite(a.type, fr), x - 24, y - 20, 48, 32);
+    if (a.flash > 0 && a.hp > 0 && G.state === 'play') ctx.globalAlpha = 0.5 + 0.5 * Math.sin(G.t * 60);
+    ctx.drawImage(alienSprite(a.type, fr), x - 16, y - 14, 32, 21.3);
     ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(8,8,34,.9)'; rrp(ctx, x - 62, y + 18, 124, 22, 11); ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = col; rrp(ctx, x - 62, y + 18, 124, 22, 11); ctx.stroke();
-    bold(a.t, x, y + 29.5, 13, '#fff', 'center', 112);
+    if (a.hp > 1) { ctx.lineWidth = 2; ctx.strokeStyle = '#d8e4ff'; ctx.setLineDash([3, 2]); ctx.beginPath(); ctx.arc(x, y - 3, 20, 0, 6.283); ctx.stroke(); ctx.setLineDash([]); }
+    if (a.kami) { ctx.fillStyle = 'rgba(255,120,70,.35)'; ctx.fillRect(x - 3, y - 40, 6, 24); }
+    ctx.fillStyle = 'rgba(8,8,34,.92)'; rrp(ctx, x - 46, y + 11, 92, 18, 9); ctx.fill();
+    ctx.lineWidth = a.hp > 1 ? 2.5 : 1.5; ctx.strokeStyle = a.hp > 1 ? '#d8e4ff' : col; rrp(ctx, x - 46, y + 11, 92, 18, 9); ctx.stroke();
+    bold(a.t, x, y + 20.5, 12, '#fff', 'center', 84);
     ctx.restore();
   });
+}
+function drawCaps() {
+  G.caps.forEach((c) => {
+    const good = 'RTSL'.indexOf(c.k) >= 0, col = good ? '#7dff9b' : '#ff6a6a';
+    ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 10;
+    ctx.fillStyle = 'rgba(8,10,34,.95)'; rrp(ctx, c.x - 12, c.y - 9, 24, 18, 9); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = col; rrp(ctx, c.x - 12, c.y - 9, 24, 18, 9); ctx.stroke(); ctx.restore();
+    bold(c.k, c.x, c.y + 0.5, 13, col, 'center');
+  });
+  const e = G.eff, lines = [];
+  if (e.tri > 0) lines.push(['TRIPLE SHOT', e.tri, '#7dff9b']); if (e.slow > 0) lines.push(['ALIENS SLOWED', e.slow, '#7dff9b']);
+  if (e.frz > 0) lines.push(['CANNON JAMMED', e.frz, '#ff7a7a']); if (e.weak > 0) lines.push(['SLOW FIRE', e.weak, '#ff7a7a']);
+  lines.forEach((l, i) => bold(l[0] + ' ' + Math.ceil(l[1]) + 's', FX + 10, FY + FH - 14 - i * 16, 11, l[2], 'left'));
 }
 function drawShields() {
   G.shields.forEach((s) => {
@@ -728,8 +832,9 @@ function drawPanel() {
     const ls = wrap(G.last.s, w - 24, 11); ls.slice(0, 4).forEach((l, i) => bold(l, x + 8, 338 + i * 14, 11, '#fff'));
     const fr = wrap(G.last.fr || '', w - 24, 10); fr.slice(0, 3).forEach((l, i) => bold(l, x + 8, 338 + Math.min(4, ls.length) * 14 + 6 + i * 13, 10, '#ffd23a'));
   } else bold('Shoot the', x + 8, 330, 11, '#9aa'), bold('right answer!', x + 8, 346, 11, '#9aa');
-  txt('SHOOT THE', x + 4, 450, 7, '#9aa'); txt('CORRECT ANSWER', x + 4, 464, 7, '#9aa');
-  txt('WRONG: -50', x + 4, 484, 7, '#ff8a8a'); txt('UFO: HINT', x + 4, 500, 7, '#ff8a8a');
+  txt('CAPSULES TO CATCH', x + 4, 446, 6, '#9aa');
+  txt('T triple  R repair', x + 4, 460, 6, '#7dff9b'); txt('S slow  L life', x + 4, 472, 6, '#7dff9b');
+  txt('B jam  F slow fire', x + 4, 486, 6, '#ff8a8a'); txt('WRONG: -50', x + 4, 504, 6, '#ff8a8a'); txt('UP ARROW = FIRE', x + 4, 522, 6, '#9aa');
   txt('P pause  M sound', x + 4, 540, 6, '#6f78d8');
 }
 function banner(l1, l2, col) {
@@ -738,10 +843,10 @@ function banner(l1, l2, col) {
 }
 function draw() {
   ctx.setTransform(SC, 0, 0, SC, 0, 0);
-  drawField(); drawQuestion(); drawShields(); drawUfo(); drawAliens(); drawCannon(); drawShots(); drawPanel();
+  drawField(); drawQuestion(); drawShields(); drawUfo(); drawAliens(); drawCaps(); drawCannon(); drawShots(); drawPanel();
   G.pops.forEach((p) => { ctx.globalAlpha = Math.max(0, 1 - p.t / 1.4); bold(p.s, p.x, p.y - p.t * 30, 14, p.col, 'center'); }); ctx.globalAlpha = 1;
   const st = G.state;
-  if (st === 'ready') banner('WAVE ' + G.round, G.q ? G.q.tag : '', '#ffd23a');
+  if (st === 'ready') banner('WAVE ' + G.round, G.q ? (G.q.order ? 'KILL ORDER: ' + G.q.order.join(' THEN ') : G.q.tag) : '', '#ffd23a');
   else if (st === 'paused') banner('PAUSED', 'press P to continue');
   else if (st === 'dead') banner(G.lives > 0 ? (G.deadWhy === 'invaded' ? 'THEY LANDED!' : 'HIT!') : 'GAME OVER', G.lives > 0 ? G.lives + (G.lives > 1 ? ' lives left' : ' life left') : '', '#ff6b6b');
   else if (st === 'clear') drawClear();
@@ -749,8 +854,8 @@ function draw() {
 function drawClear() {
   const q = G.q, x = FX + 20, w = FW - 40, y = 300;
   ctx.fillStyle = 'rgba(6,30,24,.94)'; rrp(ctx, x, y, w, 168, 12); ctx.fill();
-  ctx.strokeStyle = '#7dff9b'; ctx.lineWidth = 2; rrp(ctx, x, y, w, 168, 12); ctx.stroke();
-  txt('CORRECT!  +' + G.gain + (mult() > 1 ? '  (x' + mult() + ')' : ''), CX0, y + 24, 14, '#7dff9b', 'center');
+  ctx.strokeStyle = G.last && G.last.ok ? '#7dff9b' : '#ffb04a'; ctx.lineWidth = 2; rrp(ctx, x, y, w, 168, 12); ctx.stroke();
+  txt(G.clearMsg, CX0, y + 24, 14, G.last && G.last.ok ? '#7dff9b' : '#ffb04a', 'center');
   const full = q.kind === 'verb' ? q.fill : q.fill;
   const ls = wrap(full, w - 30, q.kind === 'verb' ? 20 : 16);
   ls.slice(0, 3).forEach((l, i) => bold(l, CX0, y + 62 + i * 24, q.kind === 'verb' ? 20 : 16, '#fff', 'center'));
@@ -958,7 +1063,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES &amp; BONUSES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the cannon. <b>Up arrow</b> (or space, or click): fire.<br>Each wave shows a sentence with a gap, or an irregular verb question. Four aliens carry the answers: shoot the right one to clear the wave. The French translation appears afterwards.<br>A wrong alien is destroyed but costs 50 points, breaks your streak and pushes the others down. Streaks raise your multiplier up to x4.<br>Hit the red UFO for bonus points and a hint (a wrong alien is removed). Shields protect you from bombs but wear away.<br>If the aliens land or a bomb hits you, you lose a life. When you lose your last life, your wave is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one life.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the cannon. <b>Up arrow</b> (or space, or click): fire.<br>Each wave shows a sentence with a gap, or an irregular verb question. Four small aliens carry the answers: shoot the right one to clear the wave. The French translation appears afterwards.<br><b>KILL ORDER waves</b> (yellow frame): you must shoot the two right answers in the order shown (for example PRETERIT, then PAST PARTICIPLE). Shooting them in the wrong order loses the wave.<br>A wrong alien is destroyed but costs 50 points, breaks your streak and pushes the others down. Streaks raise your multiplier up to x4. Some aliens are armoured (2 shots), the answers sometimes swap places, and a wrong alien may dive at you as a kamikaze.<br>Catch the falling capsules with your cannon. Green: T triple shot, R shields repaired, S aliens slowed, L extra life. Red: B cannon jammed for a moment, F very slow fire.<br>Hit the red UFO for bonus points and a hint (a wrong alien is removed). Shields protect you from bombs but wear away.<br>If the aliens land or a bomb hits you, you lose a life. When you lose your last life, your wave is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one life.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
