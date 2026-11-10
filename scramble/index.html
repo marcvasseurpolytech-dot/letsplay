@@ -247,12 +247,169 @@ const CONNECTORS = [
   ['apart from', "à part"],
   ['that is why', "c'est pourquoi"]
 ];
+/* Decks : chaque boucle (base détruite) change de contenu : connecteurs, verbes irréguliers, vocabulaire TOEIC */
+const IRR = [
+  ["be","was / were / been","être"],
+  ["become","became / become","devenir"],
+  ["begin","began / begun","commencer"],
+  ["break","broke / broken","casser"],
+  ["bring","brought / brought","apporter"],
+  ["build","built / built","construire"],
+  ["buy","bought / bought","acheter"],
+  ["catch","caught / caught","attraper"],
+  ["choose","chose / chosen","choisir"],
+  ["come","came / come","venir"],
+  ["cost","cost / cost","coûter"],
+  ["cut","cut / cut","couper"],
+  ["deal","dealt / dealt","traiter"],
+  ["do","did / done","faire"],
+  ["draw","drew / drawn","dessiner"],
+  ["drive","drove / driven","conduire"],
+  ["eat","ate / eaten","manger"],
+  ["fall","fell / fallen","tomber"],
+  ["feel","felt / felt","ressentir"],
+  ["find","found / found","trouver"],
+  ["fly","flew / flown","voler"],
+  ["forget","forgot / forgotten","oublier"],
+  ["get","got / got","obtenir"],
+  ["give","gave / given","donner"],
+  ["go","went / gone","aller"],
+  ["grow","grew / grown","grandir"],
+  ["have","had / had","avoir"],
+  ["hear","heard / heard","entendre"],
+  ["hold","held / held","tenir"],
+  ["keep","kept / kept","garder"],
+  ["know","knew / known","savoir"],
+  ["lead","led / led","diriger"],
+  ["leave","left / left","partir"],
+  ["lend","lent / lent","prêter"],
+  ["let","let / let","laisser"],
+  ["lose","lost / lost","perdre"],
+  ["make","made / made","faire, fabriquer"],
+  ["mean","meant / meant","signifier"],
+  ["meet","met / met","rencontrer"],
+  ["pay","paid / paid","payer"],
+  ["put","put / put","mettre"],
+  ["read","read / read","lire"],
+  ["ride","rode / ridden","monter"],
+  ["rise","rose / risen","augmenter"],
+  ["run","ran / run","courir"],
+  ["say","said / said","dire"],
+  ["see","saw / seen","voir"],
+  ["sell","sold / sold","vendre"],
+  ["send","sent / sent","envoyer"],
+  ["set","set / set","fixer"],
+  ["shake","shook / shaken","secouer"],
+  ["show","showed / shown","montrer"],
+  ["shut","shut / shut","fermer"],
+  ["sit","sat / sat","s'asseoir"],
+  ["speak","spoke / spoken","parler"],
+  ["spend","spent / spent","dépenser"],
+  ["stand","stood / stood","se tenir debout"],
+  ["steal","stole / stolen","voler (dérober)"],
+  ["take","took / taken","prendre"],
+  ["teach","taught / taught","enseigner"],
+  ["tell","told / told","dire à"],
+  ["think","thought / thought","penser"],
+  ["throw","threw / thrown","jeter"],
+  ["understand","understood / understood","comprendre"],
+  ["wear","wore / worn","porter"],
+  ["win","won / won","gagner"],
+  ["write","wrote / written","écrire"]
+];
+const VOC = [
+  ["invoice","facture"],
+  ["deadline","date limite"],
+  ["supplier","fournisseur"],
+  ["warranty","garantie"],
+  ["schedule","planning"],
+  ["refund","remboursement"],
+  ["colleague","collègue"],
+  ["shipment","expédition"],
+  ["negotiate","négocier"],
+  ["headquarters","siège social"],
+  ["recruit","recruter"],
+  ["overdue","en retard"],
+  ["turnover","chiffre d'affaires"],
+  ["premises","locaux"],
+  ["workforce","main-d'œuvre"],
+  ["shareholder","actionnaire"],
+  ["agenda","ordre du jour"],
+  ["delegate","déléguer"],
+  ["contractor","sous-traitant"],
+  ["maintenance","entretien"],
+  ["efficiency","efficacité"],
+  ["inventory","inventaire, stock"],
+  ["reliable","fiable"],
+  ["outcome","résultat"],
+  ["benefit","avantage"],
+  ["branch","succursale"],
+  ["payroll","paie"],
+  ["quotation","devis"],
+  ["compliance","conformité"],
+  ["landlord","propriétaire"],
+  ["applicant","candidat"],
+  ["supervisor","responsable"],
+  ["attachment","pièce jointe"],
+  ["handout","document distribué"],
+  ["tenant","locataire"],
+  ["resignation","démission"],
+  ["budget","budget"],
+  ["customer","client"],
+  ["purchase","achat"],
+  ["vendor","vendeur"],
+  ["candidate","candidat"],
+  ["revenue","recettes"],
+  ["expense","dépense"],
+  ["receipt","reçu"],
+  ["reimburse","rembourser"],
+  ["estimate","devis, estimer"],
+  ["assemble","assembler"],
+  ["inspect","inspecter"],
+  ["install","installer"],
+  ["replace","remplacer"],
+  ["renew","renouveler"],
+  ["postpone","reporter"],
+  ["cancel","annuler"],
+  ["approve","approuver"],
+  ["submit","soumettre"],
+  ["attend","assister à"],
+  ["register","s'inscrire"],
+  ["brochure","brochure"],
+  ["catalog","catalogue"],
+  ["conference","conférence"],
+  ["exhibit","exposition"],
+  ["itinerary","itinéraire"],
+  ["luggage","bagages"],
+  ["departure","départ"],
+  ["boarding","embarquement"],
+  ["reservation","réservation"],
+  ["vacancy","poste vacant"],
+  ["promotion","promotion"],
+  ["retire","prendre sa retraite"],
+  ["raise","augmentation"],
+  ["overtime","heures sup."],
+  ["temporary","temporaire"],
+  ["equipment","équipement"],
+  ["shortage","pénurie"],
+  ["fragile","fragile"],
+  ["durable","durable, résistant"],
+  ["storage","stockage"],
+  ["warehouse","entrepôt"]
+];
+const DECKS = [
+  { id: 'c', name: 'LOGICAL CONNECTORS', pre: '', items: CONNECTORS },
+  { id: 'v', name: 'IRREGULAR VERBS', pre: 'v-', items: IRR.map((a) => [a[0], a[1] + ' (' + a[2] + ')']) },
+  { id: 'w', name: 'TOEIC VOCABULARY', pre: 'w-', items: VOC }
+];
+let DECK = DECKS[0];
+const wkey = (d, it) => d.pre + it[0];
 function assignWords() {
   const targets = templates.filter((t) => t.type === 'fuel');
   let pool = [];
   for (const t of targets) {
     if (!pool.length) {
-      pool = CONNECTORS.map((_, i) => i);
+      pool = DECK.items.map((_, i) => i);
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(rng() * (i + 1)); const tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
       }
@@ -262,7 +419,7 @@ function assignWords() {
   // niveaux de fanions : deux fanions voisins ne se chevauchent jamais (calcul stable, indépendant de l'écran)
   const lanes = [-1e9, -1e9, -1e9, -1e9];
   for (const t of targets.slice().sort((a, b) => a.x - b.x)) {
-    const cx = t.x + t.w / 2, bw = CONNECTORS[t.word][0].length * 8 + 16;
+    const cx = t.x + t.w / 2, bw = DECK.items[t.word][0].length * 8 + 16;
     let k = lanes.findIndex((r) => r < cx - 4);
     if (k < 0) k = lanes.indexOf(Math.min.apply(null, lanes));
     t.lane = k; lanes[k] = cx + bw + 6;
@@ -671,6 +828,7 @@ function startGame() {
   score = 0; lives = 3; level = 0; nextLife = 10000; secT = 0;
   applyDifficulty();
   camX = 0; fuel = 100;
+  DECK = DECKS[0]; assignWords();
   buildEntities();
   resetShipAt(0);
   bullets = []; bombs = []; booms = []; parts = []; pops = []; cards = []; vocab = []; learned = [];
@@ -713,9 +871,9 @@ function pop(x, y, txt) { pops.push({ x, y, txt, life: 50 }); }
 // carte de traduction : s'affiche à l'écran quand une cible portant un connecteur explose
 function card(e, cx) {
   if (e.word === undefined) return;
-  const c = CONNECTORS[e.word];
-  if (!learned.some((l) => l.en === c[0])) learned.push({ en: c[0], fr: c[1] });
-  profWord(c[0]);
+  const c = DECK.items[e.word];
+  if (!learned.some((l) => l.en === c[0] && l.d === DECK.id)) learned.push({ en: c[0], fr: c[1], d: DECK.id });
+  profWord(wkey(DECK, c));
   cards.push({ x: cx - camX, y: clamp(e.y - 26, TOP + 30, BOT - 40), x0: 0, y0: 0, t: 0, en: c[0], fr: c[1], life: 54 });
   if (cards.length > 8) cards.shift();
 }
@@ -803,10 +961,11 @@ function update() {
       addScore(Math.round(fuel) * 10);
       level++; applyDifficulty();
       camX = 0; fuel = 100; lives = Math.min(6, lives + 1);
+      DECK = DECKS[level % DECKS.length]; assignWords();
       buildEntities(); bullets = []; bombs = [];
       resetShipAt(0);
       state = 'play';
-      lastSec = 0; banner = { t: 150, txt: 'LOOP ' + (level + 1) };
+      lastSec = 0; banner = { t: 150, txt: 'LOOP ' + (level + 1) + ' : ' + DECK.name };
       saveHi();
     }
   }
@@ -1206,7 +1365,7 @@ function drawTags() {
     if (!e.alive || e.word === undefined) continue;
     const sx = e.x - camX;
     if (sx < -140 || sx > W + 20) continue;
-    const label = CONNECTORS[e.word][0];
+    const label = DECK.items[e.word][0];
     const bw = Math.round(textW(label)) + 16, bh = 15;
     const mx = Math.round(sx + e.w / 2);
     const fy0 = Math.max(TOP + 3, Math.round(e.y - 12 - e.lane * 17 - bh));
@@ -1373,7 +1532,7 @@ function drawHud() {
   ctx.fillStyle = '#0a0e28'; ctx.fillRect(0, py + 1, W, H - py - 1);
   ctx.textAlign = 'left'; ctx.font = '8px ' + FONT; ctx.fillStyle = '#ff3a2a'; ctx.fillText('VOCABULARY', 14, py + 25);
   if (!vocab.length) {
-    ctx.fillStyle = '#4a5a8c'; ctx.fillText('Destroy fuel tanks to collect connectors', 130, py + 25);
+    ctx.fillStyle = '#4a5a8c'; ctx.fillText('Destroy fuel tanks to collect words', 130, py + 25);
   }
   vocab.forEach((v, i) => {
     ctx.textAlign = 'center';
@@ -1431,7 +1590,7 @@ function draw() {
       centerText('GAME OVER', n ? 100 : 210, 40, '#ff5a4a');
       centerText('SCORE ' + pad(score, 6) + (score >= hi && score > 0 ? '  NEW RECORD' : ''), n ? 134 : 262, 12, '#ffffff');
       if (n) {
-        centerText('CONNECTORS COLLECTED: ' + n, 170, 10, '#ffd23a');
+        centerText('WORDS COLLECTED: ' + n, 170, 10, '#ffd23a');
         ctx.font = '8px ' + FONT; ctx.textAlign = 'left';
         const shown = learned.slice(0, 28);
         shown.forEach((l, i) => {
@@ -1487,7 +1646,9 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const lsDel = (k) => { try { localStorage.removeItem(k); } catch (e) {} };
 const escH = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 function canStart() { return PR.guest || !!PR.user; }
-function nCollected() { return CONNECTORS.filter((c) => PR.words[c[0]] > 0).length; }
+function nCollected(d) { return d.items.filter((c) => PR.words[wkey(d, c)] > 0).length; }
+function nTotal() { return DECKS.reduce((a, d) => a + d.items.length, 0); }
+function nAll() { return DECKS.reduce((a, d) => a + nCollected(d), 0); }
 function apiPost(action, body) {
   const h = { 'Content-Type': 'application/json' };
   if (PR.token) h.Authorization = 'Bearer ' + PR.token;
@@ -1561,18 +1722,18 @@ function renderAuth() {
   const $ = (q) => box.querySelector(q);
   let h = '<h1>SCRAMBLE <span>TOEIC</span></h1>';
   if (PR.user) {
-    const tot = CONNECTORS.length, n = nCollected();
-    h += '<p class="sub">Shoot the fuel tanks, collect the logical connectors.</p>' +
+    const tot = nTotal(), n = nAll();
+    h += '<p class="sub">Shoot the fuel tanks and collect the words. Each loop changes the deck: connectors, irregular verbs, TOEIC vocabulary.</p>' +
       '<div class="who"><span>Logged in as <b>' + escH(PR.user.nom) + '</b></span><button class="btn" id="aOut">Log out</button></div>' +
-      '<div class="stats"><div class="stat"><b>' + n + ' / ' + tot + '</b><span>connectors collected</span></div>' +
+      '<div class="stats"><div class="stat"><b>' + n + ' / ' + tot + '</b><span>words collected</span></div>' +
       '<div class="stat"><b>' + PR.best + '</b><span>best score</span></div>' +
       '<div class="stat"><b>' + PR.runs + '</b><span>games played</span></div></div>' +
       '<div class="row"><button class="btn solid big" id="aPlay">PLAY</button></div>' +
       '<p class="msg" style="color:#a9b3c9">' + escH(PR.status) + '</p>' +
-      '<details><summary>My connectors (' + n + ' / ' + tot + ')</summary><div class="words">' +
-      CONNECTORS.slice().sort((p, q) => ((PR.words[q[0]] > 0) - (PR.words[p[0]] > 0))).map((c) => PR.words[c[0]] > 0
-        ? '<div class="w ok"><b>' + escH(c[0]) + '</b> <i>= ' + escH(c[1]) + '</i> <span class="muted">x' + PR.words[c[0]] + '</span></div>'
-        : '<div class="w no">' + escH(c[0]) + ' = ?</div>').join('') + '</div></details>';
+      DECKS.map((d) => '<details><summary>' + escH(d.name) + ' (' + nCollected(d) + ' / ' + d.items.length + ')</summary><div class="words">' +
+        d.items.slice().sort((p, q) => ((PR.words[wkey(d, q)] > 0) - (PR.words[wkey(d, p)] > 0))).map((c) => PR.words[wkey(d, c)] > 0
+          ? '<div class="w ok"><b>' + escH(c[0]) + '</b> <i>= ' + escH(c[1]) + '</i> <span class="muted">x' + PR.words[wkey(d, c)] + '</span></div>'
+          : '<div class="w no">' + escH(c[0]) + ' = ?</div>').join('') + '</div></details>').join('');
   } else if (PR.guest) {
     h += '<p class="sub">Guest mode: nothing is saved.</p><div class="row"><button class="btn solid big" id="aPlay">PLAY</button></div>';
   } else {
@@ -1586,7 +1747,7 @@ function renderAuth() {
       (PR.offline ? '<div class="row"><button class="btn" id="aGuest">Server unreachable: play as guest (not saved)</button></div>' : '') +
       '<p class="muted">It is the same profile as in Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
-  h += '<details><summary>Directions</summary><p>LEFT arrow: laser (rockets, UFOs, fuel tanks). RIGHT arrow: bomb (two at a time). ZQSD / WASD: move. P: pause. M: sound. H: HD / retro.<br>Every fuel tank carries a logical connector on a flag. Destroy it to collect the word and its French translation. Meteors cannot be destroyed: dodge them. Do not run out of fuel!</p></details>';
+  h += '<details><summary>Directions</summary><p>LEFT arrow: laser (rockets, UFOs, fuel tanks). RIGHT arrow: bomb (two at a time). ZQSD / WASD: move. P: pause. M: sound. H: HD / retro.<br>Every fuel tank carries a word on a flag. Destroy it to collect it with its translation. Finish a loop (destroy the base) and the next loop changes deck: connectors, then irregular verbs (past simple / past participle), then TOEIC vocabulary. Meteors cannot be destroyed: dodge them. Do not run out of fuel!</p></details>';
   box.innerHTML = h;
   { const fn = box.querySelector('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
@@ -1642,7 +1803,7 @@ resize();
 requestAnimationFrame(loop);
 
 // Accès pour les tests automatisés
-window.__sc = { update, draw, startGame, templates, FL, CL, floorAt, ceilAt, sectionOf, kbd, SECTIONS, CONNECTORS, LV, KX, KY,
+window.__sc = { DECKS, wkey, deck: () => DECK, nextLoop: () => { level++; DECK = DECKS[level % DECKS.length]; assignWords(); buildEntities(); }, update, draw, startGame, templates, FL, CL, floorAt, ceilAt, sectionOf, kbd, SECTIONS, CONNECTORS, LV, KX, KY,
   destroy, set: (o) => { if ('camX' in o) camX = o.camX; if ('fuel' in o) fuel = o.fuel; if ('lives' in o) lives = o.lives; },
   get: () => ({ state, camX, score, lives, fuel, ship, sv, entities, bullets, bombs, level, paused, cards }) };
 })();
