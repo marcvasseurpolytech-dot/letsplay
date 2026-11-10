@@ -52,6 +52,7 @@
   .ov .tbar i { display: block; height: 100%; width: 100%; background: #38e87a; }
   .ov .tbar.low i { background: #ff4050; }
   .ov .pen { color: #ff9af0; font-size: 10px; text-align: center; margin: 0 0 6px; }
+  .ov .dots .g { color: #6fe09a; } .ov .dots .r { color: #ff6a6a; }
   .ov .dots { text-align: center; font-size: 20px; letter-spacing: 6px; color: #ffd23a; margin: 0 0 6px; }
   .ov .qs { font-size: 17px; line-height: 1.55; margin: 12px 0 14px; color: #fff; text-align: center; }
   .ov .gap { display: inline-block; min-width: 70px; border-bottom: 2px solid #ffd23a; color: #ffd23a; text-align: center; }
@@ -722,7 +723,7 @@ function drawPanel() {
   for (let i = 0; i < 4; i++) { ctx.fillStyle = i < mult() ? '#ffd23a' : 'rgba(255,255,255,.15)'; ctx.fillRect(x + 56 + i * 20, 260, 16, 12); }
   txt('LAST', x + 4, 296, 8, '#7d8cff');
   if (G.last) {
-    ctx.fillStyle = G.last.ok ? 'rgba(40,140,80,.35)' : 'rgba(170,40,50,.35)'; rrp(ctx, x, 306, w - 8, 118, 6); ctx.fill();
+    ctx.fillStyle = G.last.ok ? 'rgba(40,140,80,.35)' : 'rgba(170,40,50,.35)'; rrp(ctx, x, 306, w - 8, 132, 6); ctx.fill();
     txt(G.last.ok ? 'CORRECT' : 'WRONG', x + 8, 320, 8, G.last.ok ? '#7dff9b' : '#ff7b7b');
     const ls = wrap(G.last.s, w - 24, 11); ls.slice(0, 4).forEach((l, i) => bold(l, x + 8, 338 + i * 14, 11, '#fff'));
     const fr = wrap(G.last.fr || '', w - 24, 10); fr.slice(0, 3).forEach((l, i) => bold(l, x + 8, 338 + Math.min(4, ls.length) * 14 + 6 + i * 13, 10, '#ffd23a'));
@@ -1007,7 +1008,7 @@ function qPool() {
 function openQuiz(onDone, onCancel) {
   const pool = shuffle(qPool());
   if (!pool.length) { onDone(); return; }
-  QZ = { ok: 0, need: 3, wrong: 0, tl: 10, timer: null, pool, idx: 0, q: null, opts: [], answered: false, last: '', onDone, onCancel };
+  QZ = { ok: 0, need: 3, done: 0, res: [], wrong: 0, tl: 10, timer: null, pool, idx: 0, q: null, opts: [], answered: false, last: '', onDone, onCancel };
   document.getElementById('auth').classList.remove('on'); PR.shown = false;
   nextQuestion();
   document.getElementById('quiz').classList.add('on');
@@ -1034,8 +1035,8 @@ function startQTimer() {
 function renderQuiz() {
   const box = document.getElementById('quizBox'), q = QZ.q;
   const sentence = esc(q.s).replace('___', '<span class="gap">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>');
-  let dots = ''; for (let i = 0; i < QZ.need; i++) dots += i < QZ.ok ? '&#9679;' : '&#9675;';
-  box.innerHTML = '<h2>BACK IN THE GAME</h2><p class="sub">Answer 3 grammar questions correctly to continue. You have 10 seconds per question.</p>' +
+  let dots = ''; for (let i = 0; i < QZ.need; i++) dots += QZ.res[i] === 1 ? '<span class="g">&#9679;</span>' : QZ.res[i] === 0 ? '<span class="r">&#9679;</span>' : '&#9675;';
+  box.innerHTML = '<h2>BACK IN THE GAME</h2><p class="sub">Answer 3 grammar questions to continue (3 questions, no more). You have 10 seconds per question.</p>' +
     '<p class="pen">Each wrong answer or timeout costs you one life when the game restarts' + (QZ.wrong ? ' (so far ' + Math.min(2, QZ.wrong) + ')' : '') + '</p>' +
     '<div class="tbar"><i></i></div><div class="dots">' + dots + '</div>' +
     '<div class="qs">' + sentence + '</div><div class="opts">' + QZ.opts.map((o, i) => '<button class="opt" data-i="' + i + '">' + esc(o) + '</button>').join('') + '</div>' +
@@ -1047,13 +1048,13 @@ function answerQuestion(i) {
   if (!QZ || QZ.answered) return;
   QZ.answered = true; stopQTimer();
   const q = QZ.q, good = i >= 0 && QZ.opts[i] === q.o[0], box = document.getElementById('quizBox');
-  PR.qN++; if (good) { PR.qOk++; QZ.ok++; } else QZ.wrong++;
+  PR.qN++; QZ.done++; QZ.res.push(good ? 1 : 0); if (good) { PR.qOk++; QZ.ok++; } else QZ.wrong++;
   if (PR.user) scheduleSave();
   box.querySelectorAll('.opt').forEach((b, k) => { b.disabled = true; if (QZ.opts[k] === q.o[0]) b.classList.add('ok'); else if (k === i) b.classList.add('no'); });
-  const dn = QZ.ok >= QZ.need;
+  const dn = QZ.done >= QZ.need;
   box.querySelector('#qfb').innerHTML = (good ? '<b class="g">Correct!</b>' : '<b class="r">' + (i < 0 ? 'Time is up!' : 'Not quite.') + '</b> The answer is <b class="g">' + esc(q.o[0]) + '</b>.') + (q.fr ? '<br><i>' + esc(q.fr) + '</i>' : '') + (QZ.wrong ? '<br><b class="r">You will restart with ' + Math.max(1, 3 - QZ.wrong) + ' ' + (3 - QZ.wrong > 1 ? 'lives' : 'life') + '.</b>' : '');
-  const nx = box.querySelector('#qNext'); nx.style.display = ''; nx.innerHTML = dn ? 'CONTINUE' : (good ? 'NEXT QUESTION' : 'TRY ANOTHER QUESTION');
-  let dots = ''; for (let k = 0; k < QZ.need; k++) dots += k < QZ.ok ? '&#9679;' : '&#9675;';
+  const nx = box.querySelector('#qNext'); nx.style.display = ''; nx.innerHTML = dn ? 'CONTINUE' : 'NEXT QUESTION (' + (QZ.done + 1) + ' / ' + QZ.need + ')';
+  let dots = ''; for (let k = 0; k < QZ.need; k++) dots += QZ.res[k] === 1 ? '<span class="g">&#9679;</span>' : QZ.res[k] === 0 ? '<span class="r">&#9679;</span>' : '&#9675;';
   box.querySelector('.dots').innerHTML = dots;
   nx.addEventListener('click', () => { if (dn) { const f = QZ.onDone, w = QZ.wrong; QZ = null; document.getElementById('quiz').classList.remove('on'); f(w); } else nextQuestion(); });
 }
