@@ -628,7 +628,11 @@ function pickChoose(i) {
   applyUpg(u.id); SND.pick(); G.picks--;
   if (G.picks > 0) { newPickOpts(); G.stateT = 0; if (!G.pickOpts.length) startRound(G.round + 1); } else startRound(G.round + 1);
 }
-function advance() { if (G.kind === 'q' && G.qi < 2) { G.qi++; startRound(G.round, false, true); } else openPick(); }
+function recoverShip() {
+  if (!G.capBoss && !G.rescue) return;
+  G.capBoss = null; G.rescue = null; G.dual = true; G.lives = Math.min(6, G.lives + 1); SND.dock(); popup(G.cx, CAN_Y - 30, 'SHIP RECOVERED +1  DUAL FIGHTER!', '#9ad0ff');
+}
+function advance() { recoverShip(); if (G.kind === 'q' && G.qi < 2) { G.qi++; startRound(G.round, false, true); } else startRound(G.round + 1); }
 function startRound(n, redo, keep) {
   G.beamC = 0;
   G.round = n; G.kind = (!keep && isChal(n)) ? 'chal' : 'q';
@@ -684,7 +688,7 @@ function hurt(why) {
   G.lives--; G.streak = 0; G.state = 'dead'; G.stateT = 0; G.bul = []; G.ebul = [];
 }
 function doNextQ() {
-  G.nextQ = false; G.qi++; G.q = makeQuestion(G.qn = (G.qn || 0) + 1); G.qT = 0; G.shT = 0; G.diveT = 3; G.capBoss = null; G.rescue = null;
+  G.nextQ = false; G.qi++; G.q = makeQuestion(G.qn = (G.qn || 0) + 1); G.qT = 0; G.shT = 0; G.diveT = 3; recoverShip(); G.capBoss = null; G.rescue = null;
   const cap = G.capBoss && G.capBoss.alive ? G.capBoss : null; if (!cap) G.capBoss = null;
   const occ = G.en.filter((o) => o.alive && o.type < 2);
   G.en = G.en.filter((o) => { if (o.type === 2) { if (o === cap) return true; if (o.alive) boom(o.x, o.y, '#ffd95c', 6); return false; } return o.alive; });
@@ -891,6 +895,7 @@ function update(dt) {
   G.pops.forEach((p) => { p.t += dt; }); G.pops = G.pops.filter((p) => p.t < (p.big ? 2.2 : 1.4));
   if (G.beamFx) { G.beamFx.t += dt; if (G.beamFx.t > 0.5) G.beamFx = null; }
   G.stars.forEach((s) => { s.y += s.v * dt; if (s.y > FY + FH) s.y = FY; });
+  if (G.capCd > 0) G.capCd -= dt;
   if (G.cool > 0) G.cool -= dt; if (G.inv > 0) G.inv -= dt;
   ['tri', 'slow', 'frz', 'weak', 'stop'].forEach((k) => { if (G.eff[k] > 0) G.eff[k] -= dt; });
   const st = G.state;
@@ -964,7 +969,7 @@ function update(dt) {
         const bosses = inForm.filter((e) => e.type === 2 && !e.cap);
         const wb = inForm.filter((e) => e.type === 2 && !e.ok && !e.cap && e.hp > 0 && !e.arm);
         if (G.round >= 3 && wb.length && Math.random() < (0.18 + (G.qi === 2 ? 0.1 : 0))) startKami(wb[Math.floor(Math.random() * wb.length)]);
-        else if (bosses.length && G.lives > 1 && !G.capBoss && !G.dual && Math.random() < 0.28 && !G.en.some((e) => e.alive && (e.st === 'beam' || e.st === 'beamgo'))) startDive(bosses[Math.floor(Math.random() * bosses.length)], true);
+        else if (bosses.length && G.lives > 1 && !G.capBoss && !G.dual && !(G.capCd > 0) && Math.random() < 0.1 && !G.en.some((e) => e.alive && (e.st === 'beam' || e.st === 'beamgo'))) { G.capCd = 28; startDive(bosses[Math.floor(Math.random() * bosses.length)], true); }
         else { const sm = inForm.filter((e) => e.type < 2); const e = (sm.length ? sm : inForm)[Math.floor(Math.random() * (sm.length || inForm.length))]; startDive(e, false); }
       }
       G.diveT = Math.max(0.75, (3.0 - G.round * 0.11) * (1 - 0.3 * Math.min(1, G.dir))) * (0.7 + Math.random() * 0.6);
@@ -1553,7 +1558,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('62px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tg = { PR, openQuiz, qState: () => QZ, answerQuestion, renderAuth, G, VERBS, BANK, update, draw, newGame, action, startRound, makeQuestion, verbQuestion, gapQuestion, killEnemy, hurt, startDive, ufoHit, startKami,  applyUpg, openPick, pickChoose, fireCharge,fireBeam, evolveOne, enemyShot, ringShot, splitGold, UPG, catchCap, maybeDrop, KS, fire, collection, SND };
+window.__tg = { PR, openQuiz, qState: () => QZ, answerQuestion, renderAuth, G, VERBS, BANK, update, draw, newGame, action, startRound, makeQuestion, verbQuestion, gapQuestion, killEnemy, hurt, startDive, ufoHit, startKami,  applyUpg, openPick, pickChoose, fireCharge,fireBeam,advance,recoverShip, evolveOne, enemyShot, ringShot, splitGold, UPG, catchCap, maybeDrop, KS, fire, collection, SND };
 })();
 </script>
 </body>
