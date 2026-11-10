@@ -577,7 +577,7 @@ function buildStage(n) {
   }
   const q = G.q, nBt = 24, nBe = Math.min(48, 32 + 2 * Math.floor(n / 2));
   const bossX = [-150, -50, 50, 150];
-  q.opts.forEach((o, i) => en.push(mkEnemy(2, CX0 + bossX[i], 134, { ok: o.ok, t: o.t, grp: 0, idx: i, tsx: CX0 + bossX[i], shield: true })));
+  q.opts.forEach((o, i) => en.push(mkEnemy(2, CX0 + bossX[i], 134, { ok: o.ok, t: o.t, grp: 0, idx: i, tsx: CX0 + bossX[i], sh: 10, rebuild: 0, lastHit: -9 })));
   if (n >= 3) { const w = en.filter((e) => e.type === 2 && !e.ok); if (w.length) { const a = w[Math.floor(Math.random() * w.length)]; a.hp = 3; a.arm = true; } }
   for (let i = 0; i < nBt; i++) { const row = Math.floor(i / 12), cnt = Math.min(12, nBt - row * 12); const c = i % 12; en.push(mkEnemy(1, CX0 + (c - (cnt - 1) / 2) * 30, 188 + row * 22, { grp: 1 + (i % 2) })); }
   for (let i = 0; i < nBe; i++) { const row = Math.floor(i / 16), cnt = Math.min(16, nBe - row * 16); const c = i % 16; en.push(mkEnemy(0, CX0 + (c - (cnt - 1) / 2) * 30, 232 + row * 22, { grp: 3 + (i % 2) })); }
@@ -627,14 +627,16 @@ function hurt(why) {
   G.hideT = 0;
   boom(G.cx, CAN_Y, '#e9efff', 30); SND.lose(); G.deadWhy = why;
   if (G.dual) { G.dual = false; G.inv = 1.8; return; }
-  G.lives--; G.streak = 0; G.state = 'dead'; G.stateT = 0; G.bul = []; G.ebul = []; G.rescue = null;
+  G.lives--; G.streak = 0; G.state = 'dead'; G.stateT = 0; G.bul = []; G.ebul = [];
 }
 function doNextQ() {
   G.nextQ = false; G.qi++; G.q = makeQuestion(G.qn = (G.qn || 0) + 1); G.qT = 0; G.shT = 0; G.diveT = 3; G.capBoss = null; G.rescue = null;
+  const cap = G.capBoss && G.capBoss.alive ? G.capBoss : null; if (!cap) G.capBoss = null;
   const occ = G.en.filter((o) => o.alive && o.type < 2);
-  G.en = G.en.filter((o) => { if (o.type === 2) { if (o.alive) boom(o.x, o.y, '#ffd95c', 6); return false; } return o.alive; });
+  G.en = G.en.filter((o) => { if (o.type === 2) { if (o === cap) return true; if (o.alive) boom(o.x, o.y, '#ffd95c', 6); return false; } return o.alive; });
   buildStage(G.round).forEach((f) => {
-    if (f.type === 2) { f.st = 'ret'; f.x = f.sx; f.y = -20; f.shield = true; G.en.push(f); }
+    if (f.type === 2 && cap && f.idx === cap.idx) { cap.t = f.t; cap.ok = f.ok; cap.hp = f.hp; cap.arm = f.arm; }
+    else if (f.type === 2) { f.st = 'ret'; f.x = f.sx; f.y = -20; G.en.push(f); }
     else if (!occ.some((o) => Math.abs(o.sx - f.sx) < 2 && Math.abs(o.sy - f.sy) < 2)) { f.st = 'ret'; f.x = f.sx; f.y = -20 - Math.random() * 40; G.en.push(f); }
   });
   popup(CX0, 300, 'SENTENCE ' + (G.qi + 1) + ' / 3', '#9ad0ff'); G.pops[G.pops.length - 1].big = true; SND.dock();
@@ -689,7 +691,11 @@ function drawCards() {
   });
 }
 function killEnemy(e, byShot, ram) {
-  if (e.type === 2 && !ram && e.shield && !e.chal) { e.shield = false; e.flash = 0.25; SND.armor(); return; }
+  if (e.type === 2 && !ram && e.sh > 0 && !e.chal && !e.cap) {
+    e.sh = Math.max(0, e.sh - 1); e.lastHit = G.t; e.flash = 0.1;
+    if (e.sh < 0.05) { e.sh = 0; e.rebuild = 4; boom(e.x, e.y, '#9ad8ff', 14); SND.hit2(); popup(e.x, e.y - 22, 'SHIELD DOWN', '#9ad8ff'); } else SND.armor();
+    return;
+  }
   if (e.type === 2 && !ram && e.hp > 1 && !e.chal) { e.hp--; e.flash = 0.25; SND.hit2(); return; }
   e.alive = false; boom(e.x, e.y, e.type === 0 ? '#6a8cff' : e.type === 1 ? '#ff6a7a' : '#5dffb0', e.type === 2 ? 34 : 22); (e.type === 0 ? SND.hitBee : e.type === 1 ? SND.hitBut : SND.bossBoom)();
   const dv = e.st === 'dive' || e.st === 'ret' || e.st === 'beamgo' || e.st === 'beam';
@@ -824,8 +830,12 @@ function update(dt) {
   }
   if (st !== 'play') return;
   moveCannon(dt); G.qT += dt;
-  if (G.entered) G.shT = (G.shT || 0) + dt;
-  if (G.shT > 9) G.en.forEach((e) => { if (e.shield) { e.shield = false; if (e.alive) boom(e.x, e.y, '#9ad8ff', 8); } });
+  G.en.forEach((e) => {
+    if (e.type !== 2 || !e.alive || e.chal) return;
+    if (e.cap) { e.sh = 0; e.rebuild = 0; return; }
+    if (e.sh > 0) { if (e.sh < 10 && G.t - e.lastHit > 1.5) e.sh = Math.min(10, e.sh + 1.2 * dt); }
+    else if (e.rebuild > 0) { e.rebuild -= dt; if (e.rebuild <= 0) { e.sh = 2; popup(e.x, e.y - 22, 'SHIELD BACK', '#9ad8ff'); } }
+  });
   if (KS[' '] || KS.arrowup || PADK.f) fire();
   updEnemies(dt); if (G.state !== 'play') return;
   G.caps.forEach((c) => { c.y += 110 * dt; if (Math.abs(c.x - G.cx) < 30 && Math.abs(c.y - CAN_Y) < 20) { c.dead = true; catchCap(c); } else if (c.y > FY + FH) c.dead = true; });
@@ -919,7 +929,7 @@ function ufoHit() {
   const e = G.eff, m = { JACKPOT: 'MYSTERY: JACKPOT +1000', STOP: 'MYSTERY: TIME STOP 4s', TRI: 'MYSTERY: TRIPLE SHOT 10s', SHIELDS: 'MYSTERY: SHIELDS DOWN', HINT: 'MYSTERY: X-RAY, THE ANSWER GLOWS', LIFE: 'MYSTERY: 1UP', METEOR: 'MYSTERY: METEOR SHOWER!' }[k];
   if (k === 'JACKPOT') G.score += 1000; else if (k === 'STOP') e.stop = 4; else if (k === 'TRI') e.tri = 10; else if (k === 'HINT') G.hint = 4;
   else if (k === 'LIFE') G.lives = Math.min(5, G.lives + 1); else if (k === 'METEOR') { G.meteor = 3; G.metT = 0; }
-  else G.en.forEach((o) => { if (o.shield) { o.shield = false; boom(o.x, o.y, '#9ad8ff', 8); } });
+  else G.en.forEach((o) => { if (o.type === 2 && o.sh > 0) { o.sh = 0; o.rebuild = 6; boom(o.x, o.y, '#9ad8ff', 8); } });
   popup(CX0, 430, m, k === 'METEOR' ? '#ff7a7a' : '#ffe14d'); G.pops[G.pops.length - 1].big = true;
 }
 function drawUfo() {
@@ -955,7 +965,11 @@ function drawEnemies() {
     ctx.restore();
     if (e.type === 2 && e.st !== 'entry') {
       const col = PCOL[e.idx];
-      if (e.shield) { ctx.save(); ctx.shadowColor = '#7fd4ff'; ctx.shadowBlur = 12; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(150,225,255,' + (0.6 + 0.3 * Math.sin(G.t * 8)) + ')'; ctx.fillStyle = 'rgba(110,200,255,.18)'; ctx.beginPath(); ctx.arc(e.x, e.y, 24, 0, 6.283); ctx.fill(); ctx.stroke(); ctx.restore(); }
+      if (e.sh > 0) {
+        const f = Math.min(1, e.sh / 10); ctx.save(); ctx.shadowColor = '#7fd4ff'; ctx.shadowBlur = 12; ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(150,225,255,' + (0.35 + 0.5 * f + 0.15 * Math.sin(G.t * 8)) + ')'; ctx.fillStyle = 'rgba(110,200,255,' + (0.06 + 0.16 * f) + ')';
+        ctx.beginPath(); ctx.arc(e.x, e.y, 24, 0, 6.283); ctx.fill(); ctx.stroke();
+        ctx.lineWidth = 4; ctx.strokeStyle = f > 0.5 ? '#9ad8ff' : '#ffd23a'; ctx.beginPath(); ctx.arc(e.x, e.y, 28, -1.5708, -1.5708 + 6.283 * f); ctx.stroke(); ctx.restore();
+      }
       if (e.arm && e.hp > 1) { ctx.lineWidth = 2; ctx.strokeStyle = '#d8e4ff'; ctx.setLineDash([3, 2]); ctx.beginPath(); ctx.arc(e.x, e.y, 21, 0, 6.283); ctx.stroke(); ctx.setLineDash([]); }
       ctx.fillStyle = 'rgba(8,8,34,.92)'; rrp(ctx, e.x - 47, e.y + 15, 94, 18, 9); ctx.fill();
       ctx.lineWidth = e.arm && e.hp > 1 ? 2.5 : 1.5; ctx.strokeStyle = e.arm && e.hp > 1 ? '#d8e4ff' : col; rrp(ctx, e.x - 47, e.y + 15, 94, 18, 9); ctx.stroke();
@@ -1242,7 +1256,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES &amp; BONUSES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage has 3 questions in a row (a sentence with a gap, or an irregular verb): after a right answer the correct sentence and its French stay on screen for a moment, then four new chiefs drop in with a new question while the remaining insects stay where they are (the missing ones come back). After the third question you move on to the next stage. Four green chiefs carry the answers. At the start of each stage they are protected by a shield bubble (it absorbs one shot and disappears after about 9 seconds), so clear the small insects first if you like. Then shoot the right chief twice (the first hit turns it blue) to answer the question. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>When a chief with a wrong irregular verb explodes, the three forms and the French appear and everything else disappears for 2 seconds so you can read them.<br>Insects dive and shoot. A chief may fire a tractor beam from the top of the screen and slide towards you: nothing can hurt you while it is active, so dodge it or shoot the chief. If you are captured, free the ship by shooting its captor to get a dual fighter.<br>Now and then a mystery UFO (?) crosses the screen above your ship: shoot it for a random surprise (jackpot, time stop, triple shot, shields down, x-ray on the right answer, extra ship... or a meteor shower).<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage has 3 questions in a row (a sentence with a gap, or an irregular verb): after a right answer the correct sentence and its French stay on screen for a moment, then four new chiefs drop in with a new question while the remaining insects stay where they are (the missing ones come back). After the third question you move on to the next stage. Four green chiefs carry the answers. Each chief is protected by a shield bubble worth 10 hits (the ring around it shows what is left). If you stop firing for a moment the shield slowly rebuilds, and a broken shield comes back after a few seconds, so keep shooting. Then shoot the right chief twice (the first hit turns it blue) to answer the question. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>When a chief with a wrong irregular verb explodes, the three forms and the French appear and everything else disappears for 2 seconds so you can read them.<br>Insects dive and shoot. A chief may fire a tractor beam from the top of the screen and slide towards you: nothing can hurt you while it is active, so dodge it or shoot the chief. If you are captured, free the ship by shooting its captor to get a dual fighter.<br>Now and then a mystery UFO (?) crosses the screen above your ship: shoot it for a random surprise (jackpot, time stop, triple shot, shields down, x-ray on the right answer, extra ship... or a meteor shower).<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
