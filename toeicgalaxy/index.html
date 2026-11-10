@@ -356,7 +356,7 @@ const G = {
   state: 'title', score: 0, lives: 3, round: 1, hi: parseInt(lsGet('tgHi') || '0', 10) || 0, t: 0, stateT: 0,
   q: null, en: [], bul: [], ebul: [], parts: [], pops: [], stars: [], cx: CX0, tx: null, cool: 0, inv: 0, dual: false, capBoss: null, rescue: null,
   streak: 0, ok: 0, ko: 0, missed: [], learned: [], last: null, qT: 0, prevState: null, deadWhy: '', gain: 0, recent: [], spawnT: 0, entered: false,
-  diveT: 3, kind: 'q', chalHits: 0, chalTot: 0, beamSnd: 0, clearMsg: '', ending: null
+  diveT: 3, caps: [], eff: { tri: 0, slow: 0, frz: 0, weak: 0 }, step: 0, swapT: 9, kind: 'q', chalHits: 0, chalTot: 0, beamSnd: 0, clearMsg: '', ending: null
 };
 let collection = (() => { try { return new Set(JSON.parse(lsGet('tgLearned') || '[]')); } catch (e) { return new Set(); } })();
 function saveCollection() { lsSet('tgLearned', JSON.stringify(Array.from(collection))); }
@@ -401,7 +401,7 @@ function enemySprite(type, frame, hit) {
 }
 function drawEnemySprite(e, x, y) {
   const fr = Math.floor(G.t * 3 + e.ph) & 1, c = enemySprite(e.type, fr, e.type === 2 && e.hp < 2);
-  const s = e.type === 2 ? 1.25 : 1;
+  const s = e.type === 2 ? 1.0 : 0.8;
   ctx.drawImage(c, x - c.width / SC * s / 2, y - c.height / SC * s / 2, c.width / SC * s, c.height / SC * s);
 }
 function drawShip(x, y, col, glow) {
@@ -460,6 +460,11 @@ function startDive(e, beam) {
   e.path = spline(pts); e.d = 0; e.st = beam ? 'beamgo' : 'dive'; e.spd = 215 + Math.min(G.round, 30) * 6; e.shot = 0; SND.dive();
 }
 
+function startKami(e) {
+  const tx = clamp(G.cx, FX + 30, FX + FW - 30), pts = [[e.x, e.y]];
+  for (let i = 1; i <= 6; i++) { const f = i / 6; pts.push([clamp(e.x + (tx - e.x) * f + (i % 2 ? 1 : -1) * 55 * (1 - f * 0.3), FX + 15, FX + FW - 15), e.y + (640 - e.y) * f]); }
+  e.path = spline(pts); e.d = 0; e.st = 'dive'; e.spd = 300; e.shot = 2; e.kami = true; e.hp = 1; SND.dive(); popup(e.x, e.y - 20, 'KAMIKAZE!', '#ff9a6a');
+}
 /* ---------- questions ---------- */
 const BANK = ((window.WB_BANK && window.WB_BANK.NORMAL) || []).filter((q) => q && q.s && q.o && q.o.length >= 3 && (q.s.match(/___/g) || []).length === 1 && q.s.length <= 88 && q.o.every((o) => o.length <= 17));
 let pool = [];
@@ -496,9 +501,20 @@ function verbQuestion(variant) {
   }
   return { kind: 'verb', tag, prompt, opts: shuffle([{ t: correct, ok: true }].concat(wrongs.map((t) => ({ t, ok: false })))), fill: v[0] + '  -  ' + v[1] + '  -  ' + v[2], fr: v[3], id: 'v:' + v[0] + ':' + variant, verb: v };
 }
+function orderQuestion() {
+  let cand = VERBS.filter((v) => v[1] !== v[2] && v[1] !== v[0] && v[2] !== v[0] && v[1].length <= 14 && !G.recent.includes(v[0]));
+  const fresh = cand.filter((v) => !collection.has(v[0])); if (fresh.length && Math.random() < 0.7) cand = fresh;
+  const v = cand[Math.floor(Math.random() * cand.length)];
+  G.recent.push(v[0]); if (G.recent.length > 12) G.recent.shift();
+  const others = VERBS.filter((o) => o !== v);
+  const dec = [v[0]].concat(uniqPick(others.map((o) => o[Math.random() < 0.5 ? 1 : 2]), [v[1], v[2], v[0]], 1));
+  const opts = shuffle([{ t: v[1], ok: true, ord: 0 }, { t: v[2], ok: true, ord: 1 }].concat(dec.map((t) => ({ t, ok: false, ord: -1 }))));
+  return { kind: 'verb', tag: 'KILL ORDER', prompt: 'Verb *' + v[0].toUpperCase() + '*', order: ['PRETERIT', 'PAST PARTICIPLE'], opts, fill: v[0] + '  -  ' + v[1] + '  -  ' + v[2], fr: v[3], id: 'o:' + v[0], verb: v };
+}
 const isChal = (n) => n % 5 === 0;
 function makeQuestion(n) {
   if (n % 3 === 0 || !BANK.length) return verbQuestion((Math.floor(n / 3) - 1 + 4000) % 4);
+  if (n % 3 === 2) return orderQuestion();
   return gapQuestion();
 }
 
@@ -516,10 +532,11 @@ function buildStage(n) {
     return en;
   }
   const q = G.q, nBt = Math.min(16, 8 + 2 * Math.floor(n / 2)), nBe = Math.min(20, 10 + 2 * Math.floor(n / 2));
-  const bossX = [-195, -65, 65, 195];
-  q.opts.forEach((o, i) => en.push(mkEnemy(2, CX0 + bossX[i], 134, { ok: o.ok, t: o.t, grp: 0, idx: i })));
-  for (let i = 0; i < nBt; i++) { const row = Math.floor(i / 8), cnt = row === 0 ? Math.min(8, nBt) : nBt - 8; const c = i % 8; en.push(mkEnemy(1, CX0 + (c - (cnt - 1) / 2) * 52, 192 + row * 36, { grp: 1 + (i % 2) })); }
-  for (let i = 0; i < nBe; i++) { const row = Math.floor(i / 10), cnt = row === 0 ? Math.min(10, nBe) : nBe - 10; const c = i % 10; en.push(mkEnemy(0, CX0 + (c - (cnt - 1) / 2) * 50, 266 + row * 36, { grp: 3 + (i % 2) })); }
+  const bossX = [-150, -50, 50, 150];
+  q.opts.forEach((o, i) => en.push(mkEnemy(2, CX0 + bossX[i], 134, { ok: o.ok, ord: o.ord != null ? o.ord : (o.ok ? 0 : -1), t: o.t, grp: 0, idx: i, tsx: CX0 + bossX[i] })));
+  if (n >= 3) { const w = en.filter((e) => e.type === 2 && !e.ok); if (w.length) { const a = w[Math.floor(Math.random() * w.length)]; a.hp = 3; a.arm = true; } }
+  for (let i = 0; i < nBt; i++) { const row = Math.floor(i / 8), cnt = row === 0 ? Math.min(8, nBt) : nBt - 8; const c = i % 8; en.push(mkEnemy(1, CX0 + (c - (cnt - 1) / 2) * 42, 188 + row * 30, { grp: 1 + (i % 2) })); }
+  for (let i = 0; i < nBe; i++) { const row = Math.floor(i / 10), cnt = row === 0 ? Math.min(10, nBe) : nBe - 10; const c = i % 10; en.push(mkEnemy(0, CX0 + (c - (cnt - 1) / 2) * 40, 252 + row * 30, { grp: 3 + (i % 2) })); }
   // ordre d'entrée : par groupes, côtés alternés
   const groups = [[], [], [], [], []];
   en.forEach((e) => groups[e.grp].push(e));
@@ -531,7 +548,7 @@ function startRound(n, redo) {
   G.round = n; G.kind = isChal(n) ? 'chal' : 'q';
   if (!redo || (!G.q && G.kind === 'q')) G.q = G.kind === 'chal' ? null : makeQuestion(n);
   G.en = buildStage(n); G.bul = []; G.ebul = []; G.cx = CX0; G.cool = 0; G.qT = 0; G.spawnT = 0; G.entered = false; G.diveT = 4; G.chalHits = 0; G.chalTot = G.en.length;
-  G.capBoss = null; G.rescue = null; G.ending = null;
+  G.capBoss = null; G.rescue = null; G.ending = null; G.step = 0; G.caps = []; G.eff = { tri: 0, slow: 0, frz: 0, weak: 0 }; G.swapT = 8 + Math.random() * 3;
   G.state = 'ready'; G.stateT = 0;
 }
 function demoStage() {
@@ -543,6 +560,20 @@ function boom(x, y, col, n) {
   for (let i = 0; i < (n || 20); i++) { const a = Math.random() * 6.283, v = 40 + Math.random() * 170; G.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.35 + Math.random() * 0.5, t: 0, col, s: 2 + Math.random() * 2.5 }); }
 }
 
+/* ---------- capsules ---------- */
+function maybeDrop(x, y, p) {
+  if (Math.random() > p) return;
+  const r = Math.random();
+  const k = r < 0.07 ? 'L' : r < 0.30 ? 'T' : r < 0.50 ? 'Z' : r < 0.65 ? 'S' : r < 0.83 ? 'B' : 'F';
+  G.caps.push({ x, y, k });
+}
+function catchCap(c) {
+  const e = G.eff; SND.capsule(); let m = '';
+  if (c.k === 'T') { e.tri = 9; m = 'TRIPLE SHOT'; } else if (c.k === 'Z') { G.inv = Math.max(G.inv, 5); m = 'SHIELD 5s'; }
+  else if (c.k === 'S') { e.slow = 7; m = 'ENEMIES SLOWED'; } else if (c.k === 'L') { G.lives = Math.min(5, G.lives + 1); m = '1UP'; }
+  else if (c.k === 'B') { e.frz = 1.3; m = 'SHIP JAMMED!'; } else { e.weak = 6; m = 'SLOW FIRE!'; }
+  popup(G.cx, CAN_Y - 30, m, 'TZSL'.indexOf(c.k) >= 0 ? '#7dff9b' : '#ff7a7a');
+}
 /* ---------- événements ---------- */
 function hurt(why) {
   if (G.state !== 'play' || G.inv > 0) return;
@@ -550,16 +581,16 @@ function hurt(why) {
   if (G.dual) { G.dual = false; G.inv = 1.8; return; }
   G.lives--; G.streak = 0; G.state = 'dead'; G.stateT = 0; G.bul = []; G.ebul = []; G.rescue = null;
 }
-function endStage(correct, e) {
+function endStage(correct, e, msg) {
   const q = G.q; G.state = 'clear'; G.stateT = 0; G.ebul = []; G.bul = [];
   G.en.forEach((o) => { if (o.alive) { boom(o.x, o.y, '#ffd95c', 6); o.alive = false; } });
   if (correct) {
     G.streak++; const sp = Math.max(0, Math.round((20 - G.qT) * 8)), pts = (500 + sp) * mult();
-    G.score += pts; G.gain = pts; G.ok++; G.clearMsg = 'CORRECT!  +' + pts + (mult() > 1 ? '  (x' + mult() + ')' : '');
+    G.score += pts * (q.order ? 2 : 1); G.gain = pts * (q.order ? 2 : 1); G.ok++; G.clearMsg = 'CORRECT!  +' + pts * (q.order ? 2 : 1) + (mult() > 1 ? '  (x' + mult() + ')' : '');
     if (q.verb) { profWord(q.verb[0]); G.learned.push(q.verb); }
     G.last = { ok: true, s: q.fill, fr: q.fr }; SND.good(); if (e) popup(e.x, e.y - 10, '+' + pts, '#7dff9b');
   } else {
-    G.streak = 0; G.ko++; G.clearMsg = 'THE ANSWER WAS...'; G.gain = 0;
+    G.streak = 0; G.ko++; G.clearMsg = msg || 'THE ANSWER WAS...'; G.gain = 0;
     if (!G.missed.some((m) => m.id === q.id)) G.missed.push({ id: q.id, s: q.fill, fr: q.fr, kind: q.kind });
     G.last = { ok: false, s: q.fill, fr: q.fr };
   }
@@ -570,43 +601,53 @@ function killEnemy(e, byShot, ram) {
   const dv = e.st === 'dive' || e.st === 'ret' || e.st === 'beamgo' || e.st === 'beam';
   if (e.chal) { G.chalHits++; G.score += 100; popup(e.x, e.y - 8, '100', '#ffe14d'); return; }
   if (e.cap && G.capBoss === e) { G.capBoss = null; G.rescue = { x: e.x, y: e.y }; e.cap = false; popup(e.x, e.y - 14, 'FIGHTER FREED', '#9ad0ff'); }
-  if (e.type < 2) { const p = e.type === 0 ? (dv ? 100 : 50) : (dv ? 160 : 80); G.score += p; popup(e.x, e.y - 8, String(p), '#cfe'); return; }
+  if (e.type < 2) { const p = e.type === 0 ? (dv ? 100 : 50) : (dv ? 160 : 80); G.score += p; popup(e.x, e.y - 8, String(p), '#cfe'); maybeDrop(e.x, e.y, dv ? 0.2 : 0.08); return; }
   // chef = réponse
   if (ram) { if (e.ok) endStage(false, e); return; }
-  if (e.ok) { endStage(true, e); return; }
+  if (e.kami) { G.score += 100; popup(e.x, e.y - 8, '+100', '#cfe'); maybeDrop(e.x, e.y, 0.6); return; }
+  if (G.q.order) {
+    if (e.ord === G.step) {
+      G.step++;
+      if (G.step >= G.q.order.length) { endStage(true, e); return; }
+      G.score += 200 * mult(); popup(e.x, e.y - 10, 'ORDER OK: ' + G.step + '/' + G.q.order.length, '#7dff9b'); SND.good(); maybeDrop(e.x, e.y, 0.6); return;
+    }
+    if (e.ord >= 0) { endStage(false, e, 'WRONG ORDER!'); return; }
+  } else if (e.ok) { endStage(true, e); return; }
   G.streak = 0; G.ko++; G.score = Math.max(0, G.score - 50);
   if (!G.missed.some((m) => m.id === G.q.id)) G.missed.push({ id: G.q.id, s: G.q.fill, fr: G.q.fr, kind: G.q.kind });
   G.last = { ok: false, s: G.q.fill, fr: G.q.fr };
-  popup(e.x, e.y - 10, 'WRONG -50  ALERT!', '#ff6b6b'); SND.wrong();
+  popup(e.x, e.y - 10, 'WRONG -50  ALERT!', '#ff6b6b'); SND.wrong(); maybeDrop(e.x, e.y, 0.6);
   let n = 0; shuffle(G.en.filter((o) => o.alive && o.st === 'form' && o.type < 2)).forEach((o) => { if (n < 3) { startDive(o, false); n++; } });
 }
 
 /* ---------- mise à jour ---------- */
 const KS = {}; const PADK = { l: false, r: false, f: false };
 function moveCannon(dt) {
+  if (G.eff.frz > 0) return;
   const d = ((KS.arrowright || KS.d || PADK.r) ? 1 : 0) - ((KS.arrowleft || KS.a || KS.q || PADK.l) ? 1 : 0);
   if (d) { G.cx += d * 300 * dt; G.tx = null; }
   else if (G.tx != null) { const dx = G.tx - G.cx, st = 520 * dt; G.cx += Math.abs(dx) < st ? dx : Math.sign(dx) * st; }
   const m = G.dual ? 40 : 22; G.cx = clamp(G.cx, FX + m, FX + FW - m);
 }
 function fire() {
-  const max = G.dual ? 4 : 2; if (G.cool > 0 || G.bul.length >= max) return;
-  if (G.dual) { G.bul.push({ x: G.cx - 12, y: CAN_Y - 18 }, { x: G.cx + 12, y: CAN_Y - 18 }); } else G.bul.push({ x: G.cx, y: CAN_Y - 18 });
-  G.cool = G.dual ? 0.3 : 0.17; SND.shoot();
+  const tri = G.eff.tri > 0, max = tri ? 6 : G.dual ? 4 : 2; if (G.cool > 0 || G.bul.length >= max) return;
+  if (tri) { [-16, 0, 16].forEach((d) => G.bul.push({ x: G.cx + d, y: CAN_Y - 18 })); } else if (G.dual) { G.bul.push({ x: G.cx - 12, y: CAN_Y - 18 }, { x: G.cx + 12, y: CAN_Y - 18 }); } else G.bul.push({ x: G.cx, y: CAN_Y - 18 });
+  G.cool = G.eff.weak > 0 ? 1.0 : G.dual ? 0.3 : 0.17; SND.shoot();
 }
 function formPos(e) {
-  const k = G.entered ? 1 : 0, sw = Math.sin(G.t * 0.55) * 26 * k, br = 1 + 0.07 * Math.sin(G.t * 1.2) * k;
+  const k = G.entered ? 1 : 0, sw = Math.sin(G.t * 0.55) * 22 * k, br = 1 + 0.07 * Math.sin(G.t * 1.2) * k;
   return [CX0 + (e.sx - CX0) * br + sw, e.sy + (e.sy - 134) * 0.05 * Math.sin(G.t * 1.2) * k];
 }
 function enemyShot(e) {
   const dx = G.cx - e.x, dy = CAN_Y - e.y, L = Math.hypot(dx, dy) || 1, sp = 190 + Math.min(G.round, 30) * 3;
   G.ebul.push({ x: e.x, y: e.y + 10, vx: dx / L * sp * 0.55, vy: Math.max(120, dy / L * sp) });
 }
-function updEnemies(dt) {
-  let waiting = 0, entering = 0;
+function updEnemies(dt0) {
+  let waiting = 0, entering = 0; const dt = dt0 * (G.eff.slow > 0 ? 0.55 : 1);
   G.spawnT += dt;
   G.en.forEach((e) => {
     if (!e.alive) return;
+    if (e.tsx != null) e.sx += (e.tsx - e.sx) * Math.min(1, dt * 6);
     if (e.flash > 0) e.flash -= dt;
     if (e.st === 'wait') {
       waiting++;
@@ -625,7 +666,7 @@ function updEnemies(dt) {
         const f = e.d / e.path.len;
         if (e.shot === 0 && f > 0.3 && f < 0.7) { enemyShot(e); e.shot = 1; }
         if (e.shot === 1 && f > 0.52 && f < 0.8 && G.round > 2) { enemyShot(e); e.shot = 2; }
-        if (e.d >= e.path.len) { e.st = 'ret'; e.x = e.sx; e.y = -30; }
+        if (e.d >= e.path.len) { e.st = 'ret'; e.kami = false; e.x = e.sx; e.y = -30; }
       } else if (e.d >= e.path.len) { e.st = 'beam'; e.beamT = 0; SND.beam(); }
       return;
     }
@@ -662,6 +703,7 @@ function update(dt) {
   G.pops.forEach((p) => { p.t += dt; }); G.pops = G.pops.filter((p) => p.t < 1.4);
   G.stars.forEach((s) => { s.y += s.v * dt; if (s.y > FY + FH) s.y = FY; });
   if (G.cool > 0) G.cool -= dt; if (G.inv > 0) G.inv -= dt;
+  ['tri', 'slow', 'frz', 'weak'].forEach((k) => { if (G.eff[k] > 0) G.eff[k] -= dt; });
   const st = G.state;
   if (st === 'title') { G.en.forEach((e) => { const p = formPos(e); e.x = p[0]; e.y = p[1]; }); return; }
   if (st === 'ready' || st === 'clear') moveCannon(dt);
@@ -694,6 +736,16 @@ function update(dt) {
   moveCannon(dt); G.qT += dt;
   if (KS[' '] || KS.arrowup || PADK.f) fire();
   updEnemies(dt); if (G.state !== 'play') return;
+  G.caps.forEach((c) => { c.y += 110 * dt; if (Math.abs(c.x - G.cx) < 30 && Math.abs(c.y - CAN_Y) < 20) { c.dead = true; catchCap(c); } else if (c.y > FY + FH) c.dead = true; });
+  G.caps = G.caps.filter((c) => !c.dead);
+  if (G.kind === 'q' && G.entered && G.round >= 2) {
+    G.swapT -= dt;
+    if (G.swapT <= 0) {
+      G.swapT = 7 + Math.random() * 4;
+      const bs = G.en.filter((e) => e.alive && e.type === 2 && e.st === 'form' && !e.cap);
+      if (bs.length >= 2) { const p = shuffle(bs.slice()), a = p[0], b = p[1], t = a.tsx; a.tsx = b.tsx; b.tsx = t; popup(CX0, 120, 'SWAP!', '#9ad0ff'); SND.dive(); }
+    }
+  }
   // piqués
   if (G.kind === 'q' && G.entered) {
     G.diveT -= dt;
@@ -702,7 +754,9 @@ function update(dt) {
       const maxD = Math.min(5, 1 + Math.floor(G.round / 3));
       if (inForm.length && diving < maxD) {
         const bosses = inForm.filter((e) => e.type === 2 && !e.cap);
-        if (bosses.length && !G.capBoss && !G.dual && Math.random() < 0.28 && !G.en.some((e) => e.alive && (e.st === 'beam' || e.st === 'beamgo'))) startDive(bosses[Math.floor(Math.random() * bosses.length)], true);
+        const wb = inForm.filter((e) => e.type === 2 && !e.ok && !e.cap && e.hp > 0 && !e.arm);
+        if (G.round >= 3 && wb.length && Math.random() < 0.18) startKami(wb[Math.floor(Math.random() * wb.length)]);
+        else if (bosses.length && !G.capBoss && !G.dual && Math.random() < 0.28 && !G.en.some((e) => e.alive && (e.st === 'beam' || e.st === 'beamgo'))) startDive(bosses[Math.floor(Math.random() * bosses.length)], true);
         else { const sm = inForm.filter((e) => e.type < 2); const e = (sm.length ? sm : inForm)[Math.floor(Math.random() * (sm.length || inForm.length))]; startDive(e, false); }
       }
       G.diveT = Math.max(0.9, 3.0 - G.round * 0.11) * (0.7 + Math.random() * 0.6);
@@ -722,7 +776,7 @@ function update(dt) {
     b.y -= 620 * dt; if (b.y < FY + 4) { b.dead = true; return; }
     for (const e of G.en) {
       if (!e.alive || e.st === 'wait') continue;
-      const r = e.type === 2 ? 17 : 14;
+      const r = e.type === 2 ? 15 : 12;
       if (Math.abs(b.x - e.x) < r && Math.abs(b.y - e.y) < r) { b.dead = true; killEnemy(e, true, false); return; }
     }
   });
@@ -749,9 +803,20 @@ function drawField() {
 }
 function drawQuestion() {
   const q = G.q; if (!q || G.kind === 'chal') return;
-  ctx.fillStyle = 'rgba(20,24,80,.92)'; rrp(ctx, FX + 6, FY + 6, FW - 12, 52, 8); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,225,77,.55)'; ctx.lineWidth = 1.5; rrp(ctx, FX + 6, FY + 6, FW - 12, 52, 8); ctx.stroke();
-  txt(q.tag + '   (2 SHOTS ON THE RIGHT CHIEF)', FX + 14, FY + 14, 7, '#7d8cff');
+  const ord = !!q.order, bh = ord ? 70 : 52;
+  ctx.fillStyle = 'rgba(20,24,80,.92)'; rrp(ctx, FX + 6, FY + 6, FW - 12, bh, 8); ctx.fill();
+  ctx.strokeStyle = ord ? 'rgba(255,225,77,.95)' : 'rgba(255,225,77,.55)'; ctx.lineWidth = ord ? 2.5 : 1.5; rrp(ctx, FX + 6, FY + 6, FW - 12, bh, 8); ctx.stroke();
+  txt(ord ? 'KILL ORDER: SHOOT THE ANSWERS IN THIS ORDER (2 SHOTS EACH)' : q.tag + '   (2 SHOTS ON THE RIGHT CHIEF)', FX + 14, FY + 14, 7, ord ? '#ffe14d' : '#7d8cff');
+  if (ord) {
+    richLine('Verb *' + q.verb[0].toUpperCase() + '*', CX0, FY + 33, 17, '#fff');
+    q.order.forEach((lab, i) => {
+      const x0 = CX0 - 190 + i * 200, done = G.step > i, cur = G.step === i;
+      ctx.fillStyle = done ? 'rgba(40,160,90,.55)' : cur ? 'rgba(255,225,77,.25)' : 'rgba(255,255,255,.06)'; rrp(ctx, x0, FY + 46, 180, 22, 11); ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = done ? '#7dff9b' : cur ? '#ffe14d' : 'rgba(255,255,255,.3)'; rrp(ctx, x0, FY + 46, 180, 22, 11); ctx.stroke();
+      bold((done ? '\u2713 ' : (i + 1) + '. ') + lab, x0 + 90, FY + 57.5, 12, done ? '#7dff9b' : cur ? '#ffe14d' : '#9aa', 'center', 170);
+    });
+    return;
+  }
   const big = q.kind === 'verb', size = big ? 18 : 14, lines = wrap(q.prompt.replace('___', '_____'), FW - 40, size);
   const lh = size + 4, y0 = FY + 36 - (lines.length - 1) * lh / 2 + (lines.length > 1 ? 4 : 2);
   lines.forEach((l, i) => richLine(l, CX0, y0 + i * lh, size, '#fff'));
@@ -776,12 +841,26 @@ function drawEnemies() {
     ctx.restore();
     if (e.type === 2 && e.st !== 'entry') {
       const col = PCOL[e.idx];
-      ctx.fillStyle = 'rgba(8,8,34,.92)'; rrp(ctx, e.x - 58, e.y + 17, 116, 20, 10); ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = col; rrp(ctx, e.x - 58, e.y + 17, 116, 20, 10); ctx.stroke();
-      bold(e.t, e.x, e.y + 27.5, 12, '#fff', 'center', 106);
+      if (e.arm && e.hp > 1) { ctx.lineWidth = 2; ctx.strokeStyle = '#d8e4ff'; ctx.setLineDash([3, 2]); ctx.beginPath(); ctx.arc(e.x, e.y, 21, 0, 6.283); ctx.stroke(); ctx.setLineDash([]); }
+      ctx.fillStyle = 'rgba(8,8,34,.92)'; rrp(ctx, e.x - 47, e.y + 15, 94, 18, 9); ctx.fill();
+      ctx.lineWidth = e.arm && e.hp > 1 ? 2.5 : 1.5; ctx.strokeStyle = e.arm && e.hp > 1 ? '#d8e4ff' : col; rrp(ctx, e.x - 47, e.y + 15, 94, 18, 9); ctx.stroke();
+      bold(e.t, e.x, e.y + 24.5, 12, '#fff', 'center', 86);
       if (e.cap) drawShip(e.x, e.y - 24, '#ff5a5a', false);
     }
   });
+}
+function drawCaps() {
+  G.caps.forEach((c) => {
+    const good = 'TZSL'.indexOf(c.k) >= 0, col = good ? '#7dff9b' : '#ff6a6a';
+    ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 10;
+    ctx.fillStyle = 'rgba(8,10,34,.95)'; rrp(ctx, c.x - 12, c.y - 9, 24, 18, 9); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = col; rrp(ctx, c.x - 12, c.y - 9, 24, 18, 9); ctx.stroke(); ctx.restore();
+    bold(c.k, c.x, c.y + 0.5, 13, col, 'center');
+  });
+  const e = G.eff, lines = [];
+  if (e.tri > 0) lines.push(['TRIPLE SHOT', e.tri, '#7dff9b']); if (e.slow > 0) lines.push(['ENEMIES SLOWED', e.slow, '#7dff9b']);
+  if (e.frz > 0) lines.push(['SHIP JAMMED', e.frz, '#ff7a7a']); if (e.weak > 0) lines.push(['SLOW FIRE', e.weak, '#ff7a7a']);
+  lines.forEach((l, i) => bold(l[0] + ' ' + Math.ceil(l[1]) + 's', FX + 10, FY + FH - 40 - i * 16, 11, l[2], 'left'));
 }
 function drawPlayer() {
   const st = G.state; if (st === 'dead' || st === 'gameover' || st === 'title') return;
@@ -815,8 +894,10 @@ function drawPanel() {
     const ls = wrap(G.last.s, w - 24, 11); ls.slice(0, 4).forEach((l, i) => bold(l, x + 8, 338 + i * 14, 11, '#fff'));
     const fr = wrap(G.last.fr || '', w - 24, 10); fr.slice(0, 3).forEach((l, i) => bold(l, x + 8, 338 + Math.min(4, ls.length) * 14 + 6 + i * 13, 10, '#ffd23a'));
   } else { bold('Shoot the chief', x + 8, 330, 11, '#9aa'); bold('with the answer!', x + 8, 346, 11, '#9aa'); }
-  txt('CHIEF = 2 SHOTS', x + 4, 446, 7, '#9aa'); txt('WRONG: -50 + ALERT', x + 4, 462, 7, '#ff8a8a');
-  txt('BEAM = CAPTURE', x + 4, 482, 7, '#9ad0ff'); txt('FREE IT: DUAL SHIP', x + 4, 498, 7, '#9ad0ff');
+  txt('CAPSULES TO CATCH', x + 4, 440, 6, '#9aa');
+  txt('T triple  Z shield', x + 4, 454, 6, '#7dff9b'); txt('S slow  L life', x + 4, 466, 6, '#7dff9b');
+  txt('B jam  F slow fire', x + 4, 480, 6, '#ff8a8a'); txt('WRONG: -50 + ALERT', x + 4, 496, 6, '#ff8a8a');
+  txt('BEAM = CAPTURE', x + 4, 510, 6, '#9ad0ff'); txt('UP ARROW = FIRE', x + 4, 524, 6, '#9aa');
   txt('P pause  M sound', x + 4, 540, 6, '#6f78d8');
 }
 function banner(l1, l2, col) {
@@ -826,7 +907,7 @@ function banner(l1, l2, col) {
 function drawClear() {
   const q = G.q, x = FX + 20, w = FW - 40, y = 300, chal = G.kind === 'chal';
   ctx.fillStyle = 'rgba(6,30,24,.94)'; rrp(ctx, x, y, w, chal ? 110 : 168, 12); ctx.fill();
-  const ok = chal || G.last && G.last.ok; ctx.strokeStyle = ok ? '#7dff9b' : '#ffb04a'; ctx.lineWidth = 2; rrp(ctx, x, y, w, chal ? 110 : 168, 12); ctx.stroke();
+  const ok = chal || (G.last && G.last.ok); ctx.strokeStyle = ok ? '#7dff9b' : '#ffb04a'; ctx.lineWidth = 2; rrp(ctx, x, y, w, chal ? 110 : 168, 12); ctx.stroke();
   txt(G.clearMsg, CX0, y + 24, 14, ok ? '#7dff9b' : '#ffb04a', 'center');
   if (chal) { bold('Bonus stage: no question, just aim!', CX0, y + 70, 14, '#fff', 'center'); return; }
   const ls = wrap(q.fill, w - 30, q.kind === 'verb' ? 20 : 16);
@@ -836,10 +917,10 @@ function drawClear() {
 }
 function draw() {
   ctx.setTransform(SC, 0, 0, SC, 0, 0);
-  drawField(); drawQuestion(); drawEnemies(); drawPlayer(); drawShots(); drawPanel();
+  drawField(); drawQuestion(); drawEnemies(); drawCaps(); drawPlayer(); drawShots(); drawPanel();
   G.pops.forEach((p) => { ctx.globalAlpha = Math.max(0, 1 - p.t / 1.4); bold(p.s, p.x, p.y - p.t * 30, 14, p.col, 'center'); }); ctx.globalAlpha = 1;
   const st = G.state;
-  if (st === 'ready') banner(G.kind === 'chal' ? 'BONUS STAGE' : 'STAGE ' + G.round, G.kind === 'chal' ? 'hit them all for a perfect bonus' : (G.q ? G.q.tag : ''), '#ffd23a');
+  if (st === 'ready') banner(G.kind === 'chal' ? 'BONUS STAGE' : 'STAGE ' + G.round, G.kind === 'chal' ? 'hit them all for a perfect bonus' : (G.q ? (G.q.order ? 'KILL ORDER: ' + G.q.order.join(' THEN ') : G.q.tag) : ''), '#ffd23a');
   else if (st === 'paused') banner('PAUSED', 'press P to continue');
   else if (st === 'dead') banner(G.lives > 0 ? (G.deadWhy === 'captured' ? 'CAPTURED!' : 'HIT!') : 'GAME OVER', G.lives > 0 ? G.lives + (G.lives > 1 ? ' ships left' : ' ship left') : '', '#ff6b6b');
   else if (st === 'clear') drawClear();
@@ -1045,7 +1126,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in Scramble, Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES &amp; BONUSES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage shows a sentence with a gap, or an irregular verb question. Four green chiefs carry the answers. Shoot the right one twice (the first hit turns it blue) to clear the stage. The French translation appears afterwards.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4.<br>Insects dive and shoot. Chiefs may use a tractor beam to capture your ship: free it by shooting its captor to get a dual fighter.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Left / right arrows (or A / D) or the mouse: move the ship. <b>Up arrow</b> (or space, or click): fire (hold to keep firing).<br>Each stage shows a sentence with a gap, or an irregular verb question. Four green chiefs carry the answers. Shoot the right one twice (the first hit turns it blue) to clear the stage. The French translation appears afterwards.<br><b>KILL ORDER stages</b> (yellow frame): shoot the two right chiefs in the order shown (for example PRETERIT, then PAST PARTICIPLE). Shooting them in the wrong order loses the stage.<br>A wrong chief costs 50 points, breaks your streak and sends other insects diving. Streaks raise your multiplier up to x4. Some chiefs are armoured (3 shots), chiefs swap places, and a wrong chief may dive at you as a kamikaze (shoot it, no penalty).<br>Insects dive and shoot. Chiefs may use a tractor beam to capture your ship: free it by shooting its captor to get a dual fighter.<br>Catch the falling capsules. Green: T triple shot, Z shield for 5 seconds, S enemies slowed, L extra ship. Red: B ship jammed for a moment, F very slow fire.<br>Every 5th stage is a bonus stage with no question: hit them all for a perfect bonus.<br>When you lose your last ship, your stage is saved. To continue, answer 3 grammar questions (10 seconds each): each wrong answer or timeout costs you one ship.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
@@ -1157,7 +1238,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('62px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tg = { PR, openQuiz, qState: () => QZ, answerQuestion, renderAuth, G, VERBS, BANK, update, draw, newGame, action, startRound, makeQuestion, verbQuestion, gapQuestion, killEnemy, hurt, startDive, KS, fire, collection, SND };
+window.__tg = { PR, openQuiz, qState: () => QZ, answerQuestion, renderAuth, G, VERBS, BANK, update, draw, newGame, action, startRound, makeQuestion, verbQuestion, gapQuestion, killEnemy, hurt, startDive, startKami, KS, fire, collection, SND };
 })();
 </script>
 </body>
