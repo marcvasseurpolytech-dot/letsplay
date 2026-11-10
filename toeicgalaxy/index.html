@@ -579,8 +579,8 @@ function buildStage(n) {
   const bossX = [-150, -50, 50, 150];
   q.opts.forEach((o, i) => en.push(mkEnemy(2, CX0 + bossX[i], 134, { ok: o.ok, t: o.t, grp: 0, idx: i, tsx: CX0 + bossX[i], shield: true })));
   if (n >= 3) { const w = en.filter((e) => e.type === 2 && !e.ok); if (w.length) { const a = w[Math.floor(Math.random() * w.length)]; a.hp = 3; a.arm = true; } }
-  for (let i = 0; i < nBt; i++) { const row = Math.floor(i / 8), cnt = Math.min(8, nBt - row * 8); const c = i % 8; en.push(mkEnemy(1, CX0 + (c - (cnt - 1) / 2) * 42, 188 + row * 30, { grp: 1 + (i % 2) })); }
-  for (let i = 0; i < nBe; i++) { const row = Math.floor(i / 10), cnt = Math.min(10, nBe - row * 10); const c = i % 10; en.push(mkEnemy(0, CX0 + (c - (cnt - 1) / 2) * 40, 252 + row * 30, { grp: 3 + (i % 2) })); }
+  for (let i = 0; i < nBt; i++) { const row = Math.floor(i / 8), cnt = Math.min(8, nBt - row * 8); const c = i % 8; en.push(mkEnemy(1, CX0 + (c - (cnt - 1) / 2) * 30, 188 + row * 22, { grp: 1 + (i % 2) })); }
+  for (let i = 0; i < nBe; i++) { const row = Math.floor(i / 10), cnt = Math.min(10, nBe - row * 10); const c = i % 10; en.push(mkEnemy(0, CX0 + (c - (cnt - 1) / 2) * 30, 232 + row * 22, { grp: 3 + (i % 2) })); }
   // ordre d'entrée : par groupes, côtés alternés
   const groups = [[], [], [], [], []];
   en.forEach((e) => groups[e.grp].push(e));
