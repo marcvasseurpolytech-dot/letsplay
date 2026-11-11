@@ -106,7 +106,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
   <p class="sub">One big fit-in puzzle like in the magazines: place the 150 words (logical connectors and TOEIC vocabulary) in the grid.</p>
   <div id="who" class="sub"></div>
   <div id="lvl"></div>
-  <div class="keys">Hover a line to see its number of letters. Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>One word is already placed to start the grid. When a word is found, its French translation glows in a banner and blinks in the list. Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
+  <div class="keys">Hover a line to see its number of letters, or the translation of a word already placed (in the grid or in the list). Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>One word is already placed to start the grid. When a word is found, its French translation glows in a banner and blinks in the list. Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
   <p class="credit">Scores are kept on this device.<br>A game by Marc VASSEUR / Polytech Lille | marc.vasseur@polytech-lille.fr</p>
 </div></div>
 
@@ -224,11 +224,11 @@ function slotsAt(r, c) {
   return out;
 }
 function hoverCell(r, c, ev) {
-  const tip = $('#tip'); HV = {};
+  const tip = $('#tip'); HV = {}; tip.dataset.src = '';
   if (r < 0) { tip.style.display = 'none'; refresh(); return; }
   const here = slotsAt(r, c);
   here.forEach((i) => { const s = L.slots[i]; for (let k = 0; k < s.n; k++) HV[cellKey(s, k)] = 1; });
-  tip.innerHTML = here.map((i) => { const s = L.slots[i]; return s.n + ' letters ' + (s.d === 'A' ? '&#8594;' : '&#8595;'); }).join(' &nbsp;|&nbsp; ');
+  tip.innerHTML = here.map((i) => { const s = L.slots[i], arrow = (s.d === 'A' ? '&#8594;' : '&#8595;'); return placed[i] ? '<span>' + esc(WORDS[placed[i]][0]) + '</span> = <span style="color:#ffd21f">' + esc(WORDS[placed[i]][1]) + '</span> <small style="color:#38e8ff;font-weight:500">' + s.n + ' ' + arrow + '</small>' : s.n + ' letters ' + arrow; }).join(' &nbsp;|&nbsp; ');
   tip.style.display = 'block'; if (ev) moveTip(ev);
   refresh();
 }
@@ -323,6 +323,15 @@ function fillWord(w) {
   submit();
 }
 
+/* hovering a placed word in the list shows its translation */
+document.addEventListener('mouseover', (ev) => {
+  const e = ev.target.closest ? ev.target.closest('#list .w') : null, tip = $('#tip');
+  if (!e) { if (!ev.target.closest || !ev.target.closest('.cell')) { if (tip.dataset.src === 'list') { tip.style.display = 'none'; tip.dataset.src = ''; } } return; }
+  const w = e.getAttribute('data-w');
+  if (!L || !placed.includes(w) || !WORDS[w]) { if (tip.dataset.src === 'list') { tip.style.display = 'none'; tip.dataset.src = ''; } return; }
+  tip.dataset.src = 'list'; tip.innerHTML = '<span>' + esc(WORDS[w][0]) + '</span> = <span style="color:#ffd21f">' + esc(WORDS[w][1]) + '</span>'; tip.style.display = 'block'; moveTip(ev);
+});
+document.addEventListener('mousemove', (ev) => { const tip = $('#tip'); if (tip.dataset.src === 'list') moveTip(ev); });
 /* ---------- French translation blink in the list ---------- */
 const FL = {};
 function transFlash(w) {
