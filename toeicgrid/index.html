@@ -24,7 +24,6 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 .cell{width:var(--cs);height:var(--cs);background:var(--cream);border:2px solid var(--navy);border-radius:3px;display:flex;align-items:center;justify-content:center;font:800 calc(var(--cs)*.58) "JetBrains Mono",monospace;color:var(--navy);cursor:pointer;line-height:1}
 .cell.pv{background:#fff3b8;color:#b8941a}
 .cell.cur{background:var(--yel);box-shadow:0 0 0 2px #fff,0 0 10px var(--yel);color:#6b5200}
-.cell.cand{background:#ffe9a0}
 .cell.hint{background:#bff5d3;color:#0b5a2c}
 .cell.bad{background:#ff8a8a;color:#600}
 .cell.ok{animation:pop .5s}
@@ -34,6 +33,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 #list{flex:1;overflow-y:auto;min-height:0;padding-right:4px;font-family:"JetBrains Mono",monospace}
 .grp{margin-bottom:8px}
 .gh{font:400 clamp(7px,1.3vw,9px) "Press Start 2P",monospace;color:var(--cy);border-bottom:1px solid rgba(56,232,255,.35);padding:3px 0;margin-bottom:4px}
+.w.sel{}
 .w{display:inline-block;margin:2px 4px 2px 0;padding:3px 7px;border-radius:5px;border:1px solid rgba(245,238,220,.3);color:var(--cream);font-weight:700;font-size:clamp(11px,1.7vw,14px);cursor:pointer;background:rgba(255,255,255,.04)}
 .w:hover{border-color:var(--yel)}
 .w.sel{background:var(--yel);color:#1a1200;border-color:#fff;box-shadow:0 0 8px var(--yel)}
@@ -80,10 +80,10 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
   </div>
   <div id="main">
     <div id="gpane"><div id="grid"></div></div>
-    <div id="side"><h3>FIT THESE WORDS IN THE GRID</h3><div id="list"></div></div>
+    <div id="side"><h3>WORDS TO FIT IN THE GRID</h3><div id="list"></div></div>
   </div>
   <div id="info"></div>
-  <div id="btns"><button id="bh">HINT -50</button><button id="bc">CHECK -30 / WRONG</button><button id="bu" class="g">UNDO</button><button id="bs" class="g">SND</button></div>
+  <div id="btns"><button id="bh">HINT -50 (F1)</button><button id="bc">CHECK -30 / WRONG (F2)</button><button id="bu" class="g">UNDO (F3)</button><button id="bs" class="g">SND</button></div>
 </div>
 
 <div class="ov on" id="menu"><div class="panel">
@@ -91,7 +91,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
   <p class="sub">Fit-in puzzle: place every logical connector in the grid, like in the magazines.</p>
   <div id="who" class="sub"></div>
   <div id="lvl"></div>
-  <div class="keys">UP / DOWN: choose a word in the list<br>LEFT / RIGHT: choose where it goes<br>ENTER or SPACE: place it &nbsp;|&nbsp; Z: undo &nbsp;|&nbsp; H: hint &nbsp;|&nbsp; C: check &nbsp;|&nbsp; M: sound &nbsp;|&nbsp; ESC: menu<br>Mouse or touch: click a word, then click its place in the grid. Click a placed word to take it back.<br>Words are grouped by number of letters (spaces do not count: AS SOON AS = 8 letters). Each word is used once, and every crossing must match.</div>
+  <div class="keys">Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A correct word from the list is placed; otherwise it is refused.<br>Letters already given by crossing words are filled in for you.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F2: check (-30 per wrong word) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back.<br>Words are grouped by number of letters (spaces do not count: AS SOON AS = 8 letters). Each word is used once.</div>
   <p class="credit">Scores are kept on this device.<br>A game by Marc VASSEUR / Polytech Lille | marc.vasseur@polytech-lille.fr</p>
 </div></div>
 
@@ -100,7 +100,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 <script>
 'use strict';
 const LEVELS = [{"name": "WARM-UP", "rows": 10, "cols": 8, "slots": [{"d": "A", "r": 5, "c": 2, "n": 6, "ans": "BEFORE"}, {"d": "D", "r": 1, "c": 3, "n": 5, "ans": "WHERE"}, {"d": "D", "r": 4, "c": 5, "n": 2, "ans": "SO"}, {"d": "D", "r": 1, "c": 7, "n": 6, "ans": "EITHER"}, {"d": "A", "r": 1, "c": 3, "n": 5, "ans": "WHILE"}, {"d": "D", "r": 1, "c": 5, "n": 2, "ans": "IF"}, {"d": "D", "r": 5, "c": 4, "n": 3, "ans": "FOR"}, {"d": "A", "r": 3, "c": 0, "n": 4, "ans": "ONCE"}, {"d": "D", "r": 3, "c": 0, "n": 2, "ans": "OR"}, {"d": "D", "r": 0, "c": 1, "n": 4, "ans": "WHEN"}, {"d": "D", "r": 5, "c": 2, "n": 3, "ans": "BUT"}, {"d": "A", "r": 7, "c": 0, "n": 5, "ans": "AFTER"}, {"d": "D", "r": 7, "c": 0, "n": 3, "ans": "AND"}]}, {"name": "STANDARD", "rows": 12, "cols": 12, "slots": [{"d": "A", "r": 5, "c": 0, "n": 9, "ans": "ASARESULT"}, {"d": "D", "r": 5, "c": 6, "n": 6, "ans": "UNLESS"}, {"d": "D", "r": 4, "c": 4, "n": 7, "ans": "BECAUSE"}, {"d": "D", "r": 0, "c": 2, "n": 7, "ans": "WHEREAS"}, {"d": "A", "r": 7, "c": 4, "n": 8, "ans": "ASLONGAS"}, {"d": "A", "r": 2, "c": 0, "n": 8, "ans": "WHENEVER"}, {"d": "D", "r": 5, "c": 0, "n": 3, "ans": "AND"}, {"d": "A", "r": 9, "c": 6, "n": 6, "ans": "SOASTO"}, {"d": "D", "r": 7, "c": 10, "n": 5, "ans": "AFTER"}, {"d": "D", "r": 4, "c": 11, "n": 4, "ans": "THUS"}, {"d": "A", "r": 4, "c": 9, "n": 3, "ans": "BUT"}, {"d": "D", "r": 0, "c": 7, "n": 3, "ans": "NOR"}, {"d": "A", "r": 0, "c": 4, "n": 4, "ans": "THAN"}, {"d": "A", "r": 10, "c": 0, "n": 5, "ans": "HENCE"}, {"d": "A", "r": 11, "c": 8, "n": 3, "ans": "FOR"}, {"d": "A", "r": 1, "c": 7, "n": 4, "ans": "ONCE"}, {"d": "D", "r": 0, "c": 10, "n": 3, "ans": "YET"}, {"d": "D", "r": 8, "c": 1, "n": 4, "ans": "THEN"}]}, {"name": "EXPERT", "rows": 15, "cols": 14, "slots": [{"d": "A", "r": 7, "c": 1, "n": 12, "ans": "NEVERTHELESS"}, {"d": "D", "r": 5, "c": 8, "n": 5, "ans": "DUETO"}, {"d": "D", "r": 2, "c": 12, "n": 6, "ans": "UNLESS"}, {"d": "D", "r": 1, "c": 2, "n": 9, "ans": "INSPITEOF"}, {"d": "A", "r": 5, "c": 2, "n": 7, "ans": "INSTEAD"}, {"d": "D", "r": 0, "c": 6, "n": 9, "ans": "INORDERTO"}, {"d": "D", "r": 4, "c": 4, "n": 8, "ans": "ASWELLAS"}, {"d": "A", "r": 1, "c": 2, "n": 10, "ans": "INCONTRAST"}, {"d": "A", "r": 3, "c": 5, "n": 9, "ans": "PROVIDING"}, {"d": "D", "r": 1, "c": 9, "n": 4, "ans": "ASIF"}, {"d": "A", "r": 10, "c": 4, "n": 4, "ans": "ALSO"}, {"d": "D", "r": 5, "c": 10, "n": 7, "ans": "WHETHER"}, {"d": "A", "r": 5, "c": 10, "n": 4, "ans": "WHEN"}, {"d": "A", "r": 3, "c": 0, "n": 4, "ans": "LEST"}, {"d": "D", "r": 0, "c": 0, "n": 5, "ans": "STILL"}, {"d": "A", "r": 10, "c": 10, "n": 4, "ans": "EVEN"}, {"d": "D", "r": 9, "c": 12, "n": 5, "ans": "HENCE"}, {"d": "A", "r": 13, "c": 7, "n": 7, "ans": "NEITHER"}, {"d": "D", "r": 11, "c": 8, "n": 4, "ans": "THEN"}, {"d": "A", "r": 11, "c": 1, "n": 4, "ans": "THUS"}]}];
-const WORDS = {"ASWELLAS": ["AS WELL AS", "ainsi que", "addition"], "WHETHER": ["WHETHER", "si (whether ... or)", "choice"], "NEITHER": ["NEITHER", "ni (neither ... nor)", "choice"], "THAN": ["THAN", "que (comparaison)", "comparison"], "SO": ["SO", "donc, alors, de sorte que", "consequence"], "AFTER": ["AFTER", "après (que)", "time"], "LEST": ["LEST", "de peur que", "purpose"], "ASIF": ["AS IF", "comme si", "comparison"], "WHERE": ["WHERE", "où", "place"], "WHEN": ["WHEN", "quand, lorsque", "time"], "INORDERTO": ["IN ORDER TO", "afin de", "purpose"], "IF": ["IF", "si", "condition"], "HENCE": ["HENCE", "d'où, par conséquent", "consequence"], "INSPITEOF": ["IN SPITE OF", "malgré", "concession"], "ASARESULT": ["AS A RESULT", "par conséquent", "consequence"], "ONCE": ["ONCE", "une fois que", "time"], "WHEREAS": ["WHEREAS", "alors que", "contrast"], "UNLESS": ["UNLESS", "à moins que", "condition"], "FOR": ["FOR", "car", "cause"], "BUT": ["BUT", "mais", "contrast"], "INSTEAD": ["INSTEAD", "à la place, plutôt", "contrast"], "AND": ["AND", "et", "addition"], "EITHER": ["EITHER", "soit (either ... or)", "choice"], "YET": ["YET", "pourtant, cependant", "contrast"], "ALSO": ["ALSO", "aussi", "addition"], "BEFORE": ["BEFORE", "avant (que)", "time"], "WHENEVER": ["WHENEVER", "chaque fois que", "time"], "STILL": ["STILL", "pourtant, malgré tout", "contrast"], "DUETO": ["DUE TO", "en raison de", "cause"], "BECAUSE": ["BECAUSE", "parce que", "cause"], "THEN": ["THEN", "puis, alors", "sequence"], "PROVIDING": ["PROVIDING", "à condition que", "condition"], "ASLONGAS": ["AS LONG AS", "tant que, à condition que", "condition"], "EVEN": ["EVEN", "même", "emphasis"], "INCONTRAST": ["IN CONTRAST", "en revanche", "contrast"], "THUS": ["THUS", "ainsi, donc", "consequence"], "OR": ["OR", "ou", "choice"], "NEVERTHELESS": ["NEVERTHELESS", "néanmoins", "concession"], "WHILE": ["WHILE", "pendant que, tandis que", "time / contrast"], "NOR": ["NOR", "ni", "addition"], "SOASTO": ["SO AS TO", "afin de", "purpose"]};
+const WORDS = {"INSPITEOF": ["IN SPITE OF", "malgré", "concession"], "WHETHER": ["WHETHER", "si (whether ... or)", "choice"], "ASARESULT": ["AS A RESULT", "par conséquent", "consequence"], "ASIF": ["AS IF", "comme si", "comparison"], "BECAUSE": ["BECAUSE", "parce que", "cause"], "BEFORE": ["BEFORE", "avant (que)", "time"], "PROVIDING": ["PROVIDING", "à condition que", "condition"], "SOASTO": ["SO AS TO", "afin de", "purpose"], "NEVERTHELESS": ["NEVERTHELESS", "néanmoins", "concession"], "ASWELLAS": ["AS WELL AS", "ainsi que", "addition"], "SO": ["SO", "donc, alors, de sorte que", "consequence"], "BUT": ["BUT", "mais", "contrast"], "AND": ["AND", "et", "addition"], "THUS": ["THUS", "ainsi, donc", "consequence"], "WHERE": ["WHERE", "où", "place"], "IF": ["IF", "si", "condition"], "STILL": ["STILL", "pourtant, malgré tout", "contrast"], "FOR": ["FOR", "car", "cause"], "YET": ["YET", "pourtant, cependant", "contrast"], "EITHER": ["EITHER", "soit (either ... or)", "choice"], "WHILE": ["WHILE", "pendant que, tandis que", "time / contrast"], "ONCE": ["ONCE", "une fois que", "time"], "UNLESS": ["UNLESS", "à moins que", "condition"], "THAN": ["THAN", "que (comparaison)", "comparison"], "WHEN": ["WHEN", "quand, lorsque", "time"], "NEITHER": ["NEITHER", "ni (neither ... nor)", "choice"], "DUETO": ["DUE TO", "en raison de", "cause"], "THEN": ["THEN", "puis, alors", "sequence"], "ALSO": ["ALSO", "aussi", "addition"], "WHENEVER": ["WHENEVER", "chaque fois que", "time"], "EVEN": ["EVEN", "même", "emphasis"], "LEST": ["LEST", "de peur que", "purpose"], "INORDERTO": ["IN ORDER TO", "afin de", "purpose"], "OR": ["OR", "ou", "choice"], "WHEREAS": ["WHEREAS", "alors que", "contrast"], "INSTEAD": ["INSTEAD", "à la place, plutôt", "contrast"], "HENCE": ["HENCE", "d'où, par conséquent", "consequence"], "AFTER": ["AFTER", "après (que)", "time"], "INCONTRAST": ["IN CONTRAST", "en revanche", "contrast"], "ASLONGAS": ["AS LONG AS", "tant que, à condition que", "condition"], "NOR": ["NOR", "ni", "addition"]};
 function $(q) { return document.querySelector(q); }
 function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -124,10 +124,9 @@ const sTick = () => beep(520, .04);
 const sWin = () => [523, 659, 784, 1046, 1318].forEach((f, i) => setTimeout(() => beep(f, .18), i * 120));
 
 /* ---------- state ---------- */
-let L = null, li = 0, placed = [], hinted = [], selW = null, cands = [], ci = 0, undo = [], pen = 0, t0 = 0, secs = 0, timer = null, won = false, started = false;
+let L = null, li = 0, placed = [], hinted = [], act = -1, buf = [], typed = [], undo = [], pen = 0, secs = 0, timer = null, won = false, started = false, flash = null, msg = '';
 let wordOrder = [];
 
-function strip(s) { return s.replace(/ /g, ''); }
 function loadBest() { try { return JSON.parse(lsGet('tcgBest') || '{}'); } catch (e) { return {}; } }
 function fmt(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 
@@ -146,18 +145,19 @@ function showMenu() {
 
 function start(i) {
   li = i; L = LEVELS[i]; placed = L.slots.map(() => null); hinted = L.slots.map(() => false);
-  selW = null; cands = []; ci = 0; undo = []; pen = 0; secs = 0; won = false; started = false;
+  act = -1; buf = []; typed = []; undo = []; pen = 0; secs = 0; won = false; started = false; flash = null; msg = '';
   wordOrder = L.slots.map((s) => s.ans).sort((a, b) => a.length - b.length || a.localeCompare(b));
   $('#menu').classList.remove('on'); $('#win').classList.remove('on');
   $('#lvn').textContent = (i + 1) + '. ' + L.name;
-  buildGrid(); buildList(); refresh();
+  buildGrid(); buildList();
   clearInterval(timer); timer = setInterval(() => { if (started && !won) { secs++; $('#tm').textContent = fmt(secs); } }, 1000);
   $('#tm').textContent = '0:00';
-  selectWord(wordOrder[0]);
+  activate(firstEmpty(-1));
 }
 
 /* ---------- grid ---------- */
 let cellEls = {};
+function cellKey(s, k) { return (s.d === 'A' ? s.r : s.r + k) + ',' + (s.d === 'A' ? s.c + k : s.c); }
 function buildGrid() {
   const g = $('#grid'); g.innerHTML = ''; cellEls = {};
   g.style.gridTemplateColumns = 'repeat(' + L.cols + ', var(--cs))';
@@ -172,7 +172,6 @@ function buildGrid() {
   });
   sizeGrid();
 }
-function cellKey(s, k) { return (s.d === 'A' ? s.r : s.r + k) + ',' + (s.d === 'A' ? s.c + k : s.c); }
 function sizeGrid() {
   const p = $('#gpane'); if (!p || !L) return;
   const w = p.clientWidth - 8, h = p.clientHeight - 8;
@@ -181,121 +180,139 @@ function sizeGrid() {
 }
 window.addEventListener('resize', sizeGrid);
 
-function letterMap() {
+function letterMap(skip) {
   const m = {};
-  L.slots.forEach((s, i) => { const w = placed[i]; if (w) for (let k = 0; k < s.n; k++) m[cellKey(s, k)] = w[k]; });
+  L.slots.forEach((s, i) => { const w = placed[i]; if (w && i !== skip) for (let k = 0; k < s.n; k++) m[cellKey(s, k)] = w[k]; });
   return m;
 }
-function candidatesFor(w) {
-  const m = letterMap(), out = [];
-  L.slots.forEach((s, i) => {
-    if (placed[i] || s.n !== w.length) return;
-    for (let k = 0; k < s.n; k++) { const ch = m[cellKey(s, k)]; if (ch && ch !== w[k]) return; }
-    out.push(i);
-  });
-  return out;
+function firstEmpty(from) {
+  const n = L.slots.length;
+  for (let k = 1; k <= n; k++) { const i = (from + k + n) % n; if (!placed[i]) return i; }
+  return -1;
+}
+function prevEmpty(from) {
+  const n = L.slots.length;
+  for (let k = 1; k <= n; k++) { const i = (from - k + n * 2) % n; if (!placed[i]) return i; }
+  return -1;
+}
+function activate(i) {
+  act = i; buf = []; typed = [];
+  if (i >= 0) {
+    const s = L.slots[i], m = letterMap(i);
+    for (let k = 0; k < s.n; k++) { const ch = m[cellKey(s, k)]; buf.push(ch || null); typed.push(false); }
+  }
+  msg = ''; refresh();
 }
 
 function refresh() {
-  const m = letterMap(), cur = (selW && cands.length) ? cands[ci] : -1;
-  const pv = {}, cd = {}, cu = {}, hn = {};
-  if (cur >= 0) { const s = L.slots[cur]; for (let k = 0; k < s.n; k++) { cu[cellKey(s, k)] = 1; pv[cellKey(s, k)] = selW[k]; } }
-  cands.forEach((i) => { if (i !== cur) { const s = L.slots[i]; for (let k = 0; k < s.n; k++) cd[cellKey(s, k)] = 1; } });
+  const m = letterMap(-1);
+  const cu = {}, bl = {};
+  if (act >= 0) { const s = L.slots[act]; for (let k = 0; k < s.n; k++) { cu[cellKey(s, k)] = 1; bl[cellKey(s, k)] = buf[k]; } }
+  const hn = {};
   L.slots.forEach((s, i) => { if (hinted[i] && placed[i]) for (let k = 0; k < s.n; k++) hn[cellKey(s, k)] = 1; });
   Object.keys(cellEls).forEach((key) => {
     const e = cellEls[key];
     let cls = 'cell', txt = m[key] || '';
-    if (!txt && cu[key]) { txt = pv[key]; cls += ' pv'; }
-    if (cu[key]) cls += ' cur'; else if (cd[key] && !m[key]) cls += ' cand';
+    if (cu[key]) { cls += ' cur'; if (bl[key]) txt = bl[key]; }
     if (hn[key]) cls += ' hint';
+    if (flash && flash[key]) cls += ' bad';
     e.className = cls; e.textContent = txt;
   });
-  document.querySelectorAll('#list .w').forEach((e) => {
-    const w = e.getAttribute('data-w');
-    e.classList.toggle('used', placed.some((p) => p === w));
-    e.classList.toggle('sel', w === selW);
-  });
+  document.querySelectorAll('#list .w').forEach((e) => { e.classList.toggle('used', placed.includes(e.getAttribute('data-w'))); });
   $('#cnt').textContent = placed.filter(Boolean).length + ' / ' + L.slots.length;
   $('#pen').textContent = pen;
   infoBar();
 }
-function infoBar(msg) {
+function infoBar() {
   const el = $('#info');
-  if (msg) { el.innerHTML = msg; return; }
-  if (selW) {
-    const d = WORDS[selW];
-    el.innerHTML = '<span><b>' + esc(d[0]) + '</b> (' + selW.length + ') <i>' + esc(d[2]) + '</i> = ' + esc(d[1]) + '</span><span>' + (cands.length ? 'place ' + (ci + 1) + ' / ' + cands.length + ': LEFT/RIGHT, ENTER' : 'no free place fits: take a word back (Z)') + '</span>';
-  } else el.innerHTML = '<span>UP / DOWN: choose a word</span><span>ENTER: place | Z: undo | H: hint | C: check</span>';
+  if (won) { el.innerHTML = '<span><b>Complete!</b></span>'; return; }
+  if (msg) { el.innerHTML = '<span>' + msg + '</span>'; return; }
+  if (act >= 0) {
+    const s = L.slots[act];
+    el.innerHTML = '<span><b>' + s.n + ' letters</b> ' + (s.d === 'A' ? '(across)' : '(down)') + ' : <b>' + buf.map((c) => c || '_').join(' ') + '</b></span><span>Type the word | BACKSPACE: erase | TAB: next place</span>';
+  } else el.innerHTML = '<span>Click a place in the grid, then type the word.</span>';
 }
 
-/* ---------- list ---------- */
+/* ---------- list (reference) ---------- */
 function buildList() {
   const by = {}; wordOrder.forEach((w) => { (by[w.length] = by[w.length] || []).push(w); });
   $('#list').innerHTML = Object.keys(by).map(Number).sort((a, b) => a - b).map((n) =>
     '<div class="grp"><div class="gh">' + n + ' LETTERS</div>' + by[n].map((w) => '<span class="w" data-w="' + w + '">' + esc(WORDS[w][0]) + '</span>').join('') + '</div>').join('');
-  document.querySelectorAll('#list .w').forEach((e) => e.addEventListener('click', () => { const w = e.getAttribute('data-w'); if (placed.includes(w)) return; selectWord(w === selW ? null : w); sTick(); }));
+  document.querySelectorAll('#list .w').forEach((e) => e.addEventListener('click', () => fillWord(e.getAttribute('data-w'))));
 }
-function selectWord(w) {
-  selW = w; ci = 0; cands = w ? candidatesFor(w) : [];
-  refresh();
-  const e = w && document.querySelector('#list .w[data-w="' + w + '"]'); if (e && e.scrollIntoView) e.scrollIntoView({ block: 'nearest' });
-}
-function nextUnused(dir) {
-  const un = wordOrder.filter((w) => !placed.includes(w)); if (!un.length) return null;
-  const i = un.indexOf(selW);
-  if (i < 0) return un[0];
-  return un[(i + dir + un.length) % un.length];
+function fillWord(w) {
+  if (won || act < 0 || placed.includes(w)) { sBad(); return; }
+  const s = L.slots[act]; if (w.length !== s.n) { sBad(); return; }
+  for (let k = 0; k < s.n; k++) if (buf[k] && !typed[k] && buf[k] !== w[k]) { sBad(); return; }
+  for (let k = 0; k < s.n; k++) if (!buf[k] || typed[k]) { buf[k] = w[k]; typed[k] = true; }
+  submit();
 }
 
 /* ---------- actions ---------- */
-function startClock() { if (!started) { started = true; t0 = Date.now(); } }
-function placeAt(i) {
-  if (won || !selW || placed[i]) return;
-  if (!candidatesFor(selW).includes(i)) { sBad(); infoBar('<span>That word does not fit there.</span>'); return; }
-  startClock();
-  placed[i] = selW; undo.push(i); sPlace();
-  const s = L.slots[i]; for (let k = 0; k < s.n; k++) { const e = cellEls[cellKey(s, k)]; e.classList.add('ok'); }
-  const nx = nextUnused(1); selectWord(nx === selW ? null : nx);
-  if (placed.every(Boolean)) finish();
+function startClock() { if (!started) started = true; }
+function typeLetter(ch) {
+  if (won || act < 0) return;
+  const k = buf.findIndex((c) => !c); if (k < 0) return;
+  startClock(); buf[k] = ch; typed[k] = true; beep(500 + k * 20, .03);
+  if (buf.every(Boolean)) submit(); else refresh();
+}
+function backspace() {
+  if (won || act < 0) return;
+  for (let k = buf.length - 1; k >= 0; k--) if (typed[k]) { buf[k] = null; typed[k] = false; msg = ''; refresh(); return; }
+}
+function submit() {
+  const s = L.slots[act], w = buf.join('');
+  if (!WORDS[w]) return reject('<b>' + esc(w) + '</b> is not in the list.');
+  if (placed.includes(w)) return reject('<b>' + esc(WORDS[w][0]) + '</b> is already placed.');
+  const i = act; placed[i] = w; undo.push(i); sPlace();
+  for (let k = 0; k < s.n; k++) cellEls[cellKey(s, k)].classList.add('ok');
+  if (placed.every(Boolean)) { act = -1; refresh(); finish(); return; }
+  activate(firstEmpty(i));
+}
+function reject(text) {
+  sBad(); msg = text; flash = {};
+  const s = L.slots[act]; for (let k = 0; k < s.n; k++) if (typed[k]) flash[cellKey(s, k)] = 1;
+  refresh();
+  setTimeout(() => { flash = null; for (let k = 0; k < buf.length; k++) if (typed[k]) { buf[k] = null; typed[k] = false; } refresh(); }, 600);
 }
 function takeBack(i) {
-  if (won || !placed[i] || hinted[i]) { if (hinted[i]) sBad(); return; }
-  const w = placed[i]; placed[i] = null; undo = undo.filter((x) => x !== i); sTick(); selectWord(w);
+  if (won || !placed[i]) return;
+  if (hinted[i]) { sBad(); return; }
+  placed[i] = null; undo = undo.filter((x) => x !== i); sTick(); activate(i);
 }
 function clickCell(r, c) {
   if (won) return;
-  const key = r + ',' + c;
-  const here = []; L.slots.forEach((s, i) => { for (let k = 0; k < s.n; k++) if (cellKey(s, k) === key) here.push(i); });
-  if (selW) {
-    const ok = here.filter((i) => cands.includes(i));
-    if (ok.length) { const pick = ok.includes(cands[ci]) ? cands[ci] : ok[0]; placeAt(pick); return; }
-  }
-  const filled = here.filter((i) => placed[i] && !hinted[i]);
-  if (filled.length) { takeBack(filled[0]); return; }
-  sBad();
+  const key = r + ',' + c, here = [];
+  L.slots.forEach((s, i) => { for (let k = 0; k < s.n; k++) if (cellKey(s, k) === key) here.push(i); });
+  if (!here.length) return;
+  let pick;
+  if (here.length > 1 && here.includes(act)) pick = here.find((i) => i !== act && !placed[i]);
+  else pick = here.find((i) => !placed[i]);
+  if (pick === undefined) { if (here.includes(act)) return; pick = here[0]; }
+  if (pick === act) return;
+  if (placed[pick]) { takeBack(pick); return; }
+  sTick(); activate(pick);
 }
 function doUndo() { if (won || !undo.length) return; takeBack(undo[undo.length - 1]); }
 function doHint() {
   if (won) return;
-  let t = (selW && cands.length) ? cands[ci] : -1;
-  if (t < 0 || placed[t]) t = L.slots.findIndex((s, i) => !placed[i]);
+  let t = act; if (t < 0 || placed[t]) t = L.slots.findIndex((s, i) => !placed[i]);
   if (t < 0) return;
   startClock();
   const ans = L.slots[t].ans;
   const j = placed.indexOf(ans); if (j >= 0 && j !== t) { placed[j] = null; hinted[j] = false; }
   placed[t] = ans; hinted[t] = true; pen += 50; undo = undo.filter((x) => x !== t && x !== j); sPlace();
-  const nx = nextUnused(1); selectWord(nx);
-  if (placed.every(Boolean)) finish();
+  if (placed.every(Boolean)) { act = -1; refresh(); finish(); return; }
+  activate(firstEmpty(t));
 }
 function doCheck() {
   if (won) return;
   const bad = []; L.slots.forEach((s, i) => { if (placed[i] && placed[i] !== s.ans) bad.push(i); });
-  if (!bad.length) { beep(880, .15); infoBar('<span><b>All the words placed so far are correct.</b></span>'); return; }
-  startClock();
-  bad.forEach((i) => { const s = L.slots[i]; for (let k = 0; k < s.n; k++) cellEls[cellKey(s, k)].classList.add('bad'); });
-  sBad(); pen += 30 * bad.length;
-  setTimeout(() => { bad.forEach((i) => { placed[i] = null; undo = undo.filter((x) => x !== i); }); selectWord(selW && !placed.includes(selW) ? selW : wordOrder.find((w) => !placed.includes(w)) || null); infoBar('<span><b>' + bad.length + ' wrong word' + (bad.length > 1 ? 's' : '') + ' removed (-' + (30 * bad.length) + ').</b></span>'); }, 700);
-  $('#pen').textContent = pen;
+  if (!bad.length) { beep(880, .15); msg = '<b>All the words placed so far are correct.</b>'; refresh(); return; }
+  startClock(); flash = {};
+  bad.forEach((i) => { const s = L.slots[i]; for (let k = 0; k < s.n; k++) flash[cellKey(s, k)] = 1; });
+  sBad(); pen += 30 * bad.length; refresh();
+  setTimeout(() => { flash = null; bad.forEach((i) => { placed[i] = null; undo = undo.filter((x) => x !== i); }); activate(placed[act] || act < 0 ? firstEmpty(-1) : act); msg = '<b>' + bad.length + ' wrong word' + (bad.length > 1 ? 's' : '') + ' removed (-' + (30 * bad.length) + ').</b>'; refresh(); }, 700);
 }
 
 function finish() {
@@ -319,21 +336,22 @@ function finish() {
 
 /* ---------- input ---------- */
 document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
   const menuOn = $('#menu').classList.contains('on'), winOn = $('#win').classList.contains('on');
-  if (e.key === 'm' || e.key === 'M') { SND = !SND; lsSet('tcgSnd', SND ? '1' : '0'); return; }
   if (menuOn) {
     if (e.key >= '1' && e.key <= String(LEVELS.length)) start(+e.key - 1);
     else if (e.key === 'Escape') location.href = '../hub/';
     return;
   }
-  if (winOn) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (li < LEVELS.length - 1) start(li + 1); else showMenu(); } else if (e.key === 'Escape') showMenu(); return; }
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const nx = nextUnused(e.key === 'ArrowDown' ? 1 : -1); if (nx) { selectWord(nx); sTick(); } }
-  else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); if (cands.length > 1) { ci = (ci + (e.key === 'ArrowRight' ? 1 : cands.length - 1)) % cands.length; sTick(); refresh(); } }
-  else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selW && cands.length) placeAt(cands[ci]); else sBad(); }
-  else if (e.key === 'z' || e.key === 'Z' || e.key === 'Backspace') { e.preventDefault(); doUndo(); }
-  else if (e.key === 'h' || e.key === 'H') doHint();
-  else if (e.key === 'c' || e.key === 'C') doCheck();
-  else if (e.key === 'Escape') showMenu();
+  if (winOn) { if (e.key === 'Enter') { e.preventDefault(); if (li < LEVELS.length - 1) start(li + 1); else showMenu(); } else if (e.key === 'Escape') showMenu(); return; }
+  if (/^[a-zA-Z]$/.test(e.key)) { e.preventDefault(); typeLetter(e.key.toUpperCase()); }
+  else if (e.key === 'Backspace') { e.preventDefault(); backspace(); }
+  else if (e.key === 'Tab' || e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); const n = (e.shiftKey && e.key === 'Tab') ? prevEmpty(act) : firstEmpty(act); if (n >= 0) { sTick(); activate(n); } }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); const n = prevEmpty(act); if (n >= 0) { sTick(); activate(n); } }
+  else if (e.key === 'Escape') { if (typed.some(Boolean)) activate(act); else showMenu(); }
+  else if (e.key === 'F1') { e.preventDefault(); doHint(); }
+  else if (e.key === 'F2') { e.preventDefault(); doCheck(); }
+  else if (e.key === 'F3') { e.preventDefault(); doUndo(); }
 });
 $('#bm').addEventListener('click', showMenu);
 $('#bh').addEventListener('click', doHint);
