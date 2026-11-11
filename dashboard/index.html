@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Arcade teacher dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--navy:#0d1b3a;--navy2:#16294f;--navy3:#1f3868;--gold:#c9a227;--cream:#f5eedc;--red:#e0584f;--green:#3fae76;--cyan:#4fd1e8;--muted:#a9b3c9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--navy);color:var(--cream);font-family:'Source Serif 4',Georgia,serif;padding:16px 18px 30px}
+h1{font-family:'Playfair Display',Georgia,serif;font-size:28px;margin:0 0 4px}
+h1 span{color:var(--gold)}
+h2{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.08em;color:var(--gold);margin:22px 0 8px;text-transform:uppercase}
+.sub{color:var(--muted);font-size:14px;margin:0 0 12px}
+.box{background:var(--navy2);border:1px solid rgba(201,162,39,.4);border-radius:12px;padding:14px;max-width:420px}
+input{width:100%;font-family:inherit;font-size:16px;color:var(--cream);background:var(--navy);border:1px solid rgba(245,238,220,.3);border-radius:8px;padding:10px;margin:6px 0}
+.btn{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;background:transparent;color:var(--gold);border:1px solid var(--gold);border-radius:6px;padding:7px 11px;cursor:pointer}
+.btn.solid{background:var(--gold);color:var(--navy)}
+.btn.on{background:var(--gold);color:var(--navy)}
+.btn.red{color:var(--red);border-color:var(--red)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.bar input{width:220px;margin:0}
+.msg{color:var(--red);min-height:18px;font-size:14px}
+.cards{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.card{background:var(--navy2);border:1px solid rgba(245,238,220,.14);border-radius:10px;padding:10px 16px;min-width:130px}
+.card b{display:block;font-family:'JetBrains Mono',monospace;font-size:24px;color:var(--gold)}
+.card span{font-size:12px;color:var(--muted)}
+.card.live{border-color:var(--green)} .card.live b{color:var(--green);font-size:34px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 8px var(--green);animation:bl 1.6s infinite}
+@keyframes bl{50%{opacity:.35}}
+.wrap{overflow-x:auto;border:1px solid rgba(245,238,220,.1);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 10px;border-bottom:1px solid rgba(245,238,220,.1);text-align:left;white-space:nowrap}
+th{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);cursor:pointer;position:sticky;top:0;background:var(--navy)}
+td.num,th.num{text-align:right}
+tr:hover>td{background:rgba(255,255,255,.03)}
+.low{color:var(--red)} .ok{color:var(--green)} .dim{color:var(--muted)}
+.tabs{display:flex;gap:6px;margin:18px 0 8px;flex-wrap:wrap}
+.banner{background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.5);border-radius:8px;padding:8px 12px;font-size:13px;margin:8px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.gc{background:var(--navy2);border:1px solid rgba(245,238,220,.14);border-radius:10px;padding:12px 14px}
+.gc h3{margin:0 0 6px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--cyan)}
+.gc p{margin:2px 0;font-size:13px;color:var(--muted)} .gc p b{color:var(--cream)}
+.gc ol{margin:6px 0 0;padding-left:20px;font-size:13px}
+.det td{background:rgba(255,255,255,.03);white-space:normal}
+.det .g{display:inline-block;margin:2px 10px 2px 0;font-size:13px}
+footer{margin-top:24px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7f8bab}
+.hide{display:none}
+</style>
+</head>
+<body>
+<h1>ARCADE <span>teacher dashboard</span></h1>
+<p class="sub">Students online, connection history and progress in every game.</p>
+
+<div class="box" id="login">
+  <input id="pw" type="password" placeholder="Admin password" autocomplete="current-password">
+  <p class="msg" id="lmsg"></p>
+  <button class="btn solid" id="lgo">Log in</button>
+</div>
+
+<div id="app" class="hide">
+  <div class="cards" id="cards"></div>
+  <div id="modeBanner"></div>
+
+  <h2>Online now <span class="dim" id="onTick"></span></h2>
+  <div class="wrap"><table><thead><tr><th>Student</th><th>Where</th><th>Connected since</th><th>Last signal</th><th>Device</th></tr></thead><tbody id="onRows"></tbody></table></div>
+
+  <div class="tabs" id="tabs">
+    <button class="btn on" data-t="players">Students</button>
+    <button class="btn" data-t="games">Games</button>
+    <button class="btn" data-t="conn">Connection history</button>
+  </div>
+  <div class="bar">
+    <input id="q" placeholder="Search a name...">
+    <button class="btn" id="refresh">Refresh</button>
+    <button class="btn solid" id="xlsx">Export Excel</button>
+    <button class="btn" id="logout">Log out</button>
+    <span class="msg" id="amsg"></span>
+  </div>
+
+  <div id="tPlayers"><div class="wrap"><table><thead><tr id="pHead"></tr></thead><tbody id="pRows"></tbody></table></div></div>
+  <div id="tGames" class="hide"><div class="grid" id="gGrid"></div></div>
+  <div id="tConn" class="hide">
+    <div class="bar"><span class="dim">Show</span>
+      <button class="btn on" data-f="all">All</button><button class="btn" data-f="login">Logins</button><button class="btn" data-f="session">Sessions</button>
+      <span class="dim" style="font-size:12px">Login = typed name and code. Session = first page opened after at least 10 minutes away.</span></div>
+    <div class="wrap"><table><thead><tr><th>Date</th><th>Student</th><th>Event</th><th>Where</th><th>Device</th></tr></thead><tbody id="cRows"></tbody></table></div>
+  </div>
+</div>
+<footer>MARC VASSEUR | POLYTECH LILLE<br>marc.vasseur@polytech-lille.fr</footer>
+
+<script>
+var GAMES=[['ae','Arrow Escape'],['sc','Scramble'],['tn','TOEICnoid'],['td','TOEICdig'],['tg','TOEICgalaxy'],['tr','TOEICrunner'],['ti','TOEICti'],['cg','TOEICgrid'],['wb','Word Bridge'],['xm','Christmas Village']];
+var WHERE={hub:'Hub (arcade)',ae:'Arrow Escape',sc:'Scramble',tn:'TOEICnoid',td:'TOEICdig',tg:'TOEICgalaxy',tr:'TOEICrunner',cg:'TOEICgrid',wb:'Word Bridge',xm:'Christmas Village'};
+var token=null,players=[],onl={online:[],history:[],mode:'memory',recentCount:0},tab='players',cf='all',sortKey='activity',sortDir=-1,open={},pollT=null,tick=0;
+function $(s){return document.querySelector(s)}
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+function api(action,body){
+  var h={'Content-Type':'application/json'};if(token)h.Authorization='Bearer '+token;
+  return fetch('/api/admin',{method:'POST',headers:h,body:JSON.stringify(Object.assign({action:action},body||{}))})
+    .then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok,status:r.status,j:j}})})
+    .catch(function(){return {ok:false,status:0,j:{error:'No connection to the server.'}}});
+}
+function two(n){return n<10?'0'+n:''+n}
+function fmt(t){if(!t)return '';var x=new Date(t);return two(x.getDate())+'/'+two(x.getMonth()+1)+'/'+x.getFullYear()+' '+two(x.getHours())+':'+two(x.getMinutes())}
+function ago(t,now){if(!t)return '';var s=Math.max(0,Math.round(((now||Date.now())-t)/1000));if(s<60)return s+' s ago';if(s<3600)return Math.round(s/60)+' min ago';if(s<86400)return Math.round(s/3600)+' h ago';return Math.round(s/86400)+' d ago'}
+function dur(a,b){var m=Math.max(0,Math.round((b-a)/60000));return m<60?m+' min':Math.floor(m/60)+' h '+two(m%60)}
+function where(g){return WHERE[g]||g||''}
+function sameDay(a,b){var x=new Date(a),y=new Date(b);return x.toDateString()===y.toDateString()}
+
+/* ---------- data ---------- */
+function allConn(){
+  var seen={},out=[];
+  function add(e){var k=e.k+'|'+e.t;if(seen[k])return;seen[k]=1;out.push(e)}
+  (onl.history||[]).forEach(function(e){add(e)});
+  players.forEach(function(p){(p.logins||[]).forEach(function(l){add({t:l.t,k:p.key,n:p.nom,g:'hub',d:l.d,e:'login'})})});
+  out.sort(function(a,b){return b.t-a.t});return out;
+}
+function lastConn(p,conn){var m=p.lastLogin||0;conn.forEach(function(e){if(e.k===p.key&&e.t>m)m=e.t});return m}
+function load(){
+  $('#amsg').textContent='Loading...';
+  return api('overview').then(function(r){
+    if(r.status===401)return logout('Session expired. Please log in again.');
+    if(!r.ok){$('#amsg').textContent=r.j.error||'Error';return}
+    players=r.j.players;$('#amsg').textContent='';renderAll();
+  });
+}
+function poll(){
+  return api('online').then(function(r){
+    if(r.status===401)return logout('Session expired. Please log in again.');
+    if(r.ok){onl=r.j;renderLive();renderCards();if(tab==='conn')renderConn();if(tab==='players')renderPlayers()}
+  });
+}
+function start(){
+  load().then(poll);clearInterval(pollT);tick=0;
+  pollT=setInterval(function(){if(document.hidden)return;tick++;poll();if(tick%10===0)load()},30000);
+}
+function logout(msg){token=null;clearInterval(pollT);try{sessionStorage.removeItem('lpAdmin')}catch(e){}$('#app').classList.add('hide');$('#login').classList.remove('hide');$('#lmsg').textContent=msg||''}
+
+/* ---------- render ---------- */
+function renderCards(){
+  var conn=allConn(),now=Date.now(),d24=conn.filter(function(e){return now-e.t<86400000});
+  var activeDay={};players.forEach(function(p){if(p.activity&&sameDay(p.activity,now))activeDay[p.key]=1});conn.forEach(function(e){if(sameDay(e.t,now))activeDay[e.k]=1});
+  var week={};conn.forEach(function(e){if(now-e.t<7*86400000)week[e.k]=1});players.forEach(function(p){if(p.activity&&now-p.activity<7*86400000)week[p.key]=1});
+  $('#cards').innerHTML=
+    '<div class="card live"><b><span class="dot"></span>'+onl.online.length+'</b><span>online now</span></div>'+
+    '<div class="card"><b>'+(onl.recentCount||0)+'</b><span>seen in the last 15 min</span></div>'+
+    '<div class="card"><b>'+Object.keys(activeDay).length+'</b><span>students active today</span></div>'+
+    '<div class="card"><b>'+Object.keys(week).length+'</b><span>active in 7 days</span></div>'+
+    '<div class="card"><b>'+players.length+'</b><span>profiles</span></div>'+
+    '<div class="card"><b>'+d24.length+'</b><span>connections, last 24 h</span></div>';
+  $('#modeBanner').innerHTML=onl.mode==='redis'?'':'<div class="banner"><b>Estimated mode.</b> The online count comes from the server memory and can be lower than reality (and resets when the server restarts). For an exact count and a permanent history, add a free Redis database (Upstash) in the Vercel project, tab Storage: the dashboard switches to exact mode by itself.</div>';
+}
+function renderLive(){
+  var now=onl.now||Date.now(),l=onl.online.slice().sort(function(a,b){return a.nom.localeCompare(b.nom)});
+  $('#onRows').innerHTML=l.length?l.map(function(o){return '<tr><td><span class="dot"></span><b>'+esc(o.nom)+'</b></td><td>'+esc(where(o.game))+'</td><td>'+fmt(o.since)+' <span class="dim">('+dur(o.since,now)+')</span></td><td>'+ago(o.lastSeen,now)+'</td><td class="dim">'+esc(o.device||'')+'</td></tr>'}).join(''):'<tr><td colspan="5" class="dim">Nobody online right now.</td></tr>';
+  $('#onTick').textContent='(refreshed '+fmt(Date.now()).slice(11)+', every 30 s)';
+}
+function gv(p,g){return p.games&&p.games[g]}
+function renderPlayers(){
+  var q=$('#q').value.trim().toLowerCase(),conn=allConn(),lc={};
+  players.forEach(function(p){lc[p.key]=lastConn(p,conn)});
+  var cnt={};conn.forEach(function(e){cnt[e.k]=(cnt[e.k]||0)+1});
+  var onKeys={};onl.online.forEach(function(o){onKeys[o.key]=o});
+  var list=players.filter(function(p){return !q||p.nom.toLowerCase().indexOf(q)>=0});
+  function val(p,k){if(k==='nom')return p.nom;if(k==='created')return p.createdAt||0;if(k==='last')return lc[p.key]||0;if(k==='activity')return p.activity||0;if(k==='logins')return Math.max(p.loginCount||0,cnt[p.key]||0);var g=gv(p,k);return g?g.best:0}
+  list.sort(function(a,b){var x=val(a,sortKey),y=val(b,sortKey);return (typeof x==='number'?x-y:String(x).localeCompare(String(y)))*sortDir});
+  var cols=[['nom','Student'],['created','Created'],['last','Last connection'],['activity','Last game activity'],['logins','Connections','num']].concat(GAMES.filter(function(g){return players.some(function(p){return gv(p,g[0])})}).map(function(g){return [g[0],g[1],'num']}));
+  $('#pHead').innerHTML='<th></th>'+cols.map(function(c){return '<th class="'+(c[2]||'')+'" data-k="'+c[0]+'">'+esc(c[1])+(sortKey===c[0]?(sortDir>0?' ▲':' ▼'):'')+'</th>'}).join('');
+  var h='';
+  list.forEach(function(p){
+    var o=onKeys[p.key],exp=open[p.key];
+    h+='<tr data-k="'+esc(p.key)+'" style="cursor:pointer"><td>'+(o?'<span class="dot" title="online"></span>':(exp?'▾':'▸'))+'</td><td><b>'+esc(p.nom)+'</b></td><td>'+fmt(p.createdAt)+'</td><td>'+(lc[p.key]?fmt(lc[p.key]):'<span class="dim">-</span>')+'</td><td>'+(p.activity?fmt(p.activity):'<span class="dim">-</span>')+'</td><td class="num">'+Math.max(p.loginCount||0,cnt[p.key]||0)+'</td>'+
+      cols.slice(5).map(function(c){var g=gv(p,c[0]);return '<td class="num">'+(g&&g.best?g.best:'<span class="dim">-</span>')+'</td>'}).join('')+'</tr>';
+    if(exp){
+      var gl=GAMES.filter(function(g){return gv(p,g[0])}).map(function(g){var x=gv(p,g[0]),b=[];
+        if(g[0]==='cg')b.push(x.done+'/5 grids done'); else {
+          if(x.level)b.push('level '+x.level);
+          if(x.runs)b.push(x.runs+' runs');
+          if(x.destroyed)b.push(x.destroyed+' destroyed');
+          if(x.words)b.push(x.words+' words');
+          if(x.answered)b.push(x.correct+'/'+x.answered+' correct ('+Math.round(100*x.correct/x.answered)+'%)');
+        }
+        return '<span class="g"><b style="color:var(--cyan)">'+esc(g[1])+'</b> best '+x.best+(b.length?' | '+b.join(', '):'')+(x.at?' | '+fmt(x.at):'')+'</span>'}).join('<br>');
+      var cl=conn.filter(function(e){return e.k===p.key}).slice(0,8).map(function(e){return fmt(e.t)+' ('+e.e+(e.d?', '+e.d:'')+')'}).join(' &nbsp;·&nbsp; ');
+      h+='<tr class="det"><td></td><td colspan="'+(cols.length)+'">'+(gl||'<span class="dim">No game data yet.</span>')+'<br><span class="dim">Recent connections: '+(cl||'none recorded')+'</span><br>'+
+        '<button class="btn" data-a="code" data-k="'+esc(p.key)+'">Reset code</button> <button class="btn red" data-a="del" data-k="'+esc(p.key)+'">Delete profile</button></td></tr>';
+    }
+  });
+  $('#pRows').innerHTML=h||'<tr><td colspan="12" class="dim">No profile yet.</td></tr>';
+}
+function renderGames(){
+  var h='';
+  GAMES.forEach(function(g){
+    var ps=players.filter(function(p){var x=gv(p,g[0]);return x&&(x.best>0||x.at)});
+    if(!ps.length&&g[0]==='ti')return;
+    var best=ps.map(function(p){return {n:p.nom,b:gv(p,g[0]).best}}).sort(function(a,b){return b.b-a.b});
+    var tot=best.reduce(function(s,x){return s+x.b},0),runs=ps.reduce(function(s,p){return s+(gv(p,g[0]).runs||0)},0);
+    var ans=ps.reduce(function(s,p){return s+(gv(p,g[0]).answered||0)},0),cor=ps.reduce(function(s,p){return s+(gv(p,g[0]).correct||0)},0);
+    var now=Date.now(),week=ps.filter(function(p){return now-(gv(p,g[0]).at||0)<7*86400000}).length;
+    h+='<div class="gc"><h3>'+esc(g[1])+'</h3><p><b>'+ps.length+'</b> students played'+(players.length?' ('+Math.round(100*ps.length/players.length)+'%)':'')+'</p>'+
+      '<p><b>'+week+'</b> active in the last 7 days</p>'+(best.length?'<p>Average best score <b>'+Math.round(tot/best.length)+'</b></p>':'')+(runs?'<p><b>'+runs+'</b> games played</p>':'')+(ans?'<p>Answers <b>'+Math.round(100*cor/ans)+'%</b> correct ('+ans+')</p>':'')+
+      (g[0]==='cg'?'<p><b>'+ps.reduce(function(s,p){return s+gv(p,'cg').done},0)+'</b> grids completed in total</p>':'')+
+      (best.length?'<ol>'+best.slice(0,5).map(function(x){return '<li>'+esc(x.n)+' <b>'+x.b+'</b></li>'}).join('')+'</ol>':'<p>No data yet.</p>')+'</div>';
+  });
+  $('#gGrid').innerHTML=h;
+}
+function renderConn(){
+  var q=$('#q').value.trim().toLowerCase(),now=Date.now();
+  var l=allConn().filter(function(e){return (cf==='all'||(cf==='login'?(e.e==='login'||e.e==='signup'):e.e==='session'))&&(!q||String(e.n).toLowerCase().indexOf(q)>=0)}).slice(0,600);
+  $('#cRows').innerHTML=l.length?l.map(function(e){return '<tr><td>'+fmt(e.t)+' <span class="dim">'+ago(e.t,now)+'</span></td><td><b>'+esc(e.n)+'</b></td><td>'+esc(e.e)+'</td><td>'+esc(where(e.g))+'</td><td class="dim">'+esc(e.d||'')+'</td></tr>'}).join(''):'<tr><td colspan="5" class="dim">No connection recorded yet.</td></tr>';
+}
+function renderAll(){renderLive();renderCards();renderPlayers();renderGames();renderConn()}
+function show(t){
+  tab=t;[['players','#tPlayers'],['games','#tGames'],['conn','#tConn']].forEach(function(x){$(x[1]).classList.toggle('hide',x[0]!==t)});
+  document.querySelectorAll('#tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===t)});
+  $('#q').parentNode.style.display=t==='games'?'none':'';renderAll();
+}
+
+/* ---------- events ---------- */
+$('#lgo').addEventListener('click',function(){
+  $('#lmsg').textContent='Please wait...';
+  api('login',{password:$('#pw').value}).then(function(r){
+    if(!r.ok){$('#lmsg').textContent=r.j.error||'Error';return}
+    token=r.j.token;try{sessionStorage.setItem('lpAdmin',token)}catch(e){}
+    $('#pw').value='';$('#lmsg').textContent='';$('#login').classList.add('hide');$('#app').classList.remove('hide');start();
+  });
+});
+$('#pw').addEventListener('keydown',function(e){if(e.key==='Enter')$('#lgo').click()});
+$('#refresh').addEventListener('click',function(){load().then(poll)});
+$('#logout').addEventListener('click',function(){logout('')});
+$('#q').addEventListener('input',function(){renderPlayers();renderConn()});
+$('#tabs').addEventListener('click',function(e){var t=e.target.dataset&&e.target.dataset.t;if(t)show(t)});
+$('#tConn').addEventListener('click',function(e){var f=e.target.dataset&&e.target.dataset.f;if(!f)return;cf=f;document.querySelectorAll('#tConn [data-f]').forEach(function(b){b.classList.toggle('on',b.dataset.f===f)});renderConn()});
+$('#pHead').addEventListener('click',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-k');if(!k)return;if(sortKey===k)sortDir=-sortDir;else{sortKey=k;sortDir=k==='nom'?1:-1}renderPlayers()});
+$('#pRows').addEventListener('click',function(e){
+  var a=e.target.getAttribute('data-a'),k=e.target.getAttribute('data-k');
+  if(!a){var tr=e.target.closest('tr[data-k]');if(tr){open[tr.dataset.k]=!open[tr.dataset.k];renderPlayers()}return}
+  var p=players.filter(function(x){return x.key===k})[0];if(!p)return;
+  if(a==='code'){
+    var c=window.prompt('New 4-digit code for '+p.nom+':');if(c===null)return;
+    if(!/^\d{4}$/.test(c.trim())){$('#amsg').textContent='The code must be exactly 4 digits.';return}
+    api('resetCode',{key:k,code:c.trim()}).then(function(r){$('#amsg').textContent=r.ok?'Code updated for '+p.nom+'.':(r.j.error||'Error')});
+  }else{
+    if(!window.confirm('Delete the profile of '+p.nom+' and all its progress? This cannot be undone.'))return;
+    api('delete',{key:k}).then(function(r){if(r.ok){players=players.filter(function(x){return x.key!==k});renderAll();$('#amsg').textContent='Deleted.'}else $('#amsg').textContent=r.j.error||'Error'});
+  }
+});
+$('#xlsx').addEventListener('click',function(){
+  if(typeof XLSX==='undefined'){$('#amsg').textContent='Excel library not loaded. Check your connection.';return}
+  var conn=allConn(),gs=GAMES.filter(function(g){return players.some(function(p){return gv(p,g[0])})});
+  var head=['Student','Created','Last connection','Last game activity','Connections'].concat(gs.map(function(g){return g[1]+' best'}));
+  var rows=players.map(function(p){return [p.nom,fmt(p.createdAt),fmt(lastConn(p,conn)),fmt(p.activity),Math.max(p.loginCount||0,conn.filter(function(e){return e.k===p.key}).length)].concat(gs.map(function(g){var x=gv(p,g[0]);return x?x.best:''}))});
+  var ch=['Date','Student','Event','Where','Device'],cr=conn.map(function(e){return [fmt(e.t),e.n,e.e,where(e.g),e.d||'']});
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([head].concat(rows)),'Students');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([ch].concat(cr)),'Connections');
+  XLSX.writeFile(wb,'arcade-dashboard.xlsx');
+});
+try{var t=sessionStorage.getItem('lpAdmin');if(t){token=t;$('#login').classList.add('hide');$('#app').classList.remove('hide');start()}}catch(e){}
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 // Profils élèves + sauvegarde de progression (un fichier JSON par élève dans le dépôt de données).
 const L = require('./_lib');
+const P = require('./_presence');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -27,6 +28,7 @@ module.exports = async (req, res) => {
     };
     // Création sans sha : GitHub refuse (422) si le fichier existe déjà, ce qui garantit l'unicité.
     const r = await L.ghPut(L.pathOf(key), profile, null, ghToken, `new player ${key}`);
+    if (r.ok) await P.pushHistory({ t: Date.now(), k: key, n: profile.nom, g: 'hub', d: P.deviceOf(req), e: 'signup' });
     if (r.ok) return res.json({ token: L.issueToken(key), user: { key, nom: profile.nom }, progress: null, best: 0, wb: null, wbBest: 0, xm: null, xmBest: 0, sc: null, scBest: 0, tn: null, tnBest: 0, td: null, tdBest: 0, ti: null, tiBest: 0, tg: null, tgBest: 0, tr: null, trBest: 0 });
     if (r.status === 422) return res.status(409).json({ error: 'This name is already registered. Log in, or add your first name to be unique.' });
     return res.status(500).json({ error: 'Could not create the profile. Try again.' });
@@ -45,7 +47,25 @@ module.exports = async (req, res) => {
     if (f.missing || !L.safeEqual(f.data.codeHash || '', L.codeHash(key, code))) return bad();
     L.clearFailures(req);
     const d = f.data;
+    const ev = { t: Date.now(), k: key, n: d.nom, g: 'hub', d: P.deviceOf(req), e: 'login' };
+    if (P.redis) await P.pushHistory(ev);
+    else {
+      // sans Redis : l'historique est gardé dans le profil de l'élève (un seul essai, sans bloquer la connexion)
+      d.logins = (d.logins || []).concat([{ t: ev.t, d: ev.d }]).slice(-60);
+      d.lastLogin = new Date(ev.t).toISOString(); d.loginCount = (d.loginCount || 0) + 1;
+      try { await L.ghPut(L.pathOf(key), d, f.sha, ghToken, `login ${key}`); } catch (e) {}
+    }
     return res.json({ token: L.issueToken(key), user: { key, nom: d.nom }, progress: d.progress || null, best: d.best || 0, wb: d.wb || null, wbBest: d.wbBest || 0, xm: d.xm || null, xmBest: d.xmBest || 0, sc: d.sc || null, scBest: d.scBest || 0, tn: d.tn || null, tnBest: d.tnBest || 0, td: d.td || null, tdBest: d.tdBest || 0, ti: d.ti || null, tiBest: d.tiBest || 0, tg: d.tg || null, tgBest: d.tgBest || 0, tr: d.tr || null, trBest: d.trBest || 0 });
+  }
+
+  // ---------------------------------------------------------------- présence (jeton requis, aucune lecture GitHub)
+  if (action === 'ping') {
+    const key = L.keyFromRequest(req);
+    if (!key) return res.status(401).json({ error: 'Session expired.' });
+    const game = /^[a-z]{2,6}$/.test(String(b.game || '')) ? b.game : 'hub';
+    const nom = String(b.nom || key).replace(/[<>]/g, '').slice(0, 40);
+    await P.touch(key, nom, game, P.deviceOf(req));
+    return res.json({ ok: true });
   }
 
   // ---------------------------------------------------------------- load / save (jeton requis)
@@ -174,6 +194,23 @@ module.exports = async (req, res) => {
         d.trUpdatedAt = new Date().toISOString();
         const r = await L.ghPut(L.pathOf(key), d, f.sha, ghToken, `save tr ${key}`);
         if (r.ok) return res.json({ success: true, best: d.trBest, tr: d.tr });
+      }
+      return res.status(500).json({ error: 'Save conflict. Try again.' });
+    }
+    if (b.game === 'cg') {
+      const cg = L.cleanCgProgress(b.progress);
+      if (!cg) return res.status(400).json({ error: 'Invalid progress data.' });
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const f = await L.ghGet(L.pathOf(key), ghToken);
+        if (f.error || f.missing) return res.status(500).json({ error: 'Profile not found.' });
+        const d = f.data, old = (d.cg && d.cg.grids) || [];
+        // fusion : on garde le meilleur score de chaque grille
+        const grids = cg.grids.map((g, i) => { const o = old[i]; return !g ? (o || null) : (!o || g.s > o.s ? g : o); });
+        d.cg = { grids, savedAt: cg.savedAt };
+        d.cgBest = grids.reduce((m, g) => Math.max(m, g ? g.s : 0), 0);
+        d.cgUpdatedAt = new Date().toISOString();
+        const r = await L.ghPut(L.pathOf(key), d, f.sha, ghToken, `save cg ${key}`);
+        if (r.ok) return res.json({ success: true, best: d.cgBest });
       }
       return res.status(500).json({ error: 'Save conflict. Try again.' });
     }

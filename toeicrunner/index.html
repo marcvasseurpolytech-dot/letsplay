@@ -4,7 +4,8 @@
 <style>
 html,body{margin:0;background:#1d1560;height:100%;display:flex;align-items:center;justify-content:center;font-family:monospace}
 canvas{background:#000;border:6px solid #6c5eb5;max-width:100vw;max-height:100vh;image-rendering:pixelated;touch-action:none}
-</style></head><body><canvas id="c" width="800" height="560"></canvas>
+</style><script src="../presence.js" defer></script>
+</head><body><canvas id="c" width="800" height="560"></canvas>
 <script>
 'use strict';
 const cv = document.getElementById('c'), ctx = cv.getContext('2d'), W = 800, H = 560, TS = 32, GW = 25, GH = 15, OY = 80;

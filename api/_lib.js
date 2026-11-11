@@ -268,7 +268,18 @@ function cleanXmProgress(p) {
   };
 }
 
+// TOEICgrid : meilleur score et temps pour chacune des 5 grilles
+function cleanCgProgress(p) {
+  if (!p || typeof p !== 'object' || !Array.isArray(p.grids)) return null;
+  const grids = [];
+  for (let i = 0; i < 5; i++) {
+    const g = p.grids[i];
+    grids.push(g && typeof g === 'object' && g.s > 0 ? { s: int(g.s, 0, 1e7, 0), t: int(g.t, 0, 1e6, 0) } : null);
+  }
+  return { grids, savedAt: int(p.savedAt, 0, 8.64e15, Date.now()) };
+}
+
 module.exports = {
   ghGet, ghPut, ghList, ghDelete, DIR, checkAdminPassword, issueAdminToken, isAdmin, pathOf, playerKey, codeHash, issueToken, keyFromRequest, safeEqual,
-  throttled, noteFailure, clearFailures, cleanProgress, cleanWbProgress, cleanXmProgress, cleanScProgress, cleanTnProgress
+  throttled, noteFailure, clearFailures, cleanProgress, cleanWbProgress, cleanXmProgress, cleanScProgress, cleanTnProgress, cleanCgProgress
 };

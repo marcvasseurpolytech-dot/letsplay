@@ -80,6 +80,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 .credit{text-align:center;font-size:10px;color:#6f7a99;margin-top:10px}
 @media (max-aspect-ratio:1/1){#main{flex-direction:column}#gpane{flex:1;min-height:0}#side{width:auto;flex:0 0 34vh}}
 </style>
+<script src="../presence.js" defer></script>
 </head>
 <body>
 <div id="app">
@@ -417,11 +418,20 @@ function doHint() {
   if (placed.every(Boolean)) { act = -1; refresh(); finish(); return; }
   saveGame(); activate(nearestEmpty(t));
 }
+const CG_API = (location.protocol === 'file:' || /claude/.test(location.hostname)) ? 'https://letsplay-nine.vercel.app/api/player' : '/api/player';
+// envoie les meilleurs scores des 5 grilles au profil de l'élève (s'il est connecté), pour le suivi enseignant ; sans effet sinon
+function syncCg() {
+  let s = null; try { s = JSON.parse(lsGet('letsplaySession') || 'null'); } catch (e) {}
+  if (!s || !s.token) return;
+  const grids = LEVELS.map((lv, i) => { const b = bestOf(i); return b ? { s: b.score, t: b.time } : null; });
+  try { fetch(CG_API, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + s.token }, body: JSON.stringify({ action: 'save', game: 'cg', progress: { grids, savedAt: Date.now() } }) }).catch(() => {}); } catch (e) {}
+}
 function finish() {
   won = true; clearInterval(timer);
   const n = L.slots.length, bonus = Math.max(0, n * 30 - secs), score = Math.max(0, 100 * n + bonus - pen); lsSet(SK(li), '');
   const b = loadBest(); const bk = li ? 'best' + li : 'best'; const old = b[bk]; let rec = false;
   if (!old || score > old.score) { b[bk] = { score, time: secs }; lsSet('tcgBest3', JSON.stringify(b)); rec = true; }
+  syncCg();
   sWin();
   const rows = Object.keys(WORDS).filter((w) => L.slots.some((s) => s.ans === w)).map((w) => WORDS[w]).sort((a, b) => (a[2].startsWith('vocabulary') - b[2].startsWith('vocabulary')) || a[2].localeCompare(b[2]) || a[0].localeCompare(b[0]));
   setTimeout(() => {

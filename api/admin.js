@@ -1,5 +1,6 @@
 // Espace enseignant : liste des profils et de leur progression, code oublié, suppression.
 const L = require('./_lib');
+const P = require('./_presence');
 
 async function mapLimit(items, n, fn) {
   const out = new Array(items.length);
@@ -64,6 +65,38 @@ module.exports = async (req, res) => {
       };
     });
     return res.json({ players: rows.filter(Boolean) });
+  }
+
+  // ---- joueurs en ligne + historique des connexions (léger : aucune lecture GitHub)
+  if (b.action === 'online') {
+    const win = 150 * 1000;
+    const [on, recent, hist] = await Promise.all([P.online(win), P.online(15 * 60 * 1000), P.history(500)]);
+    return res.json({ mode: P.redis ? 'redis' : 'memory', now: Date.now(), online: on, recentCount: recent.length, history: hist });
+  }
+
+  // ---- vue d'ensemble : tous les élèves, tous les jeux
+  if (b.action === 'overview') {
+    const dir = await L.ghList(L.DIR, ghToken);
+    if (dir.error) return res.status(500).json({ error: 'Could not read the data repository.' });
+    const ts = s => (s ? Date.parse(s) || 0 : 0);
+    const rows = await mapLimit(dir.items, 8, async it => {
+      const f = await L.ghGet(it.path, ghToken);
+      if (!f.data) return null;
+      const d = f.data, p = d.progress || {}, st = p.stats || {}, g = {};
+      if (d.progress) g.ae = { best: d.best || 0, level: p.level || 1, answered: st.answered || 0, correct: st.correct || 0, cleared: st.levelsCleared || 0, at: ts(d.updatedAt) };
+      if (d.wb) { const s = d.wb.stats || {}; g.wb = { best: d.wbBest || 0, level: d.wb.level || 1, answered: s.answered || 0, correct: s.correct || 0, cleared: s.levelsCleared || 0, at: ts(d.wbUpdatedAt) }; }
+      if (d.xm) { const s = d.xm.stats || {}; g.xm = { best: d.xmBest || 0, level: d.xm.day || 1, answered: s.answered || 0, correct: s.correct || 0, cleared: s.levelsCleared || 0, at: ts(d.xmUpdatedAt) }; }
+      if (d.sc) g.sc = { best: d.scBest || 0, runs: d.sc.runs || 0, level: d.sc.maxLoop || 1, destroyed: d.sc.destroyed || 0, words: Object.keys(d.sc.words || {}).length, at: ts(d.scUpdatedAt) };
+      [['tn', 'tnUpdatedAt', 'tnBest'], ['td', 'tdUpdatedAt', 'tdBest'], ['ti', 'tiUpdatedAt', 'tiBest'], ['tg', 'tgUpdatedAt', 'tgBest'], ['tr', 'trUpdatedAt', 'trBest']].forEach(([k, u, bk]) => {
+        const x = d[k]; if (!x) return;
+        g[k] = { best: d[bk] || 0, runs: x.runs || 0, level: x.maxRound || 1, destroyed: x.destroyed || 0, words: Object.keys(x.words || {}).length, answered: x.qN || 0, correct: x.qOk || 0, at: ts(d[u]) };
+      });
+      if (d.cg) { const gr = d.cg.grids || []; g.cg = { best: d.cgBest || 0, done: gr.filter(Boolean).length, grids: gr, at: ts(d.cgUpdatedAt) }; }
+      const logins = (d.logins || []).map(x => ({ t: x.t, d: x.d }));
+      const act = Math.max(0, ...Object.values(g).map(x => x.at || 0));
+      return { key: it.name.replace(/\.json$/, ''), nom: d.nom, createdAt: ts(d.createdAt), games: g, activity: act, loginCount: d.loginCount || 0, lastLogin: ts(d.lastLogin), logins };
+    });
+    return res.json({ players: rows.filter(Boolean), now: Date.now() });
   }
 
   const key = String(b.key || '');
