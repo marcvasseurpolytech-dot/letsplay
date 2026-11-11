@@ -27,6 +27,10 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 .cell{width:var(--cs);height:var(--cs);background:var(--cream);border:2px solid var(--navy);border-radius:3px;display:flex;align-items:center;justify-content:center;font:800 calc(var(--cs)*.58) "JetBrains Mono",monospace;color:var(--navy);cursor:pointer;line-height:1}
 .cell.pv{background:#fff3b8;color:#b8941a}
 .cell.cur{background:var(--yel);box-shadow:0 0 0 2px #fff,0 0 10px var(--yel);color:#6b5200}
+.cell.hv{box-shadow:0 0 0 2px var(--cy);background:#d9f7ff}
+.cell.cur.hv{background:var(--yel)}
+.cell.hint.hv{background:#bff5d3}
+#tip{position:fixed;z-index:30;pointer-events:none;display:none;background:#0d1b3a;border:2px solid var(--cy);color:#fff;border-radius:6px;padding:5px 9px;font:700 13px "JetBrains Mono",monospace;white-space:nowrap}
 .cell.hint{background:#bff5d3;color:#0b5a2c}
 .cell.bad{background:#ff8a8a;color:#600}
 .cell.ok{animation:pop .5s}
@@ -91,12 +95,13 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
   <div id="btns"><button id="bh">HINT -50 (F1)</button><button id="bu" class="g">UNDO (F3)</button><button id="bz1" class="g">ZOOM -</button><button id="bz2" class="g">ZOOM +</button><button id="bhide" class="g">HIDE PLACED</button><button id="bs" class="g">SND</button></div>
 </div>
 
+<div id="tip"></div>
 <div class="ov on" id="menu"><div class="panel">
   <h1>TOEIC<span>GRID</span></h1>
   <p class="sub">One big fit-in puzzle like in the magazines: place the 150 words (logical connectors and TOEIC vocabulary) in the grid.</p>
   <div id="who" class="sub"></div>
   <div id="lvl"></div>
-  <div class="keys">Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>One word is already placed to start the grid. When a word is found, its French translation blinks in the list. Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
+  <div class="keys">Hover a line to see its number of letters. Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>One word is already placed to start the grid. When a word is found, its French translation blinks in the list. Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
   <p class="credit">Scores are kept on this device.<br>A game by Marc VASSEUR / Polytech Lille | marc.vasseur@polytech-lille.fr</p>
 </div></div>
 
@@ -200,9 +205,33 @@ function buildGrid() {
     const [r, c] = key.split(',').map(Number);
     const d = document.createElement('div'); d.className = 'cell'; d.style.gridRow = r + 1; d.style.gridColumn = c + 1;
     d.addEventListener('click', () => clickCell(r, c));
+    d.addEventListener('mouseenter', (ev) => hoverCell(r, c, ev));
+    d.addEventListener('mousemove', (ev) => moveTip(ev));
+    d.addEventListener('mouseleave', () => hoverCell(-1, -1));
     g.appendChild(d); cellEls[key] = d;
   });
   sizeGrid();
+}
+let HV = {};
+function slotsAt(r, c) {
+  const key = r + ',' + c, out = [];
+  L.slots.forEach((s, i) => { for (let k = 0; k < s.n; k++) if (cellKey(s, k) === key) { out.push(i); break; } });
+  return out;
+}
+function hoverCell(r, c, ev) {
+  const tip = $('#tip'); HV = {};
+  if (r < 0) { tip.style.display = 'none'; refresh(); return; }
+  const here = slotsAt(r, c);
+  here.forEach((i) => { const s = L.slots[i]; for (let k = 0; k < s.n; k++) HV[cellKey(s, k)] = 1; });
+  tip.innerHTML = here.map((i) => { const s = L.slots[i]; return s.n + ' letters ' + (s.d === 'A' ? '&#8594;' : '&#8595;'); }).join(' &nbsp;|&nbsp; ');
+  tip.style.display = 'block'; if (ev) moveTip(ev);
+  refresh();
+}
+function moveTip(ev) {
+  const tip = $('#tip'); let x = ev.clientX + 14, y = ev.clientY + 16;
+  if (x + tip.offsetWidth > window.innerWidth - 4) x = ev.clientX - tip.offsetWidth - 10;
+  if (y + tip.offsetHeight > window.innerHeight - 4) y = ev.clientY - tip.offsetHeight - 10;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
 }
 function sizeGrid() { const g = $('#grid'); if (g) g.style.setProperty('--cs', CS + 'px'); }
 
@@ -255,6 +284,7 @@ function refresh() {
     let cls = 'cell', txt = m[key] || '';
     if (cu[key]) { cls += ' cur'; if (bl[key]) txt = bl[key]; }
     if (hn[key]) cls += ' hint';
+    if (HV[key]) cls += ' hv';
     if (flash && flash[key]) cls += ' bad';
     e.className = cls; e.textContent = txt;
   });
