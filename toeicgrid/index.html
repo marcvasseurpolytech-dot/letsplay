@@ -94,7 +94,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
   <p class="sub">One big fit-in puzzle like in the magazines: place the 150 words (logical connectors and TOEIC vocabulary) in the grid.</p>
   <div id="who" class="sub"></div>
   <div id="lvl"></div>
-  <div class="keys">Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
+  <div class="keys">Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>One word is already placed to start the grid. Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
   <p class="credit">Scores are kept on this device.<br>A game by Marc VASSEUR / Polytech Lille | marc.vasseur@polytech-lille.fr</p>
 </div></div>
 
@@ -166,7 +166,12 @@ function start(resume) {
   act = -1; buf = []; typed = []; undo = []; pen = 0; secs = 0; won = false; started = false; flash = null; msg = '';
   const sv = resume ? readSave() : null;
   if (sv) { L.slots.forEach((s, i) => { const w = sv.p[skey(s)]; if (w) { placed[i] = w; hinted[i] = sv.h.includes(skey(s)); } }); pen = sv.pen | 0; secs = sv.secs | 0; started = true; }
-  else lsSet(SAVEKEY, '');
+  else {
+    lsSet(SAVEKEY, '');
+    // one word is given to start the grid (the longest one), locked like a hint but free
+    let g = 0; L.slots.forEach((s, i) => { if (s.n > L.slots[g].n) g = i; });
+    placed[g] = L.slots[g].ans; hinted[g] = true;
+  }
   wordOrder = L.slots.map((s) => s.ans).sort((a, b) => a.length - b.length || a.localeCompare(b));
   $('#menu').classList.remove('on'); $('#win').classList.remove('on');
   $('#lvn').textContent = L.slots.length + ' WORDS';
