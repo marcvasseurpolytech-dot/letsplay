@@ -525,32 +525,30 @@ function crunchBuf(a, dur, hold) {            // bruit échantillonné-bloqué :
   for (let i = 0; i < n; i++) { if (i % hold === 0) v = Math.random() * 2 - 1; d[i] = v * Math.pow(1 - i / n, 1.2); }
   return buf;
 }
-// explosion 8 bits façon console : canal de bruit LFSR dont la hauteur chute par paliers, volume sur 4 bits qui décroît par marches, + canal carré grave qui plonge
+// explosion 8 bits façon salle d'arcade : crépitement de bruit brillant, sans grave (type charley / papier alu froissé), volume sur 4 bits qui s'éteint par à-coups
 function chipBoomBuf(a, k) {
-  const sr = a.sampleRate, dur = 0.45 + 0.55 * k, n = Math.floor(sr * dur), buf = a.createBuffer(1, n, sr), d = buf.getChannelData(0);
-  let lfsr = 0x7fff, noiseV = 1, hold = 0, ph = 0;
-  const step = Math.floor(sr / 60);                                       // le volume et la hauteur évoluent à 60 images/s
-  let amp = 1, fq = 4, sqf = 120;
+  const sr = a.sampleRate, dur = 0.22 + 0.42 * k, n = Math.floor(sr * dur), buf = a.createBuffer(1, n, sr), d = buf.getChannelData(0);
+  let lfsr = 0x7fff, noiseV = 1, hold = 0;
+  const step = Math.floor(sr / 60);
+  let amp = 1, fq = 1;
   for (let i = 0; i < n; i++) {
     const x = i / n;
     if (i % step === 0) {
-      amp = Math.floor(Math.pow(1 - x, 1.4) * 15 + 0.5) / 15;             // volume 4 bits
-      fq = Math.round(2 + x * x * 90);                                    // période du bruit (en échantillons) : de grave-aigu à très grave
-      sqf = Math.round(150 * Math.pow(0.2, Math.min(1, x * 1.6)));        // carré : 150 Hz -> 30 Hz par paliers entiers
+      const jitter = 0.55 + Math.random() * 0.45;                        // froissement : le volume tremble d'une image à l'autre
+      amp = Math.floor(Math.pow(1 - x, 1.8) * jitter * 15 + 0.5) / 15;
+      fq = 1 + Math.floor(x * 5 + Math.random() * 2);                    // reste très aigu : 1 à 7 échantillons par bit de bruit
     }
     if (hold <= 0) { const bit = (lfsr ^ (lfsr >> 1)) & 1; lfsr = (lfsr >> 1) | (bit << 14); noiseV = (lfsr & 1) ? 1 : -1; hold = fq; }
     hold--;
-    ph += sqf / sr; if (ph >= 1) ph -= 1;
-    const sq = ph < 0.5 ? 1 : -1, sqAmp = Math.max(0, 1 - x * 1.7);
-    let v = noiseV * amp * 0.75 + sq * Math.floor(sqAmp * 15) / 15 * 0.45;
-    d[i] = Math.max(-1, Math.min(1, Math.round(v * 7) / 7));              // quantification 3 bits : son crunché
+    d[i] = noiseV * amp;
   }
   return buf;
 }
 function boomAt(a, out, t, k) {
   const s = a.createBufferSource(); s.buffer = chipBoomBuf(a, k);
-  const g = a.createGain(); g.gain.value = 0.95;
-  s.connect(g); g.connect(out); s.start(t);
+  const hp = a.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1800; hp.Q.value = 0.5;   // enlève tout le grave
+  const g = a.createGain(); g.gain.value = 0.55;
+  s.connect(hp); hp.connect(g); g.connect(out); s.start(t);
   return s;
 }
 function boomSnd(k, delay) {
