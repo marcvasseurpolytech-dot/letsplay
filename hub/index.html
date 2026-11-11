@@ -133,6 +133,7 @@ var GAMES=[
   {id:'td',name:'TOEICdig',href:'../toeicdig/',desc:'Dig, pump the monsters 3 times: preterit, past participle, then BOOM and the French. Burst them in the French order for a bonus.',tags:['irregular verbs'],stat:function(d){return d?'Best score '+(d.tdBest||0)+' | verbs '+nWords(d.td)+' / 93':''}},
   {id:'tg',name:'TOEICgalaxy',href:'../toeicgalaxy/',desc:'Insect waves dive and shoot. Shielded chiefs carry the answers: hit the right one twice. Tractor beam, dual fighter, capsules, kamikazes.',tags:['grammar','irregular verbs'],stat:function(d){return d?'Best score '+(d.tgBest||0)+' | verbs '+nWords(d.tg)+' / 93':''}},
   {id:'tr',name:'TOEICrunner',href:'../toeicrunner/',desc:'Lode Runner style: run, climb and dig to collect the gold bars that carry the right words. Trap the guards in your holes, jump, reach the exit.',tags:['irregular verbs','connectors','vocabulary'],stat:function(d){return d?'Best score '+(d.trBest||0)+' | words '+nWords(d.tr)+' / 27':''}},
+  {id:'cg',name:'TOEICgrid',href:'../toeicgrid/',desc:'Magazine-style fit-in puzzle: place every logical connector in the grid, sorted by number of letters. 3 levels, hints, and a revision table at the end.',tags:['connectors'],stat:function(){var b=localBest();return 'Best score '+b.s+' | levels '+b.n+' / 3'}},
   {id:'wb',name:'Word Bridge',href:'../wordbridge/',desc:'Build the bridge with the right answers. Grammar and vocabulary levels.',tags:['connectors','verbs','word families','collocations'],stat:function(d){return d?'Best score '+(d.wbBest||0):''}},
   {id:'ae',name:'Arrow Escape',href:'../',desc:'Dodge, aim and answer TOEIC questions to escape.',tags:['TOEIC questions'],stat:function(d){return d?'Best score '+(d.best||0):''}},
   {id:'xm',name:'Christmas Village',href:'../noel/',desc:'A seasonal village game with mixed TOEIC exercises.',tags:['mixed practice'],stat:function(d){return d?'Best score '+(d.xmBest||0):''}}
@@ -161,7 +162,8 @@ function beep(f,d,type,f2){
   }catch(e){}
 }
 function coinSound(){beep(988,.09,'square');setTimeout(function(){beep(1319,.3,'square')},90)}
-function bestOf(g){var d=P.data;if(!d)return 0;var k={sc:'scBest',tn:'tnBest',td:'tdBest',ti:'tiBest',tg:'tgBest',tr:'trBest',wb:'wbBest',ae:'best',xm:'xmBest'}[g.id];return d[k]||0}
+function localBest(){var s=0,n=0;try{var b=JSON.parse(localStorage.getItem('tcgBest')||'{}');Object.keys(b).forEach(function(k){n++;s=Math.max(s,b[k].score||0)})}catch(e){}return {s:s,n:n}}
+function bestOf(g){var d=P.data;if(g.id==='cg')return localBest().s;if(!d)return 0;var k={sc:'scBest',tn:'tnBest',td:'tdBest',ti:'tiBest',tg:'tgBest',tr:'trBest',wb:'wbBest',ae:'best',xm:'xmBest'}[g.id];return d[k]||0}
 function sel(i,quiet){
   S=(i+GAMES.length)%GAMES.length;
   var rows=document.querySelectorAll('#menu .row');if(!rows.length)return;
