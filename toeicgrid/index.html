@@ -19,7 +19,9 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 .stat{color:var(--cy);text-align:center}
 .stat b{display:block;color:#fff;font-weight:400}
 #main{flex:1;min-height:0;display:flex;gap:10px}
-#gpane{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;position:relative}
+#gpane{flex:1;min-width:0;overflow:auto;position:relative;border:2px solid rgba(56,232,255,.25);border-radius:8px;background:rgba(0,0,0,.25)}
+#gwrap{display:inline-block;padding:12px;min-width:100%;min-height:100%}
+#grid{margin:0 auto}
 #grid{display:grid;gap:2px;position:relative}
 .blk{width:var(--cs);height:var(--cs);background:#10182f;border-radius:3px}
 .cell{width:var(--cs);height:var(--cs);background:var(--cream);border:2px solid var(--navy);border-radius:3px;display:flex;align-items:center;justify-content:center;font:800 calc(var(--cs)*.58) "JetBrains Mono",monospace;color:var(--navy);cursor:pointer;line-height:1}
@@ -80,19 +82,19 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
     <button id="bm">MENU</button>
   </div>
   <div id="main">
-    <div id="gpane"><div id="grid"></div></div>
-    <div id="side"><h3>WORDS TO FIT IN THE GRID</h3><div id="list"></div></div>
+    <div id="gpane"><div id="gwrap"><div id="grid"></div></div></div>
+    <div id="side"><h3>WORDS TO FIT IN THE GRID</h3><div id="rem" style="text-align:center;color:#fff;font-size:11px;margin-bottom:4px"></div><div id="list"></div></div>
   </div>
   <div id="info"></div>
-  <div id="btns"><button id="bh">HINT -50 (F1)</button><button id="bc">CHECK -30 / WRONG (F2)</button><button id="bu" class="g">UNDO (F3)</button><button id="bs" class="g">SND</button></div>
+  <div id="btns"><button id="bh">HINT -50 (F1)</button><button id="bu" class="g">UNDO (F3)</button><button id="bz1" class="g">ZOOM -</button><button id="bz2" class="g">ZOOM +</button><button id="bhide" class="g">HIDE PLACED</button><button id="bs" class="g">SND</button></div>
 </div>
 
 <div class="ov on" id="menu"><div class="panel">
   <h1>TOEIC<span>GRID</span></h1>
-  <p class="sub">Fit-in puzzle like in the magazines: place every logical connector and TOEIC word in the grid.</p>
+  <p class="sub">One big fit-in puzzle like in the magazines: place the 150 words (logical connectors and TOEIC vocabulary) in the grid.</p>
   <div id="who" class="sub"></div>
   <div id="lvl"></div>
-  <div class="keys">Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A correct word from the list is placed; otherwise it is refused.<br>Letters already given by crossing words are filled in for you.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F2: check (-30 per wrong word) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back.<br>Words are grouped by number of letters (spaces do not count: AS SOON AS = 8 letters). Each word is used once.</div>
+  <div class="keys">Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
   <p class="credit">Scores are kept on this device.<br>A game by Marc VASSEUR / Polytech Lille | marc.vasseur@polytech-lille.fr</p>
 </div></div>
 
@@ -100,8 +102,8 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 
 <script>
 'use strict';
-const LEVELS = [{"name": "WARM-UP", "rows": 8, "cols": 8, "slots": [{"d": "A", "r": 0, "c": 0, "n": 6, "ans": "SUCHAS"}, {"d": "A", "r": 2, "c": 4, "n": 3, "ans": "AND"}, {"d": "A", "r": 3, "c": 0, "n": 5, "ans": "STILL"}, {"d": "A", "r": 3, "c": 6, "n": 2, "ans": "IF"}, {"d": "A", "r": 5, "c": 4, "n": 2, "ans": "OR"}, {"d": "A", "r": 6, "c": 1, "n": 3, "ans": "SET"}, {"d": "A", "r": 7, "c": 0, "n": 3, "ans": "NOR"}, {"d": "A", "r": 7, "c": 4, "n": 4, "ans": "ONCE"}, {"d": "D", "r": 0, "c": 0, "n": 6, "ans": "SOASTO"}, {"d": "D", "r": 6, "c": 1, "n": 2, "ans": "SO"}, {"d": "D", "r": 2, "c": 2, "n": 6, "ans": "EITHER"}, {"d": "D", "r": 2, "c": 4, "n": 4, "ans": "ALSO"}, {"d": "D", "r": 5, "c": 5, "n": 3, "ans": "RUN"}, {"d": "D", "r": 1, "c": 6, "n": 4, "ans": "EDIT"}, {"d": "D", "r": 5, "c": 7, "n": 3, "ans": "USE"}]}, {"name": "STANDARD", "rows": 10, "cols": 10, "slots": [{"d": "A", "r": 0, "c": 0, "n": 8, "ans": "LIKEWISE"}, {"d": "A", "r": 2, "c": 2, "n": 8, "ans": "ASWELLAS"}, {"d": "A", "r": 3, "c": 8, "n": 2, "ans": "SO"}, {"d": "A", "r": 4, "c": 0, "n": 6, "ans": "EITHER"}, {"d": "A", "r": 4, "c": 7, "n": 2, "ans": "AS"}, {"d": "A", "r": 5, "c": 8, "n": 2, "ans": "OR"}, {"d": "A", "r": 6, "c": 2, "n": 7, "ans": "OWINGTO"}, {"d": "A", "r": 8, "c": 7, "n": 3, "ans": "TAX"}, {"d": "A", "r": 9, "c": 1, "n": 6, "ans": "THOUGH"}, {"d": "D", "r": 2, "c": 0, "n": 7, "ans": "WHETHER"}, {"d": "D", "r": 0, "c": 1, "n": 2, "ans": "IF"}, {"d": "D", "r": 2, "c": 2, "n": 8, "ans": "ALTHOUGH"}, {"d": "D", "r": 4, "c": 5, "n": 4, "ans": "RENT"}, {"d": "D", "r": 0, "c": 6, "n": 4, "ans": "SALE"}, {"d": "D", "r": 2, "c": 8, "n": 8, "ans": "ASSOONAS"}, {"d": "D", "r": 0, "c": 9, "n": 4, "ans": "ALSO"}]}, {"name": "EXPERT", "rows": 12, "cols": 12, "slots": [{"d": "A", "r": 0, "c": 1, "n": 2, "ans": "IF"}, {"d": "A", "r": 0, "c": 4, "n": 8, "ans": "ASSOONAS"}, {"d": "A", "r": 2, "c": 0, "n": 3, "ans": "NOR"}, {"d": "A", "r": 3, "c": 3, "n": 7, "ans": "DESPITE"}, {"d": "A", "r": 5, "c": 0, "n": 12, "ans": "CONSEQUENTLY"}, {"d": "A", "r": 7, "c": 4, "n": 7, "ans": "NEITHER"}, {"d": "A", "r": 9, "c": 1, "n": 11, "ans": "NONETHELESS"}, {"d": "A", "r": 11, "c": 0, "n": 3, "ans": "YET"}, {"d": "A", "r": 11, "c": 8, "n": 2, "ans": "AS"}, {"d": "D", "r": 1, "c": 0, "n": 6, "ans": "INFACT"}, {"d": "D", "r": 7, "c": 1, "n": 5, "ans": "SINCE"}, {"d": "D", "r": 0, "c": 2, "n": 3, "ans": "FOR"}, {"d": "D", "r": 5, "c": 3, "n": 2, "ans": "SO"}, {"d": "D", "r": 8, "c": 3, "n": 3, "ans": "AND"}, {"d": "D", "r": 0, "c": 5, "n": 12, "ans": "SUBSEQUENTLY"}, {"d": "D", "r": 0, "c": 7, "n": 2, "ans": "OR"}, {"d": "D", "r": 5, "c": 7, "n": 6, "ans": "EITHER"}, {"d": "D", "r": 0, "c": 9, "n": 12, "ans": "NEVERTHELESS"}, {"d": "D", "r": 0, "c": 11, "n": 6, "ans": "SURVEY"}, {"d": "D", "r": 8, "c": 11, "n": 4, "ans": "ASIF"}]}];
-const WORDS = {"DESPITE": ["DESPITE", "malgré", "concession"], "USE": ["USE", "utiliser", "vocabulary (general)"], "ALTHOUGH": ["ALTHOUGH", "bien que", "concession"], "NEVERTHELESS": ["NEVERTHELESS", "néanmoins", "concession"], "YET": ["YET", "pourtant, cependant", "contrast"], "SALE": ["SALE", "vente", "vocabulary (marketing)"], "THOUGH": ["THOUGH", "bien que, quand même", "concession"], "OWINGTO": ["OWING TO", "en raison de", "cause"], "RENT": ["RENT", "louer, loyer", "vocabulary (finance)"], "ASIF": ["AS IF", "comme si", "comparison"], "IF": ["IF", "si", "condition"], "TAX": ["TAX", "taxe, impôt", "vocabulary (finance)"], "OR": ["OR", "ou", "choice"], "ASSOONAS": ["AS SOON AS", "dès que", "time"], "CONSEQUENTLY": ["CONSEQUENTLY", "par conséquent", "consequence"], "ALSO": ["ALSO", "aussi", "addition"], "SURVEY": ["SURVEY", "enquête, sondage", "vocabulary (marketing)"], "SOASTO": ["SO AS TO", "afin de", "purpose"], "SET": ["SET", "fixer, régler", "vocabulary (general)"], "LIKEWISE": ["LIKEWISE", "de même", "comparison"], "SO": ["SO", "donc, alors, de sorte que", "consequence"], "SINCE": ["SINCE", "depuis, puisque", "time / cause"], "NOR": ["NOR", "ni", "addition"], "EITHER": ["EITHER", "soit (either ... or)", "choice"], "SUCHAS": ["SUCH AS", "tel que", "example"], "ONCE": ["ONCE", "une fois que", "time"], "STILL": ["STILL", "pourtant, malgré tout", "contrast"], "SUBSEQUENTLY": ["SUBSEQUENTLY", "par la suite", "time"], "EDIT": ["EDIT", "modifier, réviser", "vocabulary (office)"], "NEITHER": ["NEITHER", "ni (neither ... nor)", "choice"], "FOR": ["FOR", "car", "cause"], "AND": ["AND", "et", "addition"], "ASWELLAS": ["AS WELL AS", "ainsi que", "addition"], "WHETHER": ["WHETHER", "si (whether ... or)", "choice"], "NONETHELESS": ["NONETHELESS", "néanmoins", "concession"], "INFACT": ["IN FACT", "en fait", "emphasis"], "RUN": ["RUN", "diriger, gérer", "vocabulary (general)"], "AS": ["AS", "comme, alors que, car", "cause / time"]};
+const LEVELS = [{"name": "GRID", "rows": 37, "cols": 37, "slots": [{"d": "A", "r": 0, "c": 9, "n": 8, "ans": "DOWNTOWN"}, {"d": "A", "r": 1, "c": 0, "n": 8, "ans": "CASHFLOW"}, {"d": "A", "r": 1, "c": 17, "n": 11, "ans": "RESERVATION"}, {"d": "A", "r": 1, "c": 30, "n": 7, "ans": "WHETHER"}, {"d": "A", "r": 2, "c": 10, "n": 6, "ans": "SINGLE"}, {"d": "A", "r": 3, "c": 0, "n": 4, "ans": "EARN"}, {"d": "A", "r": 3, "c": 24, "n": 9, "ans": "ALLOWANCE"}, {"d": "A", "r": 4, "c": 5, "n": 9, "ans": "EXCELLENT"}, {"d": "A", "r": 4, "c": 18, "n": 7, "ans": "BESIDES"}, {"d": "A", "r": 4, "c": 32, "n": 5, "ans": "CHART"}, {"d": "A", "r": 5, "c": 0, "n": 3, "ans": "FLY"}, {"d": "A", "r": 5, "c": 14, "n": 4, "ans": "LINE"}, {"d": "A", "r": 6, "c": 3, "n": 8, "ans": "PAYCHECK"}, {"d": "A", "r": 6, "c": 21, "n": 11, "ans": "INFORMATION"}, {"d": "A", "r": 7, "c": 10, "n": 10, "ans": "EXPERIENCE"}, {"d": "A", "r": 7, "c": 34, "n": 2, "ans": "OR"}, {"d": "A", "r": 8, "c": 32, "n": 5, "ans": "MONEY"}, {"d": "A", "r": 9, "c": 0, "n": 6, "ans": "BEFORE"}, {"d": "A", "r": 9, "c": 7, "n": 10, "ans": "OBLIGATION"}, {"d": "A", "r": 9, "c": 18, "n": 3, "ans": "NOR"}, {"d": "A", "r": 9, "c": 22, "n": 9, "ans": "LIABILITY"}, {"d": "A", "r": 11, "c": 1, "n": 8, "ans": "PROVIDER"}, {"d": "A", "r": 11, "c": 12, "n": 7, "ans": "BECAUSE"}, {"d": "A", "r": 11, "c": 21, "n": 3, "ans": "USE"}, {"d": "A", "r": 11, "c": 26, "n": 7, "ans": "ADVANCE"}, {"d": "A", "r": 12, "c": 4, "n": 2, "ans": "AD"}, {"d": "A", "r": 13, "c": 0, "n": 8, "ans": "COMPLETE"}, {"d": "A", "r": 13, "c": 14, "n": 7, "ans": "RECEIPT"}, {"d": "A", "r": 13, "c": 22, "n": 9, "ans": "BECAUSEOF"}, {"d": "A", "r": 14, "c": 7, "n": 7, "ans": "REPLACE"}, {"d": "A", "r": 15, "c": 0, "n": 4, "ans": "VISA"}, {"d": "A", "r": 15, "c": 16, "n": 10, "ans": "CONFERENCE"}, {"d": "A", "r": 15, "c": 27, "n": 2, "ans": "IF"}, {"d": "A", "r": 15, "c": 30, "n": 3, "ans": "BAR"}, {"d": "A", "r": 16, "c": 10, "n": 4, "ans": "TOUR"}, {"d": "A", "r": 17, "c": 1, "n": 9, "ans": "EQUIPMENT"}, {"d": "A", "r": 17, "c": 22, "n": 4, "ans": "UNIT"}, {"d": "A", "r": 17, "c": 27, "n": 10, "ans": "EVENTHOUGH"}, {"d": "A", "r": 18, "c": 14, "n": 9, "ans": "MEANWHILE"}, {"d": "A", "r": 20, "c": 0, "n": 3, "ans": "RUN"}, {"d": "A", "r": 20, "c": 4, "n": 10, "ans": "COORDINATE"}, {"d": "A", "r": 20, "c": 15, "n": 4, "ans": "EASE"}, {"d": "A", "r": 20, "c": 22, "n": 9, "ans": "THEREFORE"}, {"d": "A", "r": 20, "c": 32, "n": 5, "ans": "AFTER"}, {"d": "A", "r": 22, "c": 0, "n": 7, "ans": "PERFORM"}, {"d": "A", "r": 22, "c": 11, "n": 12, "ans": "CONSEQUENTLY"}, {"d": "A", "r": 22, "c": 25, "n": 11, "ans": "FURTHERMORE"}, {"d": "A", "r": 24, "c": 0, "n": 4, "ans": "SEND"}, {"d": "A", "r": 24, "c": 5, "n": 10, "ans": "INCONTRAST"}, {"d": "A", "r": 24, "c": 16, "n": 7, "ans": "INSTEAD"}, {"d": "A", "r": 25, "c": 25, "n": 9, "ans": "ASARESULT"}, {"d": "A", "r": 26, "c": 11, "n": 10, "ans": "INADDITION"}, {"d": "A", "r": 26, "c": 23, "n": 3, "ans": "GAS"}, {"d": "A", "r": 27, "c": 3, "n": 9, "ans": "EXTENSION"}, {"d": "A", "r": 27, "c": 22, "n": 4, "ans": "PASS"}, {"d": "A", "r": 27, "c": 29, "n": 6, "ans": "SOTHAT"}, {"d": "A", "r": 28, "c": 15, "n": 7, "ans": "SESSION"}, {"d": "A", "r": 29, "c": 1, "n": 7, "ans": "RECOVER"}, {"d": "A", "r": 29, "c": 24, "n": 11, "ans": "NONETHELESS"}, {"d": "A", "r": 30, "c": 10, "n": 3, "ans": "GYM"}, {"d": "A", "r": 30, "c": 14, "n": 7, "ans": "BILLING"}, {"d": "A", "r": 31, "c": 0, "n": 9, "ans": "IMPORTANT"}, {"d": "A", "r": 31, "c": 25, "n": 8, "ans": "ASWELLAS"}, {"d": "A", "r": 32, "c": 11, "n": 9, "ans": "GUARANTEE"}, {"d": "A", "r": 33, "c": 1, "n": 4, "ans": "THUS"}, {"d": "A", "r": 34, "c": 5, "n": 5, "ans": "GROUP"}, {"d": "A", "r": 34, "c": 11, "n": 6, "ans": "EVENIF"}, {"d": "A", "r": 34, "c": 18, "n": 9, "ans": "FINANCIAL"}, {"d": "A", "r": 34, "c": 28, "n": 9, "ans": "PURCHASER"}, {"d": "A", "r": 35, "c": 0, "n": 5, "ans": "POWER"}, {"d": "A", "r": 36, "c": 5, "n": 4, "ans": "BOTH"}, {"d": "A", "r": 36, "c": 10, "n": 10, "ans": "ACCOUNTANT"}, {"d": "A", "r": 36, "c": 24, "n": 3, "ans": "ADD"}, {"d": "A", "r": 36, "c": 28, "n": 6, "ans": "INCASE"}, {"d": "D", "r": 19, "c": 0, "n": 8, "ans": "PROPOSAL"}, {"d": "D", "r": 1, "c": 1, "n": 9, "ans": "AVAILABLE"}, {"d": "D", "r": 11, "c": 1, "n": 8, "ans": "PROVIDED"}, {"d": "D", "r": 28, "c": 1, "n": 9, "ans": "PROMOTION"}, {"d": "D", "r": 9, "c": 2, "n": 3, "ans": "FOR"}, {"d": "D", "r": 19, "c": 2, "n": 8, "ans": "ENTRANCE"}, {"d": "D", "r": 0, "c": 3, "n": 4, "ans": "THAN"}, {"d": "D", "r": 27, "c": 3, "n": 9, "ans": "ENCLOSURE"}, {"d": "D", "r": 6, "c": 4, "n": 8, "ans": "APPROVAL"}, {"d": "D", "r": 16, "c": 4, "n": 8, "ans": "DIRECTOR"}, {"d": "D", "r": 25, "c": 4, "n": 3, "ans": "BOX"}, {"d": "D", "r": 11, "c": 5, "n": 4, "ans": "IDEA"}, {"d": "D", "r": 0, "c": 6, "n": 2, "ans": "SO"}, {"d": "D", "r": 3, "c": 6, "n": 5, "ans": "EXACT"}, {"d": "D", "r": 16, "c": 6, "n": 10, "ans": "EMPLOYMENT"}, {"d": "D", "r": 27, "c": 6, "n": 8, "ans": "ELEVATOR"}, {"d": "D", "r": 8, "c": 7, "n": 7, "ans": "HOWEVER"}, {"d": "D", "r": 2, "c": 8, "n": 5, "ans": "WHERE"}, {"d": "D", "r": 16, "c": 8, "n": 9, "ans": "INORDERTO"}, {"d": "D", "r": 31, "c": 8, "n": 6, "ans": "THOUGH"}, {"d": "D", "r": 24, "c": 9, "n": 6, "ans": "NOTICE"}, {"d": "D", "r": 4, "c": 10, "n": 8, "ans": "LIKEWISE"}, {"d": "D", "r": 13, "c": 10, "n": 4, "ans": "SLOT"}, {"d": "D", "r": 18, "c": 10, "n": 3, "ans": "WIN"}, {"d": "D", "r": 0, "c": 11, "n": 5, "ans": "WHILE"}, {"d": "D", "r": 20, "c": 11, "n": 11, "ans": "ACCORDINGLY"}, {"d": "D", "r": 13, "c": 12, "n": 8, "ans": "OCCUPANT"}, {"d": "D", "r": 0, "c": 13, "n": 5, "ans": "TIGHT"}, {"d": "D", "r": 6, "c": 13, "n": 7, "ans": "NEITHER"}, {"d": "D", "r": 24, "c": 13, "n": 6, "ans": "SOASTO"}, {"d": "D", "r": 31, "c": 13, "n": 4, "ans": "LATE"}, {"d": "D", "r": 11, "c": 15, "n": 4, "ans": "AREA"}, {"d": "D", "r": 16, "c": 15, "n": 8, "ans": "WHENEVER"}, {"d": "D", "r": 26, "c": 15, "n": 11, "ans": "DESTINATION"}, {"d": "D", "r": 3, "c": 16, "n": 7, "ans": "CONCERN"}, {"d": "D", "r": 24, "c": 17, "n": 3, "ans": "NET"}, {"d": "D", "r": 0, "c": 18, "n": 3, "ans": "YET"}, {"d": "D", "r": 7, "c": 18, "n": 10, "ans": "CONVENIENT"}, {"d": "D", "r": 18, "c": 18, "n": 7, "ans": "WHEREAS"}, {"d": "D", "r": 26, "c": 18, "n": 9, "ans": "INSPITEOF"}, {"d": "D", "r": 3, "c": 19, "n": 5, "ans": "HENCE"}, {"d": "D", "r": 12, "c": 20, "n": 9, "ans": "OTHERWISE"}, {"d": "D", "r": 0, "c": 21, "n": 9, "ans": "PROVIDING"}, {"d": "D", "r": 22, "c": 21, "n": 4, "ans": "LOAN"}, {"d": "D", "r": 31, "c": 21, "n": 6, "ans": "INFACT"}, {"d": "D", "r": 11, "c": 22, "n": 12, "ans": "SUBSEQUENTLY"}, {"d": "D", "r": 0, "c": 23, "n": 3, "ans": "PAY"}, {"d": "D", "r": 26, "c": 23, "n": 3, "ans": "GAP"}, {"d": "D", "r": 31, "c": 23, "n": 5, "ans": "SINCE"}, {"d": "D", "r": 3, "c": 24, "n": 8, "ans": "ASLONGAS"}, {"d": "D", "r": 26, "c": 24, "n": 2, "ans": "AS"}, {"d": "D", "r": 15, "c": 25, "n": 6, "ans": "EITHER"}, {"d": "D", "r": 25, "c": 25, "n": 8, "ans": "ASSOONAS"}, {"d": "D", "r": 34, "c": 25, "n": 3, "ans": "AND"}, {"d": "D", "r": 0, "c": 26, "n": 4, "ans": "TOLL"}, {"d": "D", "r": 5, "c": 27, "n": 5, "ans": "PANEL"}, {"d": "D", "r": 11, "c": 27, "n": 7, "ans": "DESPITE"}, {"d": "D", "r": 20, "c": 27, "n": 10, "ans": "FOREXAMPLE"}, {"d": "D", "r": 2, "c": 28, "n": 3, "ans": "OWE"}, {"d": "D", "r": 29, "c": 28, "n": 4, "ans": "THEN"}, {"d": "D", "r": 6, "c": 29, "n": 9, "ans": "INSTEADOF"}, {"d": "D", "r": 16, "c": 29, "n": 12, "ans": "NEVERTHELESS"}, {"d": "D", "r": 0, "c": 30, "n": 7, "ans": "OWINGTO"}, {"d": "D", "r": 15, "c": 31, "n": 3, "ans": "ART"}, {"d": "D", "r": 25, "c": 31, "n": 5, "ans": "UNTIL"}, {"d": "D", "r": 0, "c": 32, "n": 6, "ans": "SELECT"}, {"d": "D", "r": 8, "c": 32, "n": 8, "ans": "MOREOVER"}, {"d": "D", "r": 22, "c": 32, "n": 4, "ans": "MAIL"}, {"d": "D", "r": 31, "c": 32, "n": 6, "ans": "SUCHAS"}, {"d": "D", "r": 27, "c": 33, "n": 4, "ans": "ALSO"}, {"d": "D", "r": 7, "c": 34, "n": 4, "ans": "ONCE"}, {"d": "D", "r": 12, "c": 34, "n": 12, "ans": "HEADQUARTERS"}, {"d": "D", "r": 32, "c": 34, "n": 4, "ans": "LEST"}, {"d": "D", "r": 0, "c": 35, "n": 9, "ans": "DEPARTURE"}, {"d": "D", "r": 10, "c": 36, "n": 8, "ans": "ALTHOUGH"}, {"d": "D", "r": 27, "c": 36, "n": 9, "ans": "ITINERARY"}]}];
+const WORDS = {"DOWNTOWN": ["DOWNTOWN", "centre-ville", "vocabulary (travel)"], "CASHFLOW": ["CASHFLOW", "trésorerie", "vocabulary (finance)"], "RESERVATION": ["RESERVATION", "réservation", "vocabulary (travel)"], "WHETHER": ["WHETHER", "si (whether ... or)", "choice"], "SINGLE": ["SINGLE", "unique, célibataire", "vocabulary (general)"], "EARN": ["EARN", "gagner (de l'argent)", "vocabulary (finance)"], "ALLOWANCE": ["ALLOWANCE", "indemnité", "vocabulary (hiring)"], "EXCELLENT": ["EXCELLENT", "excellent", "vocabulary (general)"], "BESIDES": ["BESIDES", "d'ailleurs, de plus", "addition"], "CHART": ["CHART", "graphique", "vocabulary (office)"], "FLY": ["FLY", "voler (en avion)", "vocabulary (travel)"], "LINE": ["LINE", "ligne", "vocabulary (general)"], "PAYCHECK": ["PAYCHECK", "chèque de paie", "vocabulary (hiring)"], "INFORMATION": ["INFORMATION", "information", "vocabulary (general)"], "EXPERIENCE": ["EXPERIENCE", "expérience", "vocabulary (hiring)"], "OR": ["OR", "ou", "choice"], "MONEY": ["MONEY", "argent", "vocabulary (finance)"], "BEFORE": ["BEFORE", "avant (que)", "time"], "OBLIGATION": ["OBLIGATION", "obligation", "vocabulary (legal)"], "NOR": ["NOR", "ni", "addition"], "LIABILITY": ["LIABILITY", "responsabilité", "vocabulary (legal)"], "PROVIDER": ["PROVIDER", "fournisseur", "vocabulary (general)"], "BECAUSE": ["BECAUSE", "parce que", "cause"], "USE": ["USE", "utiliser", "vocabulary (general)"], "ADVANCE": ["ADVANCE", "avance, progresser", "vocabulary (finance)"], "AD": ["AD", "annonce", "vocabulary (marketing)"], "COMPLETE": ["COMPLETE", "terminer, complet", "vocabulary (general)"], "RECEIPT": ["RECEIPT", "reçu", "vocabulary (finance)"], "BECAUSEOF": ["BECAUSE OF", "à cause de", "cause"], "REPLACE": ["REPLACE", "remplacer", "vocabulary (general)"], "VISA": ["VISA", "visa", "vocabulary (travel)"], "CONFERENCE": ["CONFERENCE", "conférence", "vocabulary (office)"], "IF": ["IF", "si", "condition"], "BAR": ["BAR", "bar, barre", "vocabulary (travel)"], "TOUR": ["TOUR", "visite, voyage organisé", "vocabulary (travel)"], "EQUIPMENT": ["EQUIPMENT", "équipement", "vocabulary (general)"], "UNIT": ["UNIT", "unité", "vocabulary (general)"], "EVENTHOUGH": ["EVEN THOUGH", "bien que", "concession"], "MEANWHILE": ["MEANWHILE", "pendant ce temps", "time"], "RUN": ["RUN", "diriger, gérer", "vocabulary (general)"], "COORDINATE": ["COORDINATE", "coordonner", "vocabulary (general)"], "EASE": ["EASE", "facilité", "vocabulary (general)"], "THEREFORE": ["THEREFORE", "donc, par conséquent", "consequence"], "AFTER": ["AFTER", "après (que)", "time"], "PERFORM": ["PERFORM", "exécuter, jouer", "vocabulary (general)"], "CONSEQUENTLY": ["CONSEQUENTLY", "par conséquent", "consequence"], "FURTHERMORE": ["FURTHERMORE", "en outre", "addition"], "SEND": ["SEND", "envoyer", "vocabulary (office)"], "INCONTRAST": ["IN CONTRAST", "en revanche", "contrast"], "INSTEAD": ["INSTEAD", "à la place, plutôt", "contrast"], "ASARESULT": ["AS A RESULT", "par conséquent", "consequence"], "INADDITION": ["IN ADDITION", "de plus", "addition"], "GAS": ["GAS", "gaz, essence", "vocabulary (travel)"], "EXTENSION": ["EXTENSION", "prolongation, poste (téléphone)", "vocabulary (office)"], "PASS": ["PASS", "passer, laissez-passer", "vocabulary (travel)"], "SOTHAT": ["SO THAT", "pour que, afin que", "purpose"], "SESSION": ["SESSION", "séance", "vocabulary (office)"], "RECOVER": ["RECOVER", "récupérer", "vocabulary (general)"], "NONETHELESS": ["NONETHELESS", "néanmoins", "concession"], "GYM": ["GYM", "salle de sport", "vocabulary (travel)"], "BILLING": ["BILLING", "facturation", "vocabulary (finance)"], "IMPORTANT": ["IMPORTANT", "important", "vocabulary (general)"], "ASWELLAS": ["AS WELL AS", "ainsi que", "addition"], "GUARANTEE": ["GUARANTEE", "garantie", "vocabulary (marketing)"], "THUS": ["THUS", "ainsi, donc", "consequence"], "GROUP": ["GROUP", "groupe", "vocabulary (general)"], "EVENIF": ["EVEN IF", "même si", "concession"], "FINANCIAL": ["FINANCIAL", "financier", "vocabulary (finance)"], "PURCHASER": ["PURCHASER", "acheteur", "vocabulary (finance)"], "POWER": ["POWER", "pouvoir, électricité", "vocabulary (general)"], "BOTH": ["BOTH", "les deux (both ... and)", "addition"], "ACCOUNTANT": ["ACCOUNTANT", "comptable", "vocabulary (finance)"], "ADD": ["ADD", "ajouter", "vocabulary (general)"], "INCASE": ["IN CASE", "au cas où", "condition"], "PROPOSAL": ["PROPOSAL", "proposition", "vocabulary (general)"], "AVAILABLE": ["AVAILABLE", "disponible", "vocabulary (general)"], "PROVIDED": ["PROVIDED", "à condition que", "condition"], "PROMOTION": ["PROMOTION", "promotion", "vocabulary (hiring)"], "FOR": ["FOR", "car", "cause"], "ENTRANCE": ["ENTRANCE", "entrée", "vocabulary (office)"], "THAN": ["THAN", "que (comparaison)", "comparison"], "ENCLOSURE": ["ENCLOSURE", "pièce jointe", "vocabulary (office)"], "APPROVAL": ["APPROVAL", "approbation", "vocabulary (office)"], "DIRECTOR": ["DIRECTOR", "directeur", "vocabulary (hiring)"], "BOX": ["BOX", "boîte, carton", "vocabulary (shipping)"], "IDEA": ["IDEA", "idée", "vocabulary (general)"], "SO": ["SO", "donc, alors, de sorte que", "consequence"], "EXACT": ["EXACT", "exact", "vocabulary (general)"], "EMPLOYMENT": ["EMPLOYMENT", "emploi", "vocabulary (hiring)"], "ELEVATOR": ["ELEVATOR", "ascenseur", "vocabulary (office)"], "HOWEVER": ["HOWEVER", "cependant", "contrast"], "WHERE": ["WHERE", "où", "place"], "INORDERTO": ["IN ORDER TO", "afin de", "purpose"], "THOUGH": ["THOUGH", "bien que, quand même", "concession"], "NOTICE": ["NOTICE", "préavis, remarquer", "vocabulary (hiring)"], "LIKEWISE": ["LIKEWISE", "de même", "comparison"], "SLOT": ["SLOT", "créneau", "vocabulary (office)"], "WIN": ["WIN", "gagner", "vocabulary (general)"], "WHILE": ["WHILE", "pendant que, tandis que", "time / contrast"], "ACCORDINGLY": ["ACCORDINGLY", "en conséquence", "consequence"], "OCCUPANT": ["OCCUPANT", "occupant", "vocabulary (general)"], "TIGHT": ["TIGHT", "serré", "vocabulary (general)"], "NEITHER": ["NEITHER", "ni (neither ... nor)", "choice"], "SOASTO": ["SO AS TO", "afin de", "purpose"], "LATE": ["LATE", "en retard", "vocabulary (general)"], "AREA": ["AREA", "zone, domaine", "vocabulary (general)"], "WHENEVER": ["WHENEVER", "chaque fois que", "time"], "DESTINATION": ["DESTINATION", "destination", "vocabulary (travel)"], "CONCERN": ["CONCERN", "préoccupation, concerner", "vocabulary (general)"], "NET": ["NET", "net, filet", "vocabulary (finance)"], "YET": ["YET", "pourtant, cependant", "contrast"], "CONVENIENT": ["CONVENIENT", "pratique", "vocabulary (general)"], "WHEREAS": ["WHEREAS", "alors que", "contrast"], "INSPITEOF": ["IN SPITE OF", "malgré", "concession"], "HENCE": ["HENCE", "d'où, par conséquent", "consequence"], "OTHERWISE": ["OTHERWISE", "sinon", "condition"], "PROVIDING": ["PROVIDING", "à condition que", "condition"], "LOAN": ["LOAN", "prêt", "vocabulary (finance)"], "INFACT": ["IN FACT", "en fait", "emphasis"], "SUBSEQUENTLY": ["SUBSEQUENTLY", "par la suite", "time"], "PAY": ["PAY", "payer, paie", "vocabulary (finance)"], "GAP": ["GAP", "écart, lacune", "vocabulary (general)"], "SINCE": ["SINCE", "depuis, puisque", "time / cause"], "ASLONGAS": ["AS LONG AS", "tant que, à condition que", "condition"], "AS": ["AS", "comme, alors que, car", "cause / time"], "EITHER": ["EITHER", "soit (either ... or)", "choice"], "ASSOONAS": ["AS SOON AS", "dès que", "time"], "AND": ["AND", "et", "addition"], "TOLL": ["TOLL", "péage", "vocabulary (travel)"], "PANEL": ["PANEL", "panel, comité", "vocabulary (general)"], "DESPITE": ["DESPITE", "malgré", "concession"], "FOREXAMPLE": ["FOR EXAMPLE", "par exemple", "example"], "OWE": ["OWE", "devoir (de l'argent)", "vocabulary (finance)"], "THEN": ["THEN", "puis, alors", "sequence"], "INSTEADOF": ["INSTEAD OF", "au lieu de", "contrast"], "NEVERTHELESS": ["NEVERTHELESS", "néanmoins", "concession"], "OWINGTO": ["OWING TO", "en raison de", "cause"], "ART": ["ART", "art", "vocabulary (general)"], "UNTIL": ["UNTIL", "jusqu'à ce que", "time"], "SELECT": ["SELECT", "sélectionner", "vocabulary (general)"], "MOREOVER": ["MOREOVER", "de plus", "addition"], "MAIL": ["MAIL", "courrier", "vocabulary (office)"], "SUCHAS": ["SUCH AS", "tel que", "example"], "ALSO": ["ALSO", "aussi", "addition"], "ONCE": ["ONCE", "une fois que", "time"], "HEADQUARTERS": ["HEADQUARTERS", "siège social", "vocabulary (general)"], "LEST": ["LEST", "de peur que", "purpose"], "DEPARTURE": ["DEPARTURE", "départ", "vocabulary (travel)"], "ALTHOUGH": ["ALTHOUGH", "bien que", "concession"], "ITINERARY": ["ITINERARY", "itinéraire", "vocabulary (travel)"]};
 function $(q) { return document.querySelector(q); }
 function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -128,32 +130,50 @@ const sWin = () => [523, 659, 784, 1046, 1318].forEach((f, i) => setTimeout(() =
 let L = null, li = 0, placed = [], hinted = [], act = -1, buf = [], typed = [], undo = [], pen = 0, secs = 0, timer = null, won = false, started = false, flash = null, msg = '';
 let wordOrder = [];
 
-function loadBest() { try { return JSON.parse(lsGet('tcgBest2') || '{}'); } catch (e) { return {}; } }
+function loadBest() { try { return JSON.parse(lsGet('tcgBest3') || '{}'); } catch (e) { return {}; } }
 function fmt(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+const SAVEKEY = 'tcgSave3';
+let CS = +(lsGet('tcgCS') || 34), hideUsed = false;
+function skey(s) { return s.d + ',' + s.r + ',' + s.c; }
+function saveGame() {
+  if (!L || won) return;
+  const p = {}, h = [];
+  L.slots.forEach((s, i) => { if (placed[i]) { p[skey(s)] = placed[i]; if (hinted[i]) h.push(skey(s)); } });
+  lsSet(SAVEKEY, JSON.stringify({ p, h, pen, secs, n: L.slots.length }));
+}
+function readSave() { try { const v = JSON.parse(lsGet(SAVEKEY) || 'null'); return v && v.p && Object.keys(v.p).length ? v : null; } catch (e) { return null; } }
 
 function showMenu() {
   clearInterval(timer); timer = null;
-  const b = loadBest();
+  const b = loadBest().best, sv = readSave();
   let u = null; try { u = JSON.parse(lsGet('letsplaySession') || 'null'); } catch (e) {}
   $('#who').innerHTML = u && u.user ? 'PLAYER: <b style="color:#ffd21f">' + esc(u.user.nom) + '</b>' : '';
-  $('#lvl').innerHTML = LEVELS.map((lv, i) => {
-    const bb = b[i];
-    return '<button class="lv" data-i="' + i + '"><span>' + (i + 1) + '. ' + esc(lv.name) + '<small>' + lv.slots.length + ' words | grid ' + lv.cols + ' x ' + lv.rows + '</small></span><span class="bs">' + (bb ? 'BEST ' + bb.score + '<br>' + fmt(bb.time) : 'NOT PLAYED') + '</span></button>';
-  }).join('');
-  document.querySelectorAll('#lvl .lv').forEach((e) => e.addEventListener('click', () => start(+e.getAttribute('data-i'))));
+  const lv = LEVELS[0];
+  $('#lvl').innerHTML =
+    '<p class="sub"><b style="color:#ffd21f">' + lv.slots.length + ' words</b> | grid ' + lv.cols + ' x ' + lv.rows + (b ? ' | best score <b style="color:#ffd21f">' + b.score + '</b> (' + fmt(b.time) + ')' : '') + '</p>' +
+    (sv ? '<button class="lv" id="mc"><span>CONTINUE<small>' + Object.keys(sv.p).length + ' / ' + lv.slots.length + ' words placed | time ' + fmt(sv.secs) + '</small></span><span class="bs">ENTER</span></button>' : '') +
+    '<button class="lv" id="mn"><span>' + (sv ? 'NEW GAME (erases the saved game)' : 'START THE GRID') + '</span><span class="bs">' + (sv ? '' : 'ENTER') + '</span></button>';
+  const mc = $('#mc'); if (mc) mc.addEventListener('click', () => start(true));
+  $('#mn').addEventListener('click', () => { if (sv && !confirm('Erase the saved game and start a new one?')) return; start(false); });
   $('#win').classList.remove('on'); $('#menu').classList.add('on');
 }
 
-function start(i) {
-  li = i; L = LEVELS[i]; placed = L.slots.map(() => null); hinted = L.slots.map(() => false);
+function start(resume) {
+  li = 0; L = LEVELS[0];
+  L.slots.sort((x, y) => x.r - y.r || x.c - y.c || x.d.localeCompare(y.d));
+  placed = L.slots.map(() => null); hinted = L.slots.map(() => false);
   act = -1; buf = []; typed = []; undo = []; pen = 0; secs = 0; won = false; started = false; flash = null; msg = '';
+  const sv = resume ? readSave() : null;
+  if (sv) { L.slots.forEach((s, i) => { const w = sv.p[skey(s)]; if (w) { placed[i] = w; hinted[i] = sv.h.includes(skey(s)); } }); pen = sv.pen | 0; secs = sv.secs | 0; started = true; }
+  else lsSet(SAVEKEY, '');
   wordOrder = L.slots.map((s) => s.ans).sort((a, b) => a.length - b.length || a.localeCompare(b));
   $('#menu').classList.remove('on'); $('#win').classList.remove('on');
-  $('#lvn').textContent = (i + 1) + '. ' + L.name;
+  $('#lvn').textContent = L.slots.length + ' WORDS';
   buildGrid(); buildList();
-  clearInterval(timer); timer = setInterval(() => { if (started && !won) { secs++; $('#tm').textContent = fmt(secs); } }, 1000);
-  $('#tm').textContent = '0:00';
-  activate(firstEmpty(-1));
+  clearInterval(timer); timer = setInterval(() => { if (started && !won) { secs++; $('#tm').textContent = fmt(secs); if (secs % 10 === 0) saveGame(); } }, 1000);
+  $('#tm').textContent = fmt(secs);
+  activate(nearestEmpty(-1));
 }
 
 /* ---------- grid ---------- */
@@ -177,18 +197,25 @@ function buildGrid() {
   });
   sizeGrid();
 }
-function sizeGrid() {
-  const p = $('#gpane'); if (!p || !L) return;
-  const w = p.clientWidth - 8, h = p.clientHeight - 8;
-  const cs = Math.max(18, Math.min(Math.floor((w - 2 * (L.cols - 1)) / L.cols), Math.floor((h - 2 * (L.rows - 1)) / L.rows), 60));
-  $('#grid').style.setProperty('--cs', cs + 'px');
-}
-window.addEventListener('resize', sizeGrid);
+function sizeGrid() { const g = $('#grid'); if (g) g.style.setProperty('--cs', CS + 'px'); }
 
 function letterMap(skip) {
   const m = {};
   L.slots.forEach((s, i) => { const w = placed[i]; if (w && i !== skip) for (let k = 0; k < s.n; k++) m[cellKey(s, k)] = w[k]; });
   return m;
+}
+function nearestEmpty(from) {
+  let best = -1, bd = 1e9;
+  const o = from >= 0 ? L.slots[from] : { r: 0, c: 0 };
+  L.slots.forEach((s, i) => { if (placed[i] || i === from) return; const d = Math.abs(s.r - o.r) + Math.abs(s.c - o.c); if (d < bd) { bd = d; best = i; } });
+  return best;
+}
+function scrollToSlot(i) {
+  if (i < 0) return;
+  const s = L.slots[i], mid = cellEls[cellKey(s, s.n >> 1)], p = $('#gpane'); if (!mid || !p) return;
+  const pr = p.getBoundingClientRect(), mr = mid.getBoundingClientRect();
+  const dx = mr.left + mr.width / 2 - (pr.left + pr.width / 2), dy = mr.top + mr.height / 2 - (pr.top + pr.height / 2);
+  if (Math.abs(dx) > pr.width * 0.3 || Math.abs(dy) > pr.height * 0.3) p.scrollBy({ left: dx, top: dy, behavior: 'smooth' });
 }
 function firstEmpty(from) {
   const n = L.slots.length;
@@ -206,7 +233,7 @@ function activate(i) {
     const s = L.slots[i], m = letterMap(i);
     for (let k = 0; k < s.n; k++) { const ch = m[cellKey(s, k)]; buf.push(ch || null); typed.push(false); }
   }
-  msg = ''; refresh();
+  msg = ''; refresh(); scrollToSlot(i);
   if (i >= 0 && buf.every(Boolean)) { startClock(); submit(); }
 }
 
@@ -224,8 +251,8 @@ function refresh() {
     if (flash && flash[key]) cls += ' bad';
     e.className = cls; e.textContent = txt;
   });
-  document.querySelectorAll('#list .w').forEach((e) => { e.classList.toggle('used', placed.includes(e.getAttribute('data-w'))); });
-  $('#cnt').textContent = placed.filter(Boolean).length + ' / ' + L.slots.length;
+  document.querySelectorAll('#list .w').forEach((e) => { const u = placed.includes(e.getAttribute('data-w')); e.classList.toggle('used', u); e.style.display = (u && hideUsed) ? 'none' : ''; });
+  $('#cnt').textContent = placed.filter(Boolean).length + ' / ' + L.slots.length; $('#rem').textContent = (L.slots.length - placed.filter(Boolean).length) + ' words left';
   $('#pen').textContent = pen;
   infoBar();
 }
@@ -273,7 +300,7 @@ function submit() {
   const i = act; placed[i] = w; undo.push(i); sPlace();
   for (let k = 0; k < s.n; k++) cellEls[cellKey(s, k)].classList.add('ok');
   if (placed.every(Boolean)) { act = -1; refresh(); finish(); return; }
-  activate(firstEmpty(i));
+  saveGame(); activate(nearestEmpty(i));
 }
 function reject(text) {
   sBad(); msg = text; flash = {};
@@ -284,7 +311,7 @@ function reject(text) {
 function takeBack(i) {
   if (won || !placed[i]) return;
   if (hinted[i]) { sBad(); return; }
-  placed[i] = null; undo = undo.filter((x) => x !== i); sTick(); activate(i);
+  placed[i] = null; undo = undo.filter((x) => x !== i); sTick(); saveGame(); activate(i);
 }
 function clickCell(r, c) {
   if (won) return;
@@ -302,41 +329,32 @@ function clickCell(r, c) {
 function doUndo() { if (won || !undo.length) return; takeBack(undo[undo.length - 1]); }
 function doHint() {
   if (won) return;
-  let t = act; if (t < 0 || placed[t]) t = L.slots.findIndex((s, i) => !placed[i]);
+  let t = act; if (t < 0 || placed[t]) t = nearestEmpty(act);
   if (t < 0) return;
   startClock();
   const ans = L.slots[t].ans;
   const j = placed.indexOf(ans); if (j >= 0 && j !== t) { placed[j] = null; hinted[j] = false; }
   placed[t] = ans; hinted[t] = true; pen += 50; undo = undo.filter((x) => x !== t && x !== j); sPlace();
+  const m = {}; const s = L.slots[t]; for (let k = 0; k < s.n; k++) m[cellKey(s, k)] = ans[k];
+  L.slots.forEach((q, i) => { if (i === t || !placed[i] || hinted[i]) return; for (let k = 0; k < q.n; k++) { const c = m[cellKey(q, k)]; if (c && c !== placed[i][k]) { placed[i] = null; undo = undo.filter((x) => x !== i); break; } } });
   if (placed.every(Boolean)) { act = -1; refresh(); finish(); return; }
-  activate(firstEmpty(t));
+  saveGame(); activate(nearestEmpty(t));
 }
-function doCheck() {
-  if (won) return;
-  const bad = []; L.slots.forEach((s, i) => { if (placed[i] && placed[i] !== s.ans) bad.push(i); });
-  if (!bad.length) { beep(880, .15); msg = '<b>All the words placed so far are correct.</b>'; refresh(); return; }
-  startClock(); flash = {};
-  bad.forEach((i) => { const s = L.slots[i]; for (let k = 0; k < s.n; k++) flash[cellKey(s, k)] = 1; });
-  sBad(); pen += 30 * bad.length; refresh();
-  setTimeout(() => { flash = null; bad.forEach((i) => { placed[i] = null; undo = undo.filter((x) => x !== i); }); activate(placed[act] || act < 0 ? firstEmpty(-1) : act); msg = '<b>' + bad.length + ' wrong word' + (bad.length > 1 ? 's' : '') + ' removed (-' + (30 * bad.length) + ').</b>'; refresh(); }, 700);
-}
-
 function finish() {
   won = true; clearInterval(timer);
-  const n = L.slots.length, bonus = Math.max(0, n * 25 - secs) * 2, score = Math.max(0, 100 * n + bonus - pen);
-  const b = loadBest(); const old = b[li]; let rec = false;
-  if (!old || score > old.score) { b[li] = { score, time: secs }; lsSet('tcgBest2', JSON.stringify(b)); rec = true; }
+  const n = L.slots.length, bonus = Math.max(0, n * 30 - secs), score = Math.max(0, 100 * n + bonus - pen); lsSet(SAVEKEY, '');
+  const b = loadBest(); const old = b.best; let rec = false;
+  if (!old || score > old.score) { b.best = { score, time: secs }; lsSet('tcgBest3', JSON.stringify(b)); rec = true; }
   sWin();
   const rows = Object.keys(WORDS).filter((w) => L.slots.some((s) => s.ans === w)).map((w) => WORDS[w]).sort((a, b) => (a[2].startsWith('vocabulary') - b[2].startsWith('vocabulary')) || a[2].localeCompare(b[2]) || a[0].localeCompare(b[0]));
   setTimeout(() => {
     $('#winp').innerHTML = '<h1>GRID <span>COMPLETE</span></h1><div class="sum">Time <b>' + fmt(secs) + '</b> | Words <b>' + n + '</b> | Penalty <b>-' + pen + '</b></div>' +
       '<div class="sum">Score <b>' + score + '</b>' + (rec ? ' <b style="color:#34e07a">NEW BEST!</b>' : '') + '</div>' +
       '<table><tr><th>Word</th><th>Function</th><th>Français</th></tr>' + rows.map((r) => '<tr><td class="i">' + esc(r[0]) + '</td><td>' + esc(r[2]) + '</td><td class="f">' + esc(r[1]) + '</td></tr>').join('') + '</table>' +
-      '<div style="text-align:center">' + (li < LEVELS.length - 1 ? '<button class="btn" id="wn">NEXT LEVEL</button>' : '') + '<button class="btn ghost" id="wa">PLAY AGAIN</button><button class="btn ghost" id="wm">MENU</button></div>' +
+      '<div style="text-align:center">' + '<button class="btn ghost" id="wa">PLAY AGAIN</button><button class="btn ghost" id="wm">MENU</button></div>' +
       '<p class="credit">A game by Marc VASSEUR / Polytech Lille</p>';
     $('#win').classList.add('on');
-    const wn = $('#wn'); if (wn) wn.addEventListener('click', () => start(li + 1));
-    $('#wa').addEventListener('click', () => start(li)); $('#wm').addEventListener('click', showMenu);
+    $('#wa').addEventListener('click', () => start(false)); $('#wm').addEventListener('click', showMenu);
   }, 900);
 }
 
@@ -345,23 +363,25 @@ document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const menuOn = $('#menu').classList.contains('on'), winOn = $('#win').classList.contains('on');
   if (menuOn) {
-    if (e.key >= '1' && e.key <= String(LEVELS.length)) start(+e.key - 1);
+    if (e.key === 'Enter') { e.preventDefault(); start(!!readSave()); }
     else if (e.key === 'Escape') location.href = '../hub/';
     return;
   }
-  if (winOn) { if (e.key === 'Enter') { e.preventDefault(); if (li < LEVELS.length - 1) start(li + 1); else showMenu(); } else if (e.key === 'Escape') showMenu(); return; }
+  if (winOn) { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); showMenu(); } return; }
   if (/^[a-zA-Z]$/.test(e.key)) { e.preventDefault(); typeLetter(e.key.toUpperCase()); }
   else if (e.key === 'Backspace') { e.preventDefault(); backspace(); }
   else if (e.key === 'Tab' || e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); const n = (e.shiftKey && e.key === 'Tab') ? prevEmpty(act) : firstEmpty(act); if (n >= 0) { sTick(); activate(n); } }
   else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); const n = prevEmpty(act); if (n >= 0) { sTick(); activate(n); } }
   else if (e.key === 'Escape') { if (typed.some(Boolean)) activate(act); else showMenu(); }
   else if (e.key === 'F1') { e.preventDefault(); doHint(); }
-  else if (e.key === 'F2') { e.preventDefault(); doCheck(); }
   else if (e.key === 'F3') { e.preventDefault(); doUndo(); }
 });
 $('#bm').addEventListener('click', showMenu);
 $('#bh').addEventListener('click', doHint);
-$('#bc').addEventListener('click', doCheck);
+$('#bz1').addEventListener('click', () => { CS = Math.max(18, CS - 4); lsSet('tcgCS', CS); sizeGrid(); scrollToSlot(act); });
+$('#bz2').addEventListener('click', () => { CS = Math.min(64, CS + 4); lsSet('tcgCS', CS); sizeGrid(); scrollToSlot(act); });
+$('#bhide').addEventListener('click', () => { hideUsed = !hideUsed; $('#bhide').textContent = hideUsed ? 'SHOW PLACED' : 'HIDE PLACED'; refresh(); });
+window.addEventListener('beforeunload', saveGame);
 $('#bu').addEventListener('click', doUndo);
 $('#bs').addEventListener('click', () => { SND = !SND; lsSet('tcgSnd', SND ? '1' : '0'); $('#bs').textContent = SND ? 'SND' : 'MUTE'; });
 showMenu();
