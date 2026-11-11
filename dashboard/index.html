@@ -193,20 +193,21 @@ function renderPlayers(){
   $('#pRows').innerHTML=h||'<tr><td colspan="12" class="dim">No profile yet.</td></tr>';
 }
 function renderGames(){
-  var h='';
+  var now=Date.now(),rows='',T={ps:0,week:0,runs:0};
   GAMES.forEach(function(g){
     var ps=players.filter(function(p){var x=gv(p,g[0]);return x&&(x.best>0||x.at)});
     if(!ps.length&&g[0]==='ti')return;
     var best=ps.map(function(p){return {n:p.nom,b:gv(p,g[0]).best}}).sort(function(a,b){return b.b-a.b});
     var tot=best.reduce(function(s,x){return s+x.b},0),runs=ps.reduce(function(s,p){return s+(gv(p,g[0]).runs||0)},0);
     var ans=ps.reduce(function(s,p){return s+(gv(p,g[0]).answered||0)},0),cor=ps.reduce(function(s,p){return s+(gv(p,g[0]).correct||0)},0);
-    var now=Date.now(),week=ps.filter(function(p){return now-(gv(p,g[0]).at||0)<7*86400000}).length;
-    h+='<div class="gc"><h3>'+esc(g[1])+'</h3><p><b>'+ps.length+'</b> students played'+(players.length?' ('+Math.round(100*ps.length/players.length)+'%)':'')+'</p>'+
-      '<p><b>'+week+'</b> active in the last 7 days</p>'+(best.length?'<p>Average best score <b>'+Math.round(tot/best.length)+'</b></p>':'')+(runs?'<p><b>'+runs+'</b> games played</p>':'')+(ans?'<p>Answers <b>'+Math.round(100*cor/ans)+'%</b> correct ('+ans+')</p>':'')+
-      (g[0]==='cg'?'<p><b>'+ps.reduce(function(s,p){return s+gv(p,'cg').done},0)+'</b> grids completed in total</p>':'')+
-      (best.length?'<ol>'+best.slice(0,5).map(function(x){return '<li>'+esc(x.n)+' <b>'+x.b+'</b></li>'}).join('')+'</ol>':'<p>No data yet.</p>')+'</div>';
+    var week=ps.filter(function(p){return now-(gv(p,g[0]).at||0)<7*86400000}).length;
+    var extra=g[0]==='cg'?ps.reduce(function(s,p){return s+gv(p,'cg').done},0)+' grids done':'';
+    rows+='<tr><td><b style="color:var(--cyan)">'+esc(g[1])+'</b></td><td class="num">'+ps.length+(players.length?' <span class="dim">('+Math.round(100*ps.length/players.length)+'%)</span>':'')+'</td><td class="num">'+week+'</td>'+
+      '<td class="num">'+(best.length?Math.round(tot/best.length):'<span class="dim">-</span>')+'</td><td class="num">'+(runs||extra?(runs||'')+(runs&&extra?' | ':'')+extra:'<span class="dim">-</span>')+'</td>'+
+      '<td class="num">'+(ans?Math.round(100*cor/ans)+'% <span class="dim">('+ans+')</span>':'<span class="dim">-</span>')+'</td>'+
+      '<td>'+(best.length?esc(best[0].n)+' <b>'+best[0].b+'</b>':'<span class="dim">No data yet</span>')+'</td></tr>';
   });
-  $('#gGrid').innerHTML=h;
+  $('#gGrid').innerHTML='<div class="gc" style="grid-column:1/-1"><h3>ALL GAMES</h3><div class="wrap"><table><thead><tr><th>Game</th><th class="num">Students who played</th><th class="num">Active 7 days</th><th class="num">Average best score</th><th class="num">Games played</th><th class="num">Correct answers</th><th>Top score</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
 function renderConn(){
   var q=$('#q').value.trim().toLowerCase(),now=Date.now();
