@@ -490,15 +490,76 @@ function noiseBurst(dur, vol, f0, f1, ftype, delay) {
   } catch (e) {}
 }
 const arp = (notes, step, type, vol, dur) => notes.forEach((f, i) => tone(f, dur || 0.16, type || 'square', vol || 0.04, 0, i * step));
-// explosion en couches : claquement sec, corps grondant, sub grave, puis crépitement de débris
-function boomSnd(k) {
-  noiseBurst(0.05, 0.4, 9000, 1500, 'highpass');                              // claquement initial
-  noiseBurst(0.35 * k, 0.32, 3800, 260, 'lowpass');                           // corps de l'explosion
-  noiseBurst(0.6 * k, 0.2, 900, 110, 'bandpass', 0.03);                       // grondement médium
-  tone(95, 0.5 * k, 'sine', 0.34, 24, 0, 0.15);                               // choc grave
-  tone(55, 0.9 * k, 'sine', 0.22, 20, 0.03);                                  // sub
-  for (let i = 0; i < 3 + Math.round(k * 2); i++)                             // débris qui retombent
-    noiseBurst(0.04 + Math.random() * 0.05, 0.1 * (1 - i * 0.08), 4500 - i * 400, 900, 'bandpass', 0.12 + i * 0.07 * k + Math.random() * 0.05);
+// explosion cinématographique : impact saturé, corps de bruit brun qui s'effondre, choc grave, grondement et queue de réverbération
+function satCurve(amount) {
+  const n = 1024, c = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(x * amount) / Math.tanh(amount); }
+  return c;
+}
+function noiseBuf(a, dur, brown, decayPow) {
+  const n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < n; i++) {
+    const w = Math.random() * 2 - 1;
+    let v = w;
+    if (brown) { last = (last + 0.035 * w) / 1.035; v = last * 7; }
+    d[i] = v * Math.pow(1 - i / n, decayPow || 1);
+  }
+  return buf;
+}
+let reverbNode = null;
+function getReverb(a, out) {
+  if (reverbNode && reverbNode.ctx === a) return reverbNode.in;
+  const len = Math.floor(a.sampleRate * 2.2), ir = a.createBuffer(2, len, a.sampleRate);
+  for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+  const cv = a.createConvolver(); cv.buffer = ir;
+  const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1800;
+  const g = a.createGain(); g.gain.value = 0.55;
+  lp.connect(cv); cv.connect(g); g.connect(out);
+  reverbNode = { ctx: a, in: lp };
+  return lp;
+}
+function boomAt(a, out, t, k, rv) {
+  const R = () => 0.9 + Math.random() * 0.2;                              // légère variation d'une explosion à l'autre
+  const sat = a.createWaveShaper(); sat.curve = satCurve(2.4); sat.oversample = '2x';
+  const bus = a.createGain(); bus.gain.value = 1; sat.connect(bus); bus.connect(out);
+  if (rv) { const s = a.createGain(); s.gain.value = 0.35 * Math.min(1.4, k); bus.connect(s); s.connect(rv); }
+  const env = (g, peak, att, dur) => { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); };
+  // 1. impact : claquement bref et brillant
+  { const s = a.createBufferSource(); s.buffer = noiseBuf(a, 0.09, false, 2.5);
+    const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2400 * R(); f.Q.value = 0.6;
+    const g = a.createGain(); env(g, 0.55, 0.002, 0.08); s.connect(f); f.connect(g); g.connect(sat); s.start(t); }
+  // 2. corps : bruit brun dont la coupure s'effondre, c'est lui qui donne l'« ampleur »
+  { const dur = 0.9 * k * R(), s = a.createBufferSource(); s.buffer = noiseBuf(a, dur + 0.1, true, 1.4);
+    const f = a.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 1.1;
+    f.frequency.setValueAtTime(5200, t); f.frequency.exponentialRampToValueAtTime(140, t + dur);
+    const g = a.createGain(); env(g, 0.95, 0.006, dur); s.connect(f); f.connect(g); g.connect(sat); s.start(t); }
+  // 3. choc grave : sinus qui plonge, avec un peu de saturation
+  { const dur = 0.55 * k, o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(150 * R(), t); o.frequency.exponentialRampToValueAtTime(30, t + dur);
+    env(g, 0.9, 0.004, dur); o.connect(g); g.connect(sat); o.start(t); o.stop(t + dur + 0.05); }
+  // 4. grondement long et sourd
+  { const dur = 1.5 * k, s = a.createBufferSource(); s.buffer = noiseBuf(a, dur + 0.1, true, 2);
+    const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(420, t + 0.05); f.frequency.exponentialRampToValueAtTime(55, t + dur);
+    const g = a.createGain(); env(g, 0.7, 0.05, dur); s.connect(f); f.connect(g); g.connect(bus); s.start(t + 0.05); }
+  // 5. débris qui retombent, clairsemés
+  for (let i = 0, n = 4 + Math.round(k * 3); i < n; i++) {
+    const dt = 0.14 + Math.random() * 0.5 * k, s = a.createBufferSource(); s.buffer = noiseBuf(a, 0.05, false, 2);
+    const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1200 + Math.random() * 3000; f.Q.value = 1.5;
+    const g = a.createGain(); env(g, 0.12 * (1 - i / (n + 2)), 0.002, 0.045); g.gain.setValueAtTime(0.0001, t);
+    // le gain démarre à t + dt
+    g.gain.cancelScheduledValues(0); g.gain.setValueAtTime(0.0001, t + dt); g.gain.linearRampToValueAtTime(0.12 * (1 - i / (n + 2)), t + dt + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.045);
+    s.connect(f); f.connect(g); g.connect(bus); s.start(t + dt);
+  }
+  return sat;
+}
+function boomSnd(k, delay) {
+  if (muted) return;
+  const a = ac(); if (!a) return;
+  try {
+    const out = a.createGain(); out.gain.value = 0.55 * (k > 1.5 ? 0.9 : 1); out.connect(outNode());
+    boomAt(a, out, a.currentTime + (delay || 0), k, getReverb(a, outNode()));
+  } catch (e) {}
 }
 const sfx = {
   // laser : « pew » spatial, deux voix désaccordées qui chutent, avec écho
@@ -515,7 +576,7 @@ const sfx = {
   life: () => { [784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.45, 'sine', 0.05, 0, i * 0.08, 0.6)); },
   over: () => { [392, 330, 262, 196, 131].forEach((f, i) => tone(f, 0.6, 'sine', 0.06, f * 0.96, i * 0.2, 0.7)); },
   clear: () => { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.55, 'sine', 0.05, 0, i * 0.1, 0.6)); },
-  base: () => { boomSnd(3); setTimeout(() => boomSnd(2), 260); [1568, 1319, 1047, 784, 659, 523].forEach((f, i) => tone(f, 0.5, 'sine', 0.035, 0, 0.5 + i * 0.09, 0.6)); }
+  base: () => { boomSnd(3); boomSnd(2, 0.26); [1568, 1319, 1047, 784, 659, 523].forEach((f, i) => tone(f, 0.5, 'sine', 0.035, 0, 0.5 + i * 0.09, 0.6)); }
 };
 // nappe spatiale discrète pendant le vol (deux sinus désaccordés + trémolo lent), à la place d'un bruit de moteur
 function setEngine(on, boost) {
@@ -1813,7 +1874,7 @@ resize();
 requestAnimationFrame(loop);
 
 // Accès pour les tests automatisés
-window.__sc = { DECKS, wkey, deck: () => DECK, nextLoop: () => { level++; DECK = DECKS[level % DECKS.length]; assignWords(); buildEntities(); }, update, draw, startGame, templates, FL, CL, floorAt, ceilAt, sectionOf, kbd, SECTIONS, CONNECTORS, LV, KX, KY,
+window.__sc = { boomAt, getReverb, DECKS, wkey, deck: () => DECK, nextLoop: () => { level++; DECK = DECKS[level % DECKS.length]; assignWords(); buildEntities(); }, update, draw, startGame, templates, FL, CL, floorAt, ceilAt, sectionOf, kbd, SECTIONS, CONNECTORS, LV, KX, KY,
   destroy, set: (o) => { if ('camX' in o) camX = o.camX; if ('fuel' in o) fuel = o.fuel; if ('lives' in o) lives = o.lives; },
   get: () => ({ state, camX, score, lives, fuel, ship, sv, entities, bullets, bombs, level, paused, cards }) };
 })();
