@@ -41,6 +41,8 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 .w:hover{border-color:var(--yel)}
 .w.sel{background:var(--yel);color:#1a1200;border-color:#fff;box-shadow:0 0 8px var(--yel)}
 .w.used{opacity:.32;text-decoration:line-through;cursor:default}
+.w.flash{display:inline-block!important}
+.w.flash.fr{opacity:1;text-decoration:none;background:#ffd21f;color:#1a1200;border-color:#fff;box-shadow:0 0 8px #ffd21f}
 #info{flex:none;min-height:46px;font:500 clamp(11px,1.6vw,13px) "JetBrains Mono",monospace;color:var(--cream);background:rgba(13,27,58,.96);border:2px solid rgba(56,232,255,.4);border-radius:8px;padding:6px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 #info b{color:var(--yel)}
 #info i{color:var(--cy);font-style:normal}
@@ -94,7 +96,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
   <p class="sub">One big fit-in puzzle like in the magazines: place the 150 words (logical connectors and TOEIC vocabulary) in the grid.</p>
   <div id="who" class="sub"></div>
   <div id="lvl"></div>
-  <div class="keys">Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>One word is already placed to start the grid. Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
+  <div class="keys">Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>One word is already placed to start the grid. When a word is found, its French translation blinks in the list. Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
   <p class="credit">Scores are kept on this device.<br>A game by Marc VASSEUR / Polytech Lille | marc.vasseur@polytech-lille.fr</p>
 </div></div>
 
@@ -286,6 +288,21 @@ function fillWord(w) {
   submit();
 }
 
+/* ---------- French translation blink in the list ---------- */
+const FL = {};
+function transFlash(w) {
+  const e = document.querySelector('#list .w[data-w="' + w + '"]'); if (!e || !WORDS[w]) return;
+  if (FL[w]) clearInterval(FL[w]);
+  const en = WORDS[w][0], fr = WORDS[w][1]; let n = 0;
+  e.classList.add('flash');
+  const tick = () => {
+    const showFr = n % 2 === 0;
+    e.textContent = showFr ? fr : en; e.classList.toggle('fr', showFr);
+    if (++n > 9) { clearInterval(FL[w]); delete FL[w]; e.textContent = en; e.classList.remove('fr', 'flash'); refresh(); }
+  };
+  tick(); FL[w] = setInterval(tick, 650);
+}
+
 /* ---------- actions ---------- */
 function startClock() { if (!started) started = true; }
 function typeLetter(ch) {
@@ -302,7 +319,7 @@ function submit() {
   const s = L.slots[act], w = buf.join('');
   if (!WORDS[w]) return reject('<b>' + esc(w) + '</b> is not in the list.');
   if (placed.includes(w)) return reject('<b>' + esc(WORDS[w][0]) + '</b> is already placed.');
-  const i = act; placed[i] = w; undo.push(i); sPlace();
+  const i = act; placed[i] = w; undo.push(i); sPlace(); transFlash(w);
   for (let k = 0; k < s.n; k++) cellEls[cellKey(s, k)].classList.add('ok');
   if (placed.every(Boolean)) { act = -1; refresh(); finish(); return; }
   saveGame(); activate(nearestEmpty(i));
@@ -316,6 +333,7 @@ function reject(text) {
 function takeBack(i) {
   if (won || !placed[i]) return;
   if (hinted[i]) { sBad(); return; }
+  if (FL[placed[i]]) { clearInterval(FL[placed[i]]); delete FL[placed[i]]; const el = document.querySelector('#list .w[data-w="' + placed[i] + '"]'); if (el) { el.textContent = WORDS[placed[i]][0]; el.classList.remove('fr', 'flash'); } }
   placed[i] = null; undo = undo.filter((x) => x !== i); sTick(); saveGame(); activate(i);
 }
 function clickCell(r, c) {
@@ -339,7 +357,7 @@ function doHint() {
   startClock();
   const ans = L.slots[t].ans;
   const j = placed.indexOf(ans); if (j >= 0 && j !== t) { placed[j] = null; hinted[j] = false; }
-  placed[t] = ans; hinted[t] = true; pen += 50; undo = undo.filter((x) => x !== t && x !== j); sPlace();
+  placed[t] = ans; hinted[t] = true; pen += 50; undo = undo.filter((x) => x !== t && x !== j); sPlace(); transFlash(ans);
   const m = {}; const s = L.slots[t]; for (let k = 0; k < s.n; k++) m[cellKey(s, k)] = ans[k];
   L.slots.forEach((q, i) => { if (i === t || !placed[i] || hinted[i]) return; for (let k = 0; k < q.n; k++) { const c = m[cellKey(q, k)]; if (c && c !== placed[i][k]) { placed[i] = null; undo = undo.filter((x) => x !== i); break; } } });
   if (placed.every(Boolean)) { act = -1; refresh(); finish(); return; }
