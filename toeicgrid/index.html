@@ -18,7 +18,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 #top .t b{display:block;color:#fff;font-weight:400;font-size:1.15em}
 .stat{color:var(--cy);text-align:center}
 .stat b{display:block;color:#fff;font-weight:400}
-#main{flex:1;min-height:0;display:flex;gap:10px}
+#main{flex:1;min-height:0;display:flex;gap:10px;position:relative}
 #gpane{flex:1;min-width:0;overflow:auto;position:relative;border:2px solid rgba(56,232,255,.25);border-radius:8px;background:rgba(0,0,0,.25)}
 #gwrap{display:inline-block;padding:12px;min-width:100%;min-height:100%}
 #grid{margin:0 auto}
@@ -30,6 +30,10 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
 .cell.hv{box-shadow:0 0 0 2px var(--cy);background:#d9f7ff}
 .cell.cur.hv{background:var(--yel)}
 .cell.hint.hv{background:#bff5d3}
+#tbar{position:absolute;left:12px;bottom:12px;z-index:6;display:none;pointer-events:none;max-width:calc(100% - min(36%,360px) - 40px);background:rgba(13,27,58,.97);border:3px solid #ffd21f;border-radius:10px;padding:10px 16px;font:800 clamp(14px,2.2vw,22px) "JetBrains Mono",monospace;color:#fff;animation:glowp .65s ease-in-out infinite alternate}
+#tbar small{display:block;font-weight:500;font-size:.6em;color:#38e8ff}
+#tbar .fr{color:#ffd21f}
+@keyframes glowp{from{box-shadow:0 0 6px #ffd21f;opacity:.75}to{box-shadow:0 0 26px #ffd21f,0 0 8px #fff;opacity:1}}
 #tip{position:fixed;z-index:30;pointer-events:none;display:none;background:#0d1b3a;border:2px solid var(--cy);color:#fff;border-radius:6px;padding:5px 9px;font:700 13px "JetBrains Mono",monospace;white-space:nowrap}
 .cell.hint{background:#bff5d3;color:#0b5a2c}
 .cell.bad{background:#ff8a8a;color:#600}
@@ -88,6 +92,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
     <button id="bm">MENU</button>
   </div>
   <div id="main">
+    <div id="tbar"></div>
     <div id="gpane"><div id="gwrap"><div id="grid"></div></div></div>
     <div id="side"><h3>WORDS TO FIT IN THE GRID</h3><div id="rem" style="text-align:center;color:#fff;font-size:11px;margin-bottom:4px"></div><div id="list"></div></div>
   </div>
@@ -101,7 +106,7 @@ body{background:radial-gradient(ellipse at 50% 0,rgba(255,60,140,.22),transparen
   <p class="sub">One big fit-in puzzle like in the magazines: place the 150 words (logical connectors and TOEIC vocabulary) in the grid.</p>
   <div id="who" class="sub"></div>
   <div id="lvl"></div>
-  <div class="keys">Hover a line to see its number of letters. Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>One word is already placed to start the grid. When a word is found, its French translation blinks in the list. Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
+  <div class="keys">Hover a line to see its number of letters. Click a place in the grid with the mouse (click again on a crossing to switch direction), then type the word on the keyboard. A word from the list is placed if it fits; otherwise it is refused.<br>One word is already placed to start the grid. When a word is found, its French translation glows in a banner and blinks in the list. Letters already given by crossing words are filled in for you. The list is sorted by number of letters; placed words are crossed out.<br>BACKSPACE: erase a letter &nbsp;|&nbsp; TAB or arrows: next place &nbsp;|&nbsp; ESC: menu<br>F1: hint (-50) &nbsp;|&nbsp; F3: undo. Click a placed word to take it back. ZOOM buttons resize the grid. Your game is saved automatically on this device.<br>Spaces do not count: AS SOON AS = 8 letters. Each word is used once.</div>
   <p class="credit">Scores are kept on this device.<br>A game by Marc VASSEUR / Polytech Lille | marc.vasseur@polytech-lille.fr</p>
 </div></div>
 
@@ -325,6 +330,9 @@ function transFlash(w) {
   if (FL[w]) clearInterval(FL[w]);
   const en = WORDS[w][0], fr = WORDS[w][1]; let n = 0;
   e.classList.add('flash');
+  if (e.scrollIntoView) e.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  const bar = $('#tbar'); bar.innerHTML = '<span>' + esc(en) + '</span> = <span class="fr">' + esc(fr) + '</span><small>' + esc(WORDS[w][2]) + '</small>'; bar.style.display = 'block';
+  clearTimeout(FL.barT); FL.barT = setTimeout(() => { bar.style.display = 'none'; }, 6800);
   const tick = () => {
     const showFr = n % 2 === 0;
     e.textContent = showFr ? fr : en; e.classList.toggle('fr', showFr);
