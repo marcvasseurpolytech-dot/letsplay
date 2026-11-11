@@ -53,7 +53,7 @@
 <div id="auth"><div class="panel" id="authBox"></div></div>
 <div id="wrap">
   <canvas id="c" width="800" height="480"></canvas>
-  <div id="hint">WASD / ZQSD: move &nbsp; ←: laser &nbsp; →: bomb &nbsp; P: pause &nbsp; M: sound &nbsp; H: HD / retro</div>
+  <div id="hint">WASD / ZQSD: move &nbsp; LEFT CLICK / ←: laser &nbsp; RIGHT CLICK / →: bomb &nbsp; P: pause &nbsp; M: sound &nbsp; H: HD / retro</div>
   <div id="touch">
     <div class="pad">
       <button data-k="up">▲</button>
@@ -547,6 +547,7 @@ function setEngine(on, boost) {
 const kbd = { left: false, right: false, up: false, down: false, fire: false, bomb: false };
 const tch = { left: false, right: false, up: false, down: false, fire: false, bomb: false };
 const input = { left: false, right: false, up: false, down: false, fire: false, bomb: false };
+const mse = { fire: false, bomb: false };
 // ← laser, → bombe ; ZQSD (touches physiques WASD) pour se déplacer ; ↑ ↓ déplacent aussi
 const KEYMAP = {
   ArrowLeft: 'fire', ArrowRight: 'bomb', ArrowUp: 'up', ArrowDown: 'down',
@@ -569,7 +570,16 @@ window.addEventListener('keyup', (e) => {
   const k = KEYMAP[e.code];
   if (k) { kbd[k] = false; e.preventDefault(); }
 });
-window.addEventListener('blur', () => { for (const k in kbd) kbd[k] = false; for (const k in tch) tch[k] = false; if (state === 'play') paused = true; });
+// souris : bouton gauche = laser, bouton droit = bombe (menu contextuel désactivé)
+const mouseUi = (e) => e.target && /^(INPUT|BUTTON|A|SUMMARY|DETAILS|SELECT|TEXTAREA)$/.test(e.target.tagName);
+window.addEventListener('mousedown', (e) => {
+  if (mouseUi(e)) return;
+  if (e.button === 0) { mse.fire = true; e.preventDefault(); } else if (e.button === 2) { mse.bomb = true; e.preventDefault(); }
+  ac();
+});
+window.addEventListener('mouseup', (e) => { if (e.button === 0) mse.fire = false; else if (e.button === 2) mse.bomb = false; });
+window.addEventListener('contextmenu', (e) => { if (!mouseUi(e)) e.preventDefault(); });
+window.addEventListener('blur', () => { mse.fire = false; mse.bomb = false; for (const k in kbd) kbd[k] = false; for (const k in tch) tch[k] = false; if (state === 'play') paused = true; });
 document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') paused = true; });
 
 const canvas = document.getElementById('c');
@@ -1005,7 +1015,7 @@ function updateFx() {
 }
 
 function updatePlay() {
-  for (const k in input) input[k] = kbd[k] || tch[k];
+  for (const k in input) input[k] = kbd[k] || tch[k] || !!mse[k];
 
   // défilement ; le niveau 6 se rejoue tant que la base n'est pas détruite
   const before = camX;
@@ -1747,7 +1757,7 @@ function renderAuth() {
       (PR.offline ? '<div class="row"><button class="btn" id="aGuest">Server unreachable: play as guest (not saved)</button></div>' : '') +
       '<p class="muted">It is the same profile as in Arrow Escape, Word Bridge and Christmas Village.</p>';
   }
-  h += '<details><summary>Directions</summary><p>LEFT arrow: laser (rockets, UFOs, fuel tanks). RIGHT arrow: bomb (two at a time). ZQSD / WASD: move. P: pause. M: sound. H: HD / retro.<br>Every fuel tank carries a word on a flag. Destroy it to collect it with its translation. Finish a loop (destroy the base) and the next loop changes deck: connectors, then irregular verbs (past simple / past participle), then TOEIC vocabulary. Meteors cannot be destroyed: dodge them. Do not run out of fuel!</p></details>';
+  h += '<details><summary>Directions</summary><p>LEFT mouse button or LEFT arrow: laser (rockets, UFOs, fuel tanks). RIGHT mouse button or RIGHT arrow: bomb (two at a time). ZQSD / WASD: move. P: pause. M: sound. H: HD / retro.<br>Every fuel tank carries a word on a flag. Destroy it to collect it with its translation. Finish a loop (destroy the base) and the next loop changes deck: connectors, then irregular verbs (past simple / past participle), then TOEIC vocabulary. Meteors cannot be destroyed: dodge them. Do not run out of fuel!</p></details>';
   box.innerHTML = h;
   { const fn = box.querySelector('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
