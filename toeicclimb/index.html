@@ -295,7 +295,7 @@ const SND = {
    Geometrie : etageres (plateformes en pente), echelles
    ------------------------------------------------------------ */
 const STAGES = [
-  { name: 'THE READING ROOM', slope: 30, seed: 77, g0: '#0a1330', g1: '#14224a', pal: { top: '#7a4b22', under: '#5c3615', edge: '#e3b04b', dot: '#d8b26a', sup: '#4a2a10' }, cols: ['#3a2a55', '#2a3f6a', '#4a3322', '#2a4a45', '#553030', '#3a4a6a', '#5a4a2a'], gaps: [], belts: [],
+  { name: 'THE READING ROOM', slope: 30, seed: 77, g0: '#0a1330', g1: '#14224a', pal: { top: '#7a4b22', under: '#5c3615', edge: '#e3b04b', dot: '#d8b26a', sup: '#4a2a10' }, cols: ['#3a2a55', '#2a3f6a', '#4a3322', '#2a4a45', '#553030', '#3a4a6a', '#5a4a2a'], gaps: [], belts: [], lifts: [],
     pls: [
       { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
       { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
@@ -307,7 +307,7 @@ const STAGES = [
     ],
     hammers: [[1, 232], [3, 230]], guns: [[2, 12]], planes: [[3, 24], [1, 16]],
     items: [['pencil', 0, 120, 300], ['phones', 2, 100, 500], ['sheet', 4, 120, 800]], speed: 1 },
-  { name: 'THE ARCHIVE', slope: 22, seed: 311, g0: '#1a0f33', g1: '#0f2a3d', pal: { top: '#3d5f80', under: '#243a52', edge: '#8fd0ff', dot: '#9fc4e0', sup: '#16283c' }, cols: ['#2d1f55', '#1f5a6a', '#4a2a55', '#1f4a45', '#552a4a', '#2a4a7a', '#3a2a6a'], gaps: [], belts: [],
+  { name: 'THE ARCHIVE', slope: 22, seed: 311, g0: '#1a0f33', g1: '#0f2a3d', pal: { top: '#3d5f80', under: '#243a52', edge: '#8fd0ff', dot: '#9fc4e0', sup: '#16283c' }, cols: ['#2d1f55', '#1f5a6a', '#4a2a55', '#1f4a45', '#552a4a', '#2a4a7a', '#3a2a6a'], gaps: [], belts: [], lifts: [],
     pls: [
       { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
       { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
@@ -331,6 +331,7 @@ const STAGES = [
       { lo: 2, x: 190, full: true }, { lo: 2, x: 80, full: false }, { lo: 3, x: 90, full: true }, { lo: 3, x: 190, full: false },
       { lo: 4, x: 176, full: true }
     ],
+    lifts: [],
     gaps: [
       { plat: 0, x0: 90, x1: 112, rope: false }, { plat: 1, x0: 96, x1: 138, rope: true },
       { plat: 2, x0: 118, x1: 140, rope: false }, { plat: 3, x0: 100, x1: 142, rope: true }
@@ -339,7 +340,33 @@ const STAGES = [
       { plat: 0, x0: 130, x1: 186, v: -62 }, { plat: 2, x0: 62, x1: 108, v: -62 }, { plat: 4, x0: 104, x1: 152, v: -62 }
     ],
     hammers: [[2, 226], [4, 220]], guns: [[1, 226]], planes: [[3, 226], [2, 14]],
-    items: [['pencil', 0, 40, 300], ['phones', 1, 190, 500], ['sheet', 3, 180, 800]], speed: 1.05 }
+    items: [['pencil', 0, 40, 300], ['phones', 1, 190, 500], ['sheet', 3, 180, 800]], speed: 1.05, hint: 'ROPES: JUMP TO GRAB, CLICK TO LET GO' },
+  { name: 'THE VERB TILES', slope: 28, seed: 1207, g0: '#2a0a14', g1: '#3a1424', hint: 'WALK ON PARTICIPLES, JUMP PRETERITS', rivets: true,
+    clearMsg: 'THE APE FELL! BOOK RECOVERED!',
+    pal: { top: '#8a6a3a', under: '#5a3f1e', edge: '#ffd23a', dot: '#e8c878', sup: '#3a2410' },
+    cols: ['#5a1f2a', '#6a3a1f', '#4a1f4a', '#7a5a22', '#3a2a55', '#5a2a2a', '#2a3f6a'], gaps: [], belts: [], lifts: [],
+    pls: [
+      { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
+      { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
+    ],
+    lad: [
+      { lo: 0, x: 190, full: true }, { lo: 0, x: 90, full: false }, { lo: 1, x: 46, full: true }, { lo: 1, x: 140, full: false },
+      { lo: 2, x: 186, full: true }, { lo: 2, x: 96, full: false }, { lo: 3, x: 74, full: true }, { lo: 3, x: 150, full: false },
+      { lo: 4, x: 172, full: true, lock: true }
+    ],
+    hammers: [[1, 230], [3, 230]], guns: [[2, 12]], planes: [[3, 20], [1, 16]],
+    items: [['phones', 0, 205, 500], ['pencil', 2, 214, 300], ['sheet', 4, 200, 800]], speed: 1 },
+  { name: 'THE LIFTS', slope: 24, seed: 4421, g0: '#07161f', g1: '#0e2c3b', hint: 'LIFT: PRESS UP, THEN PICK LEFT OR RIGHT',
+    pal: { top: '#5d6e7c', under: '#37424d', edge: '#8fe0ff', dot: '#a9c0d0', sup: '#202a33' },
+    cols: ['#1f3a4a', '#2a4a5a', '#3a3a4a', '#1f4a45', '#2a3f6a', '#4a4a55', '#2f5560'], gaps: [], belts: [],
+    pls: [
+      { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
+      { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
+    ],
+    lad: [],
+    lifts: [{ lo: 0, x: 170 }, { lo: 1, x: 60 }, { lo: 2, x: 180 }, { lo: 3, x: 70 }, { lo: 4, x: 170 }],
+    hammers: [[1, 230], [3, 230]], guns: [[2, 14]], planes: [[3, 20], [4, 226]],
+    items: [['pencil', 0, 100, 300], ['phones', 2, 120, 500], ['sheet', 3, 120, 800]], speed: 1 }
 ];
 const TH = 7;                          // epaisseur d'une planche
 const PLS = [], LAD = [];
@@ -357,6 +384,77 @@ function inGap(i, x, m) { m = m || 0; for (const g of ST.gaps) if (g.plat === i 
 function beltAt(i, x) { for (const b of ST.belts) if (b.plat === i && x >= b.x0 && x <= b.x1) return b.v; return 0; }
 function ropeAng(r) { return r.A * Math.sin(r.w * G.t + r.ph); }
 function ropeTip(r) { const a = ropeAng(r); return { x: r.cx + r.L * Math.sin(a), y: r.ay + r.L * Math.cos(a) }; }
+function verbPools() {
+  const good = (w) => w && !/[\/ ]/.test(w) && w.length <= 8;
+  const base = VERBS.filter((v) => good(v[1]) && good(v[2]));
+  return { diff: base.filter((v) => v[1] !== v[2]), same: base.filter((v) => v[1] === v[2]) };
+}
+function shuf(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function makeTiles() {
+  const SPEC = [[0, [52, 80, 108, 136, 164], ['pp', 'pret', 'pp', 'pret', 'both']], [1, [162, 134, 106, 78], ['pret', 'pp', 'pret', 'pp']],
+    [2, [74, 102, 130, 158], ['pp', 'pret', 'both', 'pret']], [3, [158, 130, 102], ['pret', 'pp', 'pret']], [4, [100, 128, 152], ['pp', 'pret', 'pp']]];
+  const P = verbPools(); const dq = shuf(P.diff), sq = shuf(P.same); let di = 0, si = 0; const out = [];
+  for (const [plat, xs, ks] of SPEC) xs.forEach((x, k) => {
+    const kind = ks[k]; let v, txt;
+    if (kind === 'both') { v = sq[si++ % sq.length]; txt = v[1]; } else { v = dq[di++ % dq.length]; txt = kind === 'pp' ? v[2] : v[1]; }
+    out.push({ plat, x, kind, txt, v, done: false, cd: 0, flash: 0 });
+  });
+  return out;
+}
+function pickQuestion() {
+  const v = shuf(verbPools().diff)[0], type = Math.random() < 0.5 ? 'pp' : 'pret';
+  return { v, type, ok: type === 'pp' ? v[2] : v[1], bad: type === 'pp' ? v[1] : v[2], okSide: Math.random() < 0.5 ? 'L' : 'R' };
+}
+function tryLift() {
+  const p = G.p;
+  if (p.liftCd > 0) return false;
+  for (const L of G.lifts) if (L.st === 'wait' && p.plat === L.lo && Math.abs(p.x - L.x) < 6) {
+    const I = inputs(); L.st = 'choose'; L.q = pickQuestion(); L.t = 0; L.pL = I.L; L.pR = I.R; L.pD = I.D;
+    p.mode = 'lift'; p.lift = L; p.x = L.x; p.y = L.y; p.moving = false; SND.step(); return true;
+  }
+  return false;
+}
+function updateLifts(dt) {
+  const p = G.p, I = inputs();
+  if (p.liftCd > 0) p.liftCd -= dt;
+  for (const L of G.lifts) {
+    const bot = yAt(L.lo, L.x), top = yAt(L.lo + 1, L.x), inside = p.mode === 'lift' && p.lift === L;
+    if (L.st === 'choose' && inside) {
+      const nl = I.L && !L.pL, nr = I.R && !L.pR, nd = I.D && !L.pD;
+      if (nl || nr) {
+        const side = nl ? 'L' : 'R';
+        if (side === L.q.okSide) { L.st = 'rise'; addScore(300); SND.item(); pop(L.x, L.y - 30, '+300', '#6fe09a'); G.learned.push(L.q.v); profWord(L.q.v[0]); }
+        else { L.st = 'jam'; L.t = 0; G.bonus = Math.max(0, G.bonus - 500); G.shake = 0.3; SND.die(); pop(L.x, L.y - 30, 'WRONG DOOR! -500', '#ff8a80'); }
+      } else if (nd) { p.mode = 'ground'; p.plat = L.lo; p.y = bot; p.liftCd = 0.6; L.st = 'wait'; }
+    } else if (L.st === 'rise') {
+      L.y -= 46 * dt; if (L.y <= top) { L.y = top; if (inside) { p.mode = 'ground'; p.plat = L.lo + 1; p.y = top; p.liftCd = 0.6; } L.st = 'return'; }
+    } else if (L.st === 'jam') {
+      L.t += dt; if (L.t > 0.5) L.st = 'drop';
+    } else if (L.st === 'drop') {
+      L.y += 130 * dt; if (L.y >= bot) { L.y = bot; if (inside) { p.mode = 'ground'; p.plat = L.lo; p.y = bot; p.liftCd = 0.6; } L.st = 'wait'; }
+    } else if (L.st === 'return') {
+      L.y += 70 * dt; if (L.y >= bot) { L.y = bot; L.st = 'wait'; }
+    }
+    L.pL = I.L; L.pR = I.R; L.pD = I.D;
+    if (inside && p.mode === 'lift') { p.x = L.x; p.y = L.y; }
+  }
+}
+function updateTiles(dt) {
+  const p = G.p; if (!G.tiles.length) return;
+  for (const t of G.tiles) {
+    if (t.cd > 0) t.cd -= dt; if (t.flash > 0) t.flash -= dt;
+    if (p.mode !== 'ground' || p.plat !== t.plat || Math.abs(p.x - t.x) > 5) continue;
+    if (t.kind === 'pret') {
+      if (t.cd <= 0) { t.cd = 1.5; t.flash = 0.6; G.bonus = Math.max(0, G.bonus - 500); G.shake = 0.15; SND.hit(1); pop(p.x, p.y - 22, 'PRETERIT! -500', '#ff8a80'); }
+    } else if (!t.done) {
+      t.done = true; addScore(200); SND.item(); pop(p.x, p.y - 22, '+200', '#6fe09a'); G.learned.push(t.v); profWord(t.v[0]);
+      if (G.tiles.every((q) => q.kind === 'pret' || q.done)) startApeFall();
+    }
+  }
+}
+function startApeFall() {
+  G.apeFall = { t: 0, boom: false }; G.unlocked = true; G.throwT = 9999; pop(120, 100, 'THE APE FALLS!', '#ffd23a'); SND.clear();
+}
 function fallInWater(i, gp) {
   const p = G.p; G.gapSnap = G.t; burst(p.x, yAt(i, p.x), '#6fd0c0', 16, 55); SND.smash();
   G.bonus = Math.max(500, G.bonus - 300);
@@ -384,7 +482,7 @@ const pad = { l: 0, r: 0, u: 0, d: 0 };
 const G = {
   state: 'title', stateT: 0, t: 0, round: 1, score: 0, hi: +(lsGet('tlHi') || 0), lives: 3, nextLife: 7000,
   bonus: 5000, bonusT: 0, globes: [], blots: [], p: null, ape: { stage: 'idle', t: 0, pound: 4 }, throwT: 2, blotT: 9, ink: 0,
-  hammers: [], guns: [], planes: [], shots: [], fly: [], gunT: 0, planeAmmo: 0, fireCd: 0, gunFlash: 0, items: [], hammerT: 0, beatT: 0, beatI: 0, learned: [], banner: null, pops: [], parts: [], shake: 0, prevState: 'play', penalty: 0, why: '', msg: ''
+  hammers: [], tiles: [], lifts: [], apeFall: null, unlocked: false, guns: [], planes: [], shots: [], fly: [], gunT: 0, planeAmmo: 0, fireCd: 0, gunFlash: 0, items: [], hammerT: 0, beatT: 0, beatI: 0, learned: [], banner: null, pops: [], parts: [], shake: 0, prevState: 'play', penalty: 0, why: '', msg: ''
 };
 let collection = (() => { try { return new Set(JSON.parse(lsGet('tlLearned') || '[]')); } catch (e) { return new Set(); } })();
 function saveCollection() { lsSet('tlLearned', JSON.stringify(Array.from(collection))); }
@@ -401,6 +499,8 @@ function resetStage() {
   G.hammers = ST.hammers.map((h) => ({ plat: h[0], x: h[1], taken: false }));
   G.guns = ST.guns.map((h) => ({ plat: h[0], x: h[1], taken: false })); G.planes = ST.planes.map((h) => ({ plat: h[0], x: h[1], taken: false }));
   G.gunT = 0; G.planeAmmo = 0; G.shots = []; G.fly = []; G.fireCd = 0; G.gunFlash = 0;
+  G.tiles = ST.rivets ? makeTiles() : []; G.apeFall = null; G.unlocked = false;
+  G.lifts = ST.lifts.map((l) => ({ lo: l.lo, x: l.x, y: yAt(l.lo, l.x), st: 'wait', q: null, t: 0, pL: false, pR: false, pD: false }));
   G.items = ST.items.map((it) => ({ plat: it[1], x: it[2], k: it[0], pts: it[3], taken: false }));
 }
 function startRound(n, pen) {
@@ -467,7 +567,7 @@ function inputs() {
 function tryLadder(dir) {
   const p = G.p;
   for (const L of LAD) {
-    if (!L.full || Math.abs(p.x - L.x) > 5) continue;
+    if (!L.full || Math.abs(p.x - L.x) > 5 || (L.lock && !G.unlocked)) continue;
     if (dir < 0 && L.lo === p.plat) { p.mode = 'climb'; p.lad = L; p.x = L.x; return true; }
     if (dir > 0 && L.lo + 1 === p.plat) { p.mode = 'climb'; p.lad = L; p.x = L.x; p.y = yAt(p.plat, L.x) + 1; return true; }
   }
@@ -497,7 +597,7 @@ function stepPlayer(dt) {
       p.y = yAt(p.plat, p.x);
       if (mv) { p.stepT = (p.stepT || 0) - dt; if (p.stepT <= 0) { SND.step(); p.stepT = 0.17; } }
       if (p.jumpReq && !hv) { p.mode = 'air'; p.vy = -130; p.vx = mv * 54; p.apex = p.y; p.fromPlat = -1; p.fromT = 0; SND.jump(); }
-      else if (!hv && (I.U || I.D)) tryLadder(I.U ? -1 : 1);
+      else if (!hv && (I.U || I.D)) { if (!(I.U && tryLift())) tryLadder(I.U ? -1 : 1); }
     }
   } else if (p.mode === 'air') {
     if (p.jumpReq) p.jumpBuf = 0.12; else if (p.jumpBuf > 0) p.jumpBuf -= dt;
@@ -526,6 +626,8 @@ function stepPlayer(dt) {
     }
     if (p.mode === 'air' && p.y > LH + 30) { die('fall'); return; }
     p.x = clamp(p.x, 2, LW - 2);
+  } else if (p.mode === 'lift') {
+    p.moving = false; p.x = p.lift.x; p.y = p.lift.y;
   } else if (p.mode === 'rope') {
     const r = p.rope, a = ropeAng(r), tp = ropeTip(r), av = r.A * r.w * Math.cos(r.w * G.t + r.ph);
     p.x = tp.x; p.y = tp.y + 16; p.ropeT += dt; p.moving = false; p.face = av >= 0 ? 1 : -1;
@@ -541,6 +643,7 @@ function stepPlayer(dt) {
   p.swing += dt;
 }
 function updateApe(dt) {
+  if (G.apeFall) return;
   const a = G.ape; a.t += dt;
   if (a.stage === 'idle') {
     a.pound -= dt;
@@ -681,6 +784,8 @@ function updatePlay(dt) {
   if (G.gunT > 0) { G.gunT -= dt; if (G.gunT <= 0) { G.gunT = 0; pop(p.x, p.y - 22, 'PISTOL GONE', '#a9b3c9'); } }
   G.fireCd -= dt; if (G.gunFlash > 0) G.gunFlash -= dt;
   stepPlayer(dt); if (G.state !== 'play') return;
+  updateLifts(dt); updateTiles(dt); if (G.state !== 'play') return;
+  if (G.apeFall) { const t0 = G.apeFall.t; G.apeFall.t += dt; if (t0 < 0.6 && G.apeFall.t >= 0.6) { burst(APE_X + 8, yAt(4, APE_X), '#8a6a3a', 26, 80); G.shake = 0.6; SND.stomp(); } }
   updateShots(dt);
   updateApe(dt); updateGlobes(dt); updateBlots(dt);
   const hv = G.hammerT > 0, Z = hammerZone();
@@ -808,10 +913,50 @@ function makeBg() {
 function drawPlank(i) {
   const p = PLS[i], gs = ST.gaps.filter((g) => g.plat === i).sort((a, b) => a.x0 - b.x0);
   let xa = p.x0;
+  if (ST.rivets && G.apeFall && G.apeFall.t > 0.6 && i === 4) xa = 66;
   for (const g of gs) { if (g.x0 > xa) drawSeg(i, xa, g.x0); xa = g.x1; }
   if (xa < p.x1) drawSeg(i, xa, p.x1);
   for (const g of gs) drawGap(g);
   for (const b of ST.belts) if (b.plat === i) drawBelt(b);
+}
+function drawTiles() {
+  for (const t of G.tiles) {
+    const y = yAt(t.plat, t.x); f.font = '3.2px ' + FONT; const w = Math.max(14, f.measureText(t.txt).width + 4);
+    const base = t.kind === 'pret' ? '#7a2a2a' : t.kind === 'both' ? '#8a6a1a' : '#1f4a7a';
+    const col = t.done ? '#2fa05a' : t.flash > 0 ? '#ff5a5a' : base;
+    rect(t.x - w / 2, y - 6, w, 5.6, '#14101a'); rect(t.x - w / 2 + 0.5, y - 5.5, w - 1, 4.6, col);
+    ft(t.txt, t.x, y - 2.6, 3.2, t.done ? '#d8ffe6' : '#f5eedc');
+    if (t.done) ft('OK', t.x + w / 2 - 3, y - 7.4, 2.6, '#6fe09a');
+  }
+  if (G.tiles.length) { const left = G.tiles.filter((q) => q.kind !== 'pret' && !q.done).length, all = G.tiles.filter((q) => q.kind !== 'pret').length; ft('PARTICIPLES ' + (all - left) + '/' + all, 62, 6, 4.4, left ? '#ffd23a' : '#6fe09a'); }
+}
+function drawLifts() {
+  for (const L of G.lifts) {
+    const bot = yAt(L.lo, L.x), top = yAt(L.lo + 1, L.x);
+    f.strokeStyle = 'rgba(143,224,255,.5)'; f.lineWidth = 0.8; f.beginPath(); f.moveTo(L.x - 10, top - 24); f.lineTo(L.x - 10, bot); f.moveTo(L.x + 10, top - 24); f.lineTo(L.x + 10, bot); f.stroke();
+    f.strokeStyle = 'rgba(143,224,255,.25)'; f.lineWidth = 0.5; f.setLineDash([2, 3]); f.beginPath(); f.moveTo(L.x, top - 24); f.lineTo(L.x, L.y - 24); f.stroke(); f.setLineDash([]);
+    const jam = L.st === 'jam' ? Math.sin(G.t * 60) * 0.8 : 0, cx = L.x + jam, y = L.y;
+    rect(cx - 9, y - 24, 18, 24, '#3a4a58'); rect(cx - 9, y - 24, 18, 2.4, '#8fe0ff'); rect(cx - 7, y - 20, 14, 17, '#0d1c26');
+    rect(cx - 0.4, y - 20, 0.8, 17, '#2a3a48'); rect(cx - 9, y - 1.4, 18, 1.4, '#8fe0ff');
+    ell(cx, y - 26.5, 2.6, 1.6, L.st === 'wait' ? '#6fe09a' : L.st === 'jam' ? '#ff5a5a' : '#ffd23a');
+    if ((L.st === 'choose' || L.st === 'jam') && L.q) {
+      const q = L.q, ty = Math.max(12, y - 34), lab = (q.type === 'pp' ? 'PAST PARTICIPLE OF ' : 'PRETERIT OF ') + q.v[0].toUpperCase();
+      f.font = '4px ' + FONT; const w = f.measureText(lab).width + 6, tx = clamp(L.x, w / 2 + 2, LW - w / 2 - 2);
+      f.fillStyle = 'rgba(8,14,36,.92)'; f.fillRect(tx - w / 2, ty - 5, w, 10); f.strokeStyle = '#ffd23a'; f.lineWidth = 0.6; f.strokeRect(tx - w / 2, ty - 5, w, 10);
+      ft(lab, tx, ty + 0.2, 4, '#ffd23a');
+      const wl = q.okSide === 'L' ? q.ok : q.bad, wr = q.okSide === 'R' ? q.ok : q.bad;
+      for (const [sd, word] of [['L', wl], ['R', wr]]) {
+        const s2 = sd === 'L' ? '< ' + word : word + ' >'; f.font = '3.6px ' + FONT; const bw = f.measureText(s2).width + 5, bx = clamp(sd === 'L' ? L.x - 14 - bw / 2 : L.x + 14 + bw / 2, bw / 2 + 1, LW - bw / 2 - 1), by = y - 12;
+        f.fillStyle = 'rgba(8,14,36,.92)'; f.fillRect(bx - bw / 2, by - 4.5, bw, 9); f.strokeStyle = '#8fe0ff'; f.lineWidth = 0.5; f.strokeRect(bx - bw / 2, by - 4.5, bw, 9);
+        ft(s2, bx, by + 0.2, 3.6, '#f5eedc');
+      }
+    }
+  }
+}
+function drawFallingApe() {
+  const t = G.apeFall.t; if (t > 2.6) return;
+  const tt = Math.max(0, t - 0.6), y0 = yAt(4, APE_X), jit = t < 0.6 ? Math.sin(t * 70) * 0.8 : 0;
+  drawApe({ x: APE_X + 8 + tt * 10 + jit, y: y0 + 0.5 * 320 * tt * tt, stage: t < 0.6 ? 'pound' : 'toss', flip: false, k: 1, rot: tt * 3.2 });
 }
 function drawSeg(i, x0, x1) {
   const a = yAt(i, x0), b = yAt(i, x1), pal = ST.pal;
@@ -861,6 +1006,7 @@ function drawRopes() {
 }
 function drawLadder(L) {
   const top = yAt(L.lo + 1, L.x), bot = yAt(L.lo, L.x);
+  if (L.lock && !G.unlocked) { f.save(); f.globalAlpha = 0.28; f.setLineDash([2, 2]); f.strokeStyle = '#efe5cb'; f.lineWidth = 1; f.beginPath(); f.moveTo(L.x - 3.2, top); f.lineTo(L.x - 3.2, bot); f.moveTo(L.x + 3.2, top); f.lineTo(L.x + 3.2, bot); f.stroke(); f.restore(); ft('LOCKED', L.x, (top + bot) / 2, 3, '#ff8a80'); return; }
   f.strokeStyle = '#efe5cb'; f.lineWidth = 1.2;
   const full = L.full, h = bot - top, ub = full ? top : top + h * 0.5;
   // montants
@@ -969,7 +1115,7 @@ function drawApe(o) {
   const a = o ? { stage: o.stage, t: G.t } : G.ape, cx = o ? o.x - 8 : APE_X, by = o ? o.y : yAt(4, cx), bob = Math.sin(G.t * 3.2) * 0.6;
   // pile de globes a gauche
   if (!o) for (const [gx, gy] of [[9, 0], [17, 0], [13, -8.4]]) { ell(gx, by + gy - 5, 4.4, 4.4, '#2a5aa0'); f.strokeStyle = 'rgba(255,255,255,.3)'; f.lineWidth = 0.5; f.beginPath(); f.ellipse(gx, by + gy - 5, 2, 4.4, 0, 0, 6.2832); f.stroke(); }
-  f.save(); f.translate(cx + 8, by); if (o) { f.scale(o.flip ? -o.k : o.k, o.k); }
+  f.save(); f.translate(cx + 8, by); if (o && o.rot) f.rotate(o.rot); if (o) { f.scale(o.flip ? -o.k : o.k, o.k); }
   const pound = a.stage === 'pound' ? Math.abs(Math.sin(a.t * 13)) : 0;
   const grab = a.stage === 'grab', toss = a.stage === 'toss';
   const fur = '#4b3a73', fur2 = '#392c5a', skin = '#cdb79b';
@@ -1064,12 +1210,13 @@ function drawField() {
   f.save();
   if (G.shake > 0) f.translate((Math.random() - 0.5) * 2.4, (Math.random() - 0.5) * 2.4);
   for (let i = 0; i < PLS.length; i++) drawPlank(i);
-  LAD.forEach(drawLadder); drawRopes();
+  LAD.forEach(drawLadder); drawRopes(); drawLifts();
   drawInkwell();
-  const cin = G.state === 'clear' && G.stateT > 0.3 ? cineApe(G.stateT - 0.3) : null;
+  const cin = G.state === 'clear' && G.stateT > 0.3 && !ST.rivets ? cineApe(G.stateT - 0.3) : null;
   if (!(cin && cin.bookGone)) drawBook();
-  if (cin) { drawApe(cin); } else drawApe();
+  if (cin) { drawApe(cin); } else if (G.apeFall) drawFallingApe(); else drawApe();
   G.hammers.forEach((h) => { if (!h.taken) drawHammerIcon(h.x, yAt(h.plat, h.x), h.x); });
+  drawTiles();
   G.guns.forEach((h) => { if (!h.taken) drawGunIcon(h.x, yAt(h.plat, h.x), h.x); });
   G.planes.forEach((h) => { if (!h.taken) drawPlane(h.x, yAt(h.plat, h.x) - 9 + Math.sin(G.t * 3 + h.x) * 1.2, 1, 0.5); });
   G.items.forEach((it) => { if (!it.taken) drawItem(it); });
@@ -1082,7 +1229,7 @@ function drawField() {
   // messages sur le terrain
   if (G.state === 'ready') {
     f.fillStyle = 'rgba(8,14,36,.82)'; f.fillRect(20, 108, 200, 36); f.strokeStyle = '#ffd23a'; f.lineWidth = 0.8; f.strokeRect(20, 108, 200, 36);
-    ft('ROUND ' + G.round, LW / 2, 114, 7, '#ffd23a'); ft(ST.name, LW / 2, 123, 4.6, '#8fd0ff'); ft(ST.gaps.some((g) => g.rope) ? 'ROPES: JUMP TO GRAB, CLICK TO LET GO' : 'HOW MANY VERBS CAN YOU CRACK?', LW / 2, 132, 4.2, '#f5eedc');
+    ft('ROUND ' + G.round, LW / 2, 114, 7, '#ffd23a'); ft(ST.name, LW / 2, 123, 4.6, '#8fd0ff'); ft(ST.hint || 'HOW MANY VERBS CAN YOU CRACK?', LW / 2, 132, 4.2, '#f5eedc');
     if (G.penalty) ft('Quiz penalty: bonus -' + G.penalty, LW / 2, 140, 3.6, '#ff8a80');
   } else if (G.state === 'dead' && G.stateT > 0.8) {
     f.fillStyle = 'rgba(8,14,36,.82)'; f.fillRect(50, 108, 140, 22); f.strokeStyle = '#ff8a80'; f.lineWidth = 0.8; f.strokeRect(50, 108, 140, 22);
@@ -1091,7 +1238,7 @@ function drawField() {
     if (G.stateT > 2.4) {
       f.fillStyle = 'rgba(8,14,36,.9)'; f.fillRect(18, 92, 204, 62); f.strokeStyle = '#6fe09a'; f.lineWidth = 0.8; f.strokeRect(18, 92, 204, 62);
       ft('ROUND CLEARED!', LW / 2, 103, 7.2, '#6fe09a'); ft('BONUS ' + (G.clearBonus || 0), LW / 2, 116, 6, '#ffd23a');
-      ft('THE APE ESCAPES WITH THE BOOK!', LW / 2, 128, 4.6, '#f5eedc'); ft('NEXT: ' + STAGES[G.round % STAGES.length].name, LW / 2, 139, 4.6, '#ffd23a');
+      ft(ST.clearMsg || 'THE APE ESCAPES WITH THE BOOK!', LW / 2, 128, 4.6, '#f5eedc'); ft('NEXT: ' + STAGES[G.round % STAGES.length].name, LW / 2, 139, 4.6, '#ffd23a');
       ft('Verbs cracked this game: ' + G.learned.length, LW / 2, 148, 3.6, '#a9b3c9');
     }
   } else if (G.state === 'paused') {
@@ -1326,7 +1473,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in the other arcade games.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Arrows, ZQSD or WASD: walk, up / down to climb a ladder. Left click or Space: jump. Right click or E: throw a paper plane. P: pause. M: sound. H: HD / retro.<br>Every globe carries an irregular verb. Grab a hammer (10 seconds) and hit a globe three times: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the globe breaks). Jumping over a globe cracks its verb at once (all three forms). A pistol (10 seconds, left click to fire, Space to jump) hits like a hammer blow from a distance. Paper planes (up to 5, kept in hand) are heat-seeking: right click or E sends one plane to each globe on the screen, and each hit cracks the verb at once. Hammers, pistols and planes lie off your route: take them only if you want them. Your goal is the book on the top shelf. You lose a life if you touch a globe or an ink blot, fall to a lower shelf, or run out of bonus points.<br>When you lose your last life, your round is saved. To continue, answer 3 grammar questions: each wrong answer costs 1000 bonus points in your first round back.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Arrows, ZQSD or WASD: walk, up / down to climb a ladder. Left click or Space: jump. Right click or E: throw a paper plane. P: pause. M: sound. H: HD / retro.<br>Every globe carries an irregular verb. Grab a hammer (10 seconds) and hit a globe three times: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the globe breaks). Jumping over a globe cracks its verb at once (all three forms). A pistol (10 seconds, left click to fire, Space to jump) hits like a hammer blow from a distance. Paper planes (up to 5, kept in hand) are heat-seeking: right click or E sends one plane to each globe on the screen, and each hit cracks the verb at once. On the tile level, walk on past participles and jump over preterits (a form identical in both counts as a participle); when all participles are validated the ape falls. On the lift level, press Up to board, then choose the correct form with Left or Right. Hammers, pistols and planes lie off your route: take them only if you want them. Your goal is the book on the top shelf. You lose a life if you touch a globe or an ink blot, fall to a lower shelf, or run out of bonus points.<br>When you lose your last life, your round is saved. To continue, answer 3 grammar questions: each wrong answer costs 1000 bonus points in your first round back.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
@@ -1439,7 +1586,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('20px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tl = { fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
+window.__tl = { updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
 })();
 
 </script>
