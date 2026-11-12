@@ -577,27 +577,90 @@ const sfx = {
   clear: () => { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.55, 'sine', 0.05, 0, i * 0.1, 0.6)); },
   base: () => { boomSnd(3); boomSnd(2, 0.26); [1568, 1319, 1047, 784, 659, 523].forEach((f, i) => tone(f, 0.5, 'sine', 0.035, 0, 0.5 + i * 0.09, 0.6)); }
 };
-// nappe spatiale discrète pendant le vol (deux sinus désaccordés + trémolo lent), à la place d'un bruit de moteur
+// Moteur : ronron grave de réacteur au ralenti (comme l'arcade) + séquence synthé façon Jean-Michel Jarre (arpèges de dents de scie filtrés, basse pulsée, nappe, écho)
+const JSTEP = 60 / 128 / 4;                                   // doubles croches à 128 bpm
+const JCHORDS = [                                              // La mineur : Am, F, C, G (notes de l'arpège + basse)
+  { arp: [220.00, 261.63, 329.63, 440.00], bass: 110.00 },
+  { arp: [174.61, 220.00, 261.63, 349.23], bass: 87.31 },
+  { arp: [261.63, 329.63, 392.00, 523.25], bass: 130.81 },
+  { arp: [196.00, 246.94, 293.66, 392.00], bass: 98.00 }
+];
+const JPAT = [0, 1, 2, 3, 2, 1, 2, 3, 0, 1, 2, 3, 2, 1, 3, 2];
+let seq = null;
+function jPluck(f, t, vol, cut) {
+  const a = actx, g = a.createGain(), lp = a.createBiquadFilter();
+  lp.type = 'lowpass'; lp.Q.value = 7;
+  lp.frequency.setValueAtTime(cut, t); lp.frequency.exponentialRampToValueAtTime(380, t + 0.22);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+  [-6, 6].forEach((dt) => { const o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = dt; o.connect(lp); o.start(t); o.stop(t + 0.3); });
+  lp.connect(g); g.connect(engine.mus);
+  if (echo) { const sg = a.createGain(); sg.gain.value = 0.55; g.connect(sg); sg.connect(echo); }
+}
+function jBass(f, t, vol) {
+  const a = actx, g = a.createGain(), lp = a.createBiquadFilter(), o = a.createOscillator();
+  o.type = 'square'; o.frequency.value = f;
+  lp.type = 'lowpass'; lp.Q.value = 3; lp.frequency.setValueAtTime(520, t); lp.frequency.exponentialRampToValueAtTime(140, t + 0.2);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+  o.connect(lp); lp.connect(g); g.connect(engine.mus); o.start(t); o.stop(t + 0.28);
+}
+function jPad(freqs, t, dur, vol) {
+  const a = actx, g = a.createGain(), lp = a.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 750;
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + dur * 0.35); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+  freqs.forEach((f) => [-9, 9].forEach((dt) => { const o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = dt; o.connect(lp); o.start(t); o.stop(t + dur + 0.05); }));
+  lp.connect(g); g.connect(engine.mus);
+  if (echo) { const sg = a.createGain(); sg.gain.value = 0.4; g.connect(sg); sg.connect(echo); }
+}
+function jStep(s, t) {
+  const ch = JCHORDS[Math.floor(s / 16) % 4], i = s % 16;
+  const sweep = 0.5 + 0.5 * Math.sin(s / 64 * Math.PI * 2);   // le filtre s'ouvre et se ferme sur 4 mesures
+  if (i === 0) jPad([ch.arp[0], ch.arp[1], ch.arp[2]], t, 16 * JSTEP, 0.007);
+  if (i % 4 === 0) jBass(ch.bass, t, i === 0 ? 0.05 : 0.036);
+  jPluck(ch.arp[JPAT[i]], t, i % 4 === 0 ? 0.02 : 0.014, 1300 + 1500 * sweep);
+}
+function seqTick() {
+  if (!seq || !actx || !engine) return;
+  const now = actx.currentTime;
+  if (seq.next < now - 0.2) seq.next = now + 0.02;            // onglet resté en arrière-plan : on repart au présent
+  while (seq.next < now + 0.14) { jStep(seq.step, seq.next); seq.next += JSTEP; seq.step++; }
+}
+function seqStart() {
+  if (seq || !actx) return;
+  seq = { next: actx.currentTime + 0.05, step: 0, timer: setInterval(seqTick, 30) };
+}
+function seqStop() {
+  if (seq) { clearInterval(seq.timer); seq = null; }
+}
 function setEngine(on, boost) {
   if (!on || muted) {
-    if (engine) { try { engine.g.gain.setTargetAtTime(0, actx.currentTime, 0.2); } catch (e) {} }
+    seqStop();
+    if (engine) { try { const t = actx.currentTime; engine.g.gain.setTargetAtTime(0, t, 0.2); engine.mus.gain.setTargetAtTime(0, t, 0.15); } catch (e) {} }
     return;
   }
   const a = ac(); if (!a) return;
   try {
     if (!engine) {
-      const o = a.createOscillator(), o2 = a.createOscillator(), l = a.createOscillator(), lg = a.createGain(), g = a.createGain();
-      o.type = 'sine'; o.frequency.value = 196; o2.type = 'sine'; o2.frequency.value = 294.6;
-      l.frequency.value = 0.35; lg.gain.value = 0.006; g.gain.value = 0;
+      const g = a.createGain(); g.gain.value = 0;
+      const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 230; lp.Q.value = 1.2;
+      const o1 = a.createOscillator(), o2 = a.createOscillator();
+      o1.type = 'sawtooth'; o1.frequency.value = 55; o2.type = 'sawtooth'; o2.frequency.value = 55.7;     // léger battement entre les deux voix
+      const ns = a.createBufferSource(); ns.buffer = noiseBuf(a, 2, true, 0); ns.loop = true;
+      const ng = a.createGain(); ng.gain.value = 0.5;
+      const l = a.createOscillator(), lg = a.createGain();
+      l.type = 'sine'; l.frequency.value = 9; lg.gain.value = 0.01;                                    // ronronnement du ralenti
+      o1.connect(lp); o2.connect(lp); ns.connect(ng); ng.connect(lp); lp.connect(g); g.connect(outNode());
       l.connect(lg); lg.connect(g.gain);
-      o.connect(g); o2.connect(g); g.connect(outNode());
-      if (echo) { const sg = a.createGain(); sg.gain.value = 0.5; g.connect(sg); sg.connect(echo); }
-      o.start(); o2.start(); l.start();
-      engine = { o, o2, g };
+      const mus = a.createGain(); mus.gain.value = 0; mus.connect(outNode());
+      o1.start(); o2.start(); ns.start(); l.start();
+      engine = { o1, o2, l, g, mus };
     }
     const t = a.currentTime;
-    engine.o.frequency.setTargetAtTime(196 + boost * 8, t, 0.3);
-    engine.g.gain.setTargetAtTime(0.012, t, 0.4);
+    engine.o1.frequency.setTargetAtTime(55 + boost * 3, t, 0.3);
+    engine.o2.frequency.setTargetAtTime(55.7 + boost * 3, t, 0.3);
+    engine.l.frequency.setTargetAtTime(9 + boost * 2, t, 0.3);
+    engine.g.gain.setTargetAtTime(0.035, t, 0.4);
+    engine.mus.gain.setTargetAtTime(1, t, 0.1);
+    seqStart();
   } catch (e) {}
 }
 
