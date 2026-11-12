@@ -373,7 +373,7 @@ function fallInWater(i, gp) {
   burst(nx, p.y - 8, '#8fd0ff', 14, 45); SND.item(); pop(nx, p.y - 24, 'SPLASH! -300', '#ff8a80'); G.shake = 0.15;
 }
 function makeRopes() {
-  return ST.gaps.filter((g) => g.rope).map((g, k) => { const cx = (g.x0 + g.x1) / 2; return { gap: g, cx, ay: yAt(g.plat, cx) - 36, L: 22, A: 1.05, w: 1.6, ph: k * 1.7 }; });
+  return ST.gaps.filter((g) => g.rope).map((g, k) => { const cx = (g.x0 + g.x1) / 2; return { gap: g, cx, ay: yAt(g.plat, cx) - 36, L: 22, A: 1.05, w: 1.35, ph: k * 1.7 }; });
 }
 
 /* ------------------------------------------------------------
@@ -504,8 +504,8 @@ function stepPlayer(dt) {
     const py = p.y; p.fromT = (p.fromT || 0) - dt;
     p.x += p.vx * dt; p.vy += 480 * dt; p.y += p.vy * dt; p.apex = Math.min(p.apex, p.y); p.moving = false;
     if (p.ropeCd > 0) p.ropeCd -= dt;
-    else if (G.ropes && G.ropes.length && (p.jumpReq || I.U)) {
-      for (const r of G.ropes) { const tp = ropeTip(r); if (Math.abs(p.x - tp.x) < 14 && Math.abs((p.y - 14) - tp.y) < 14) { p.mode = 'rope'; p.rope = r; p.ropeT = 0; SND.item(); break; } }
+    else if (G.ropes && G.ropes.length) {
+      for (const r of G.ropes) { const tp = ropeTip(r); if (Math.abs(p.x - tp.x) < 17 && Math.abs((p.y - 14) - tp.y) < 18) { p.mode = 'rope'; p.rope = r; p.ropeT = 0; SND.item(); break; } }
       if (p.mode === 'rope') { p.jumpReq = false; return; }
     }
     if (p.vy >= 0) {
@@ -529,7 +529,7 @@ function stepPlayer(dt) {
   } else if (p.mode === 'rope') {
     const r = p.rope, a = ropeAng(r), tp = ropeTip(r), av = r.A * r.w * Math.cos(r.w * G.t + r.ph);
     p.x = tp.x; p.y = tp.y + 16; p.ropeT += dt; p.moving = false; p.face = av >= 0 ? 1 : -1;
-    if (p.jumpReq || p.ropeT > 7) { p.mode = 'air'; p.vx = r.L * av * Math.cos(a) * 1.25; p.vy = -80; p.apex = p.y; p.fromPlat = -1; p.fromT = 0; p.ropeCd = 0.5; SND.jump(); }
+    if (p.jumpReq || I.D || p.ropeT > 7) { p.mode = 'air'; p.vx = r.L * av * Math.cos(a) * 1.25; p.vy = -80; p.apex = p.y; p.fromPlat = -1; p.fromT = 0; p.ropeCd = 0.5; SND.jump(); }
   } else if (p.mode === 'climb') {
     const L = p.lad, top = yAt(L.lo + 1, L.x), bot = yAt(L.lo, L.x);
     p.moving = false;
@@ -1082,7 +1082,7 @@ function drawField() {
   // messages sur le terrain
   if (G.state === 'ready') {
     f.fillStyle = 'rgba(8,14,36,.82)'; f.fillRect(20, 108, 200, 36); f.strokeStyle = '#ffd23a'; f.lineWidth = 0.8; f.strokeRect(20, 108, 200, 36);
-    ft('ROUND ' + G.round, LW / 2, 114, 7, '#ffd23a'); ft(ST.name, LW / 2, 123, 4.6, '#8fd0ff'); ft(ST.gaps.some((g) => g.rope) ? 'ROPES: JUMP, HOLD UP, CLICK TO LET GO' : 'HOW MANY VERBS CAN YOU CRACK?', LW / 2, 132, 4.2, '#f5eedc');
+    ft('ROUND ' + G.round, LW / 2, 114, 7, '#ffd23a'); ft(ST.name, LW / 2, 123, 4.6, '#8fd0ff'); ft(ST.gaps.some((g) => g.rope) ? 'ROPES: JUMP TO GRAB, CLICK TO LET GO' : 'HOW MANY VERBS CAN YOU CRACK?', LW / 2, 132, 4.2, '#f5eedc');
     if (G.penalty) ft('Quiz penalty: bonus -' + G.penalty, LW / 2, 140, 3.6, '#ff8a80');
   } else if (G.state === 'dead' && G.stateT > 0.8) {
     f.fillStyle = 'rgba(8,14,36,.82)'; f.fillRect(50, 108, 140, 22); f.strokeStyle = '#ff8a80'; f.lineWidth = 0.8; f.strokeRect(50, 108, 140, 22);
