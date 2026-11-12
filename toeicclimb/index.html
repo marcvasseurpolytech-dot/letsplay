@@ -336,7 +336,7 @@ const STAGES = [
       { plat: 2, x0: 118, x1: 140, rope: false }, { plat: 3, x0: 100, x1: 142, rope: true }
     ],
     belts: [
-      { plat: 0, x0: 130, x1: 186, v: -16 }, { plat: 2, x0: 20, x1: 108, v: 18 }, { plat: 4, x0: 90, x1: 160, v: -14 }
+      { plat: 0, x0: 130, x1: 186, v: -62 }, { plat: 2, x0: 62, x1: 108, v: -62 }, { plat: 4, x0: 104, x1: 152, v: -62 }
     ],
     hammers: [[2, 160], [4, 140]],
     items: [['pencil', 0, 40, 300], ['phones', 1, 190, 500], ['sheet', 3, 180, 800]], speed: 1.05 }
@@ -353,10 +353,25 @@ function setStage(round) {
   PLS.length = 0; ST.pls.forEach((q) => PLS.push(q)); LAD.length = 0; ST.lad.forEach((q) => LAD.push(q));
   bgCv = null;
 }
-function inGap(i, x) { for (const g of ST.gaps) if (g.plat === i && x > g.x0 && x < g.x1) return g; return null; }
+function inGap(i, x, m) { m = m || 0; for (const g of ST.gaps) if (g.plat === i && x > g.x0 + m && x < g.x1 - m) return g; return null; }
 function beltAt(i, x) { for (const b of ST.belts) if (b.plat === i && x >= b.x0 && x <= b.x1) return b.v; return 0; }
 function ropeAng(r) { return r.A * Math.sin(r.w * G.t + r.ph); }
 function ropeTip(r) { const a = ropeAng(r); return { x: r.cx + r.L * Math.sin(a), y: r.ay + r.L * Math.cos(a) }; }
+function fallInWater(i, gp) {
+  const p = G.p; G.gapSnap = G.t; burst(p.x, yAt(i, p.x), '#6fd0c0', 16, 55); SND.smash();
+  G.bonus = Math.max(500, G.bonus - 300);
+  let ni = i - 1, nx;
+  if (ni < 0) { ni = 0; nx = Math.max(4, gp.x0 - 8); }
+  else {
+    const c = (gp.x0 + gp.x1) / 2, q = PLS[ni]; nx = clamp(c, q.x0 + 4, q.x1 - 4);
+    search: for (let d = 0; d < 140; d += 4) for (const sg of [1, -1]) {
+      const x = clamp(c + sg * d, q.x0 + 4, q.x1 - 4);
+      if (!inGap(ni, x, -8) && !(ni === 4 && x < 70)) { nx = x; break search; }
+    }
+  }
+  p.plat = ni; p.x = nx; p.y = yAt(ni, nx); p.mode = 'ground'; p.vx = 0; p.vy = 0; p.moving = false; p.fromPlat = -1; p.fromT = 0; p.ropeCd = 0.4;
+  burst(nx, p.y - 8, '#8fd0ff', 14, 45); SND.item(); pop(nx, p.y - 24, 'SPLASH! -300', '#ff8a80'); G.shake = 0.15;
+}
 function makeRopes() {
   return ST.gaps.filter((g) => g.rope).map((g, k) => { const cx = (g.x0 + g.x1) / 2; return { gap: g, cx, ay: yAt(g.plat, cx) - 36, L: 22, A: 1.05, w: 1.6, ph: k * 1.7 }; });
 }
@@ -465,14 +480,16 @@ function stepPlayer(dt) {
   if (p.mode === 'ground') {
     const mv = (I.R ? 1 : 0) - (I.L ? 1 : 0);
     p.moving = mv !== 0;
+    if (p.jumpBuf > 0) { p.jumpReq = true; p.jumpBuf = 0; }
+    const px0 = p.x;
     if (mv) { p.dir = mv; p.face = mv; p.x += mv * (hv ? 44 : 54) * dt; p.walkT += dt; }
     p.x += beltAt(p.plat, p.x) * dt;
+    const gg = inGap(p.plat, p.x); if (gg) p.x = px0 <= gg.x0 + 0.01 ? gg.x0 : gg.x1;
     const pl = PLS[p.plat];
     let open = false;
     if (p.plat === 5) p.x = clamp(p.x, pl.x0, pl.x1);
     else if (pl.dir === 1) { p.x = Math.max(p.x, pl.x0 + 2); if (p.plat === 0) p.x = Math.min(p.x, INK_X - 6); if (p.plat === 4) p.x = Math.max(p.x, 64); open = p.x > pl.x1; }
     else { p.x = Math.min(p.x, pl.x1 - 2); open = p.x < pl.x0; }
-    if (!open && inGap(p.plat, p.x)) { burst(p.x, p.y, '#6fd0c0', 14, 50); G.gapSnap = G.t; die('water'); return; }
     if (open) { p.mode = 'air'; p.vx = mv * 20; p.vy = 0; p.apex = p.y; p.moving = false; p.fromPlat = p.plat; p.fromT = 0.2; }
     else {
       p.y = yAt(p.plat, p.x);
@@ -481,6 +498,7 @@ function stepPlayer(dt) {
       else if (!hv && (I.U || I.D)) tryLadder(I.U ? -1 : 1);
     }
   } else if (p.mode === 'air') {
+    if (p.jumpReq) p.jumpBuf = 0.12; else if (p.jumpBuf > 0) p.jumpBuf -= dt;
     const py = p.y; p.fromT = (p.fromT || 0) - dt;
     p.x += p.vx * dt; p.vy += 480 * dt; p.y += p.vy * dt; p.apex = Math.min(p.apex, p.y); p.moving = false;
     if (p.ropeCd > 0) p.ropeCd -= dt;
@@ -494,8 +512,8 @@ function stepPlayer(dt) {
         if (i === p.fromPlat && p.fromT > 0) continue;
         if (p.x < pl.x0 - 1 || p.x > pl.x1 + 1) continue;
         const s = yAt(i, p.x);
-        const gp = inGap(i, p.x);
-        if (gp) { if (py <= s + 1.5 && p.y >= s + 6) { burst(p.x, s, '#6fd0c0', 14, 50); G.gapSnap = G.t; die('water'); return; } continue; }
+        const gp = inGap(i, p.x, 3);
+        if (gp) { if (p.apex <= s + 1.5 && py < s + 6 && p.y >= s + 6) { fallInWater(i, gp); return; } continue; }
         if (py <= s + 1.5 && p.y >= s) {
           p.y = s; p.mode = 'ground'; p.plat = i; p.vx = 0; p.vy = 0;
           const fall = p.y - p.apex; SND.land();
@@ -545,7 +563,7 @@ function updateGlobes(dt) {
     }
     if (g.mode === 'roll') {
       const pl = PLS[g.plat], px = g.x;
-      g.x += (pl.dir * P.spd + beltAt(g.plat, g.x)) * dt; g.y = yAt(g.plat, g.x) - 5;
+      g.x += (pl.dir * P.spd + beltAt(g.plat, g.x) * 0.35) * dt; g.y = yAt(g.plat, g.x) - 5;
       const rg = inGap(g.plat, g.x);
       if (rg && rg.rope) { g.dead = true; G.gapSnap = G.t; burst(g.x, g.y, '#6fd0c0', 10, 40); SND.smash(); continue; }
       for (const L of LAD) {
@@ -761,7 +779,8 @@ function drawGap(g) {
   f.fillStyle = '#0a4a52'; f.beginPath(); f.moveTo(g.x0, ya + 3); f.lineTo(g.x1, yb + 3); f.lineTo(g.x1, yb + TH + 9); f.lineTo(g.x0, ya + TH + 9); f.closePath(); f.fill();
   f.strokeStyle = 'rgba(160,240,230,.55)'; f.lineWidth = 0.6;
   for (let x = g.x0 + 2; x < g.x1 - 4; x += 7) { const y = yAt(g.plat, x) + 5 + Math.sin(t * 3 + x) * 0.8; f.beginPath(); f.moveTo(x, y); f.lineTo(x + 4, y); f.stroke(); }
-  // crocodile : mâchoire qui claque, plus vite juste après une chute
+  { const cxp = (g.x0 + g.x1) / 2, cyp = yAt(g.plat, cxp) + TH + 8, rr = 3 + Math.sin(t * 4) * 0.7; f.strokeStyle = 'rgba(143,208,255,.8)'; f.lineWidth = 0.6; f.beginPath(); f.ellipse(cxp, cyp, rr + 3, rr * 0.45 + 0.6, 0, 0, 6.2832); f.stroke(); f.beginPath(); f.ellipse(cxp, cyp, rr, rr * 0.3, 0, 0, 6.2832); f.stroke(); }
+  // crocodile : machoire qui claque, plus vite juste après une chute
   const cx = (g.x0 + g.x1) / 2, cy = yAt(g.plat, cx) + TH + 4, snap = G.gapSnap && t - G.gapSnap < 0.6 ? 1 : 0;
   const open = snap ? 1 : Math.max(0, Math.sin(t * 2.2 + g.x0)) ;
   const w = Math.min(10, (g.x1 - g.x0) / 2 - 1);
