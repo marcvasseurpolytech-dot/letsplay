@@ -637,7 +637,11 @@ function fireGun() {
 function throwPlane() {
   const p = G.p;
   if (G.state !== 'play' || !p || G.planeAmmo <= 0 || p.mode === 'climb' || p.mode === 'rope') return;
-  G.planeAmmo--; G.fly.push({ plat: p.plat, x: p.x + p.face * 6, dir: p.face, t: 0 }); SND.toss();
+  const hx = p.x + p.face * 6, hy = p.y - 11;
+  const tg = G.globes.filter((g) => !g.dead).sort((a, b) => Math.hypot(a.x - hx, a.y - hy) - Math.hypot(b.x - hx, b.y - hy)).slice(0, G.planeAmmo);
+  if (!tg.length) return;
+  tg.forEach((g, k) => { G.fly.push({ x: hx, y: hy, ang: p.face > 0 ? -0.6 : Math.PI + 0.6, tgt: g, t: -k * 0.07, sp: 60 }); });
+  G.planeAmmo -= tg.length; SND.toss();
 }
 function updateShots(dt) {
   for (const s of G.shots) {
@@ -649,9 +653,19 @@ function updateShots(dt) {
   }
   G.shots = G.shots.filter((s) => !s.dead); G.blots = G.blots.filter((b) => !b.dead);
   for (const a of G.fly) {
-    a.t += dt; a.x += a.dir * 96 * dt; const pl = PLS[a.plat];
-    if (a.x < pl.x0 - 6 || a.x > pl.x1 + 6) { a.dead = true; continue; }
-    for (const g of G.globes) { if (g.dead || g.mode === 'fall' || g.mode === 'lad' || g.plat !== a.plat) continue; if (Math.abs(g.x - a.x) < 9) { g.dead = true; a.dead = true; addScore(300); crackVerb(g); SND.smash(); burst(g.x, g.y, '#8fd0ff', 14, 60); pop(g.x, g.y - 14, '+300', '#6fe09a'); break; } }
+    a.t += dt; if (a.t < 0) continue;
+    if (!a.tgt || a.tgt.dead) {
+      const taken = new Set(G.fly.filter((q) => q !== a && q.tgt && !q.tgt.dead).map((q) => q.tgt));
+      const c = G.globes.filter((g) => !g.dead && !taken.has(g)).sort((u, v) => Math.hypot(u.x - a.x, u.y - a.y) - Math.hypot(v.x - a.x, v.y - a.y))[0];
+      if (!c) { a.dead = true; G.planeAmmo = Math.min(5, G.planeAmmo + 1); continue; }
+      a.tgt = c;
+    }
+    const g = a.tgt, want = Math.atan2(g.y - a.y, g.x - a.x);
+    let d = want - a.ang; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+    a.ang += clamp(d, -7 * dt, 7 * dt); a.sp = Math.min(150, a.sp + 160 * dt);
+    a.x += Math.cos(a.ang) * a.sp * dt; a.y += Math.sin(a.ang) * a.sp * dt;
+    if (a.t > 7 || a.x < -20 || a.x > LW + 20 || a.y < -30 || a.y > LH + 30) { a.dead = true; continue; }
+    if (Math.hypot(g.x - a.x, g.y - a.y) < 7) { g.dead = true; a.dead = true; addScore(300); crackVerb(g); SND.smash(); burst(g.x, g.y, '#8fd0ff', 14, 60); pop(g.x, g.y - 14, '+300', '#6fe09a'); }
   }
   G.fly = G.fly.filter((a) => !a.dead);
 }
@@ -702,7 +716,7 @@ function updatePlay(dt) {
   }
   if (p.mode === 'ground') {
     for (const h of G.guns) if (!h.taken && h.plat === p.plat && Math.abs(h.x - p.x) < 6) { h.taken = true; G.gunT = 10; SND.hammer(); pop(p.x, p.y - 22, 'PISTOL! 10 s', '#8fd0ff'); }
-    for (const h of G.planes) if (!h.taken && h.plat === p.plat && Math.abs(h.x - p.x) < 6) { h.taken = true; G.planeAmmo = Math.min(3, G.planeAmmo + 1); SND.item(); pop(p.x, p.y - 22, 'PAPER PLANE!', '#f5eedc'); }
+    for (const h of G.planes) if (!h.taken && h.plat === p.plat && Math.abs(h.x - p.x) < 6) { h.taken = true; G.planeAmmo = 5; SND.item(); pop(p.x, p.y - 22, 'PAPER PLANES x5!', '#f5eedc'); }
   }
   for (const it of G.items) {
     if (it.taken) continue;
@@ -895,8 +909,8 @@ function drawGunHeld() {
   if (G.gunFlash > 0) { ell(9.6, 0, 2.6, 1.8, '#ffe27a'); ell(9.6, 0, 1.2, 0.9, '#fff'); }
   f.restore();
 }
-function drawPlane(x, y, dir, k) {
-  f.save(); f.translate(x, y); f.scale(dir * (k || 1), k || 1);
+function drawPlane(x, y, dir, k, ang) {
+  f.save(); f.translate(x, y); if (ang) f.rotate(ang); f.scale(dir * (k || 1), k || 1);
   f.fillStyle = '#f5eedc'; f.beginPath(); f.moveTo(-7, -2); f.lineTo(8, 0); f.lineTo(-7, 3); f.closePath(); f.fill();
   f.fillStyle = '#c9d3e8'; f.beginPath(); f.moveTo(-7, -2); f.lineTo(8, 0); f.lineTo(-2, 1); f.closePath(); f.fill();
   f.strokeStyle = '#8a96b8'; f.lineWidth = 0.5; f.beginPath(); f.moveTo(-7, 0.6); f.lineTo(8, 0); f.stroke();
@@ -904,7 +918,7 @@ function drawPlane(x, y, dir, k) {
 }
 function drawShots() {
   for (const s of G.shots) { const y = yAt(s.plat, s.x) - 9; f.fillStyle = 'rgba(255,226,122,.35)'; f.fillRect(s.dir > 0 ? s.x - 7 : s.x, y - 0.5, 7, 1); ell(s.x, y, 1.5, 1.5, '#ffe27a'); ell(s.x, y, 0.7, 0.7, '#fff'); }
-  for (const a of G.fly) { const y = yAt(a.plat, a.x) - 10 + Math.sin(a.t * 9) * 1.2; drawPlane(a.x, y, a.dir, 1); }
+  for (const a of G.fly) { if (a.t < 0) continue; f.fillStyle = 'rgba(245,238,220,.25)'; f.beginPath(); f.arc(a.x - Math.cos(a.ang) * 6, a.y - Math.sin(a.ang) * 6, 1.4, 0, 6.2832); f.fill(); drawPlane(a.x, a.y, 1, 1, a.ang); }
 }
 function drawHammerIcon(x, y, k) {
   f.save(); f.translate(x, y - 8 + Math.sin(G.t * 4 + k) * 1.2);
@@ -1061,7 +1075,8 @@ function drawField() {
   G.items.forEach((it) => { if (!it.taken) drawItem(it); });
   G.globes.forEach(drawGlobe); G.blots.forEach(drawBlot);
   if (G.p) drawStudent(G.state === 'dead');
-  drawShots(); if (G.p && G.gunT > 0 && G.state === 'play' && G.p.mode !== 'climb') drawGunHeld();
+  drawShots(); if (G.p && G.planeAmmo > 0 && G.state === 'play' && G.p.mode !== 'climb' && G.p.mode !== 'rope') drawPlane(G.p.x + G.p.face * 5, G.p.y - 15 + Math.sin(G.t * 5) * 0.4, G.p.face, 0.7);
+  if (G.p && G.gunT > 0 && G.state === 'play' && G.p.mode !== 'climb') drawGunHeld();
   drawFloat(); drawBanner();
   f.restore();
   // messages sur le terrain
@@ -1110,7 +1125,7 @@ function drawPanel() {
     txt('PISTOL', x0 + 12, 446, 8, '#8fd0ff'); ctx.fillStyle = '#1a1a3a'; ctx.fillRect(x0 + 12, 458, w - 24, 8); ctx.fillStyle = G.gunT < 3 ? '#ff4050' : '#8fd0ff'; ctx.fillRect(x0 + 12, 458, (w - 24) * G.gunT / 10, 8);
   }
   if (G.planeAmmo > 0) txt('PLANES x' + G.planeAmmo, x0 + 12, 474, 8, '#f5eedc');
-  const help = ['ARROWS ZQSD: move', 'SPACE: jump', 'CLICK: jump / FIRE', 'RIGHT CLICK / E: plane', 'HAMMER: 3 hits'];
+  const help = ['ARROWS ZQSD: move', 'SPACE: jump', 'CLICK: jump / FIRE', 'RIGHT CLICK / E: planes', 'HAMMER: 3 hits'];
   help.forEach((s, i) => txt(s, x0 + w / 2, 498 + i * 14, 6.6, i % 2 ? '#a9b3c9' : '#f5eedc', 'center'));
   txt(PR.user ? PR.user.nom.slice(0, 16) : 'GUEST', x0 + w / 2, 568, 7, '#6f78d8', 'center');
 }
@@ -1311,7 +1326,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in the other arcade games.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Arrows, ZQSD or WASD: walk, up / down to climb a ladder. Left click or Space: jump. Right click or E: throw a paper plane. P: pause. M: sound. H: HD / retro.<br>Every globe carries an irregular verb. Grab a hammer (10 seconds) and hit a globe three times: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the globe breaks). Jumping over a globe cracks its verb at once (all three forms). A pistol (10 seconds, left click to fire, Space to jump) hits like a hammer blow from a distance. A paper plane thrown at a globe cracks its verb at once. Hammers, pistols and planes lie off your route: take them only if you want them. Your goal is the book on the top shelf. You lose a life if you touch a globe or an ink blot, fall to a lower shelf, or run out of bonus points.<br>When you lose your last life, your round is saved. To continue, answer 3 grammar questions: each wrong answer costs 1000 bonus points in your first round back.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Arrows, ZQSD or WASD: walk, up / down to climb a ladder. Left click or Space: jump. Right click or E: throw a paper plane. P: pause. M: sound. H: HD / retro.<br>Every globe carries an irregular verb. Grab a hammer (10 seconds) and hit a globe three times: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the globe breaks). Jumping over a globe cracks its verb at once (all three forms). A pistol (10 seconds, left click to fire, Space to jump) hits like a hammer blow from a distance. Paper planes (up to 5, kept in hand) are heat-seeking: right click or E sends one plane to each globe on the screen, and each hit cracks the verb at once. Hammers, pistols and planes lie off your route: take them only if you want them. Your goal is the book on the top shelf. You lose a life if you touch a globe or an ink blot, fall to a lower shelf, or run out of bonus points.<br>When you lose your last life, your round is saved. To continue, answer 3 grammar questions: each wrong answer costs 1000 bonus points in your first round back.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
