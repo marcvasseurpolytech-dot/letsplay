@@ -24,12 +24,12 @@ module.exports = async (req, res) => {
     if (!/^\d{4}$/.test(code)) return res.status(400).json({ error: 'Your secret code must be exactly 4 digits.' });
     const profile = {
       nom: nom.toUpperCase(), codeHash: L.codeHash(key, code),
-      createdAt: new Date().toISOString(), best: 0, progress: null, wb: null, wbBest: 0, xm: null, xmBest: 0, sc: null, scBest: 0, tn: null, tnBest: 0, td: null, tdBest: 0, ti: null, tiBest: 0, tg: null, tgBest: 0, tr: null, trBest: 0
+      createdAt: new Date().toISOString(), best: 0, progress: null, wb: null, wbBest: 0, xm: null, xmBest: 0, sc: null, scBest: 0, tn: null, tnBest: 0, td: null, tdBest: 0, ti: null, tiBest: 0, tg: null, tgBest: 0, tr: null, trBest: 0, tl: null, tlBest: 0
     };
     // Création sans sha : GitHub refuse (422) si le fichier existe déjà, ce qui garantit l'unicité.
     const r = await L.ghPut(L.pathOf(key), profile, null, ghToken, `new player ${key}`);
     if (r.ok) await P.pushHistory({ t: Date.now(), k: key, n: profile.nom, g: 'hub', d: P.deviceOf(req), e: 'signup' });
-    if (r.ok) return res.json({ token: L.issueToken(key), user: { key, nom: profile.nom }, progress: null, best: 0, wb: null, wbBest: 0, xm: null, xmBest: 0, sc: null, scBest: 0, tn: null, tnBest: 0, td: null, tdBest: 0, ti: null, tiBest: 0, tg: null, tgBest: 0, tr: null, trBest: 0 });
+    if (r.ok) return res.json({ token: L.issueToken(key), user: { key, nom: profile.nom }, progress: null, best: 0, wb: null, wbBest: 0, xm: null, xmBest: 0, sc: null, scBest: 0, tn: null, tnBest: 0, td: null, tdBest: 0, ti: null, tiBest: 0, tg: null, tgBest: 0, tr: null, trBest: 0, tl: null, tlBest: 0 });
     if (r.status === 422) return res.status(409).json({ error: 'This name is already registered. Log in, or add your first name to be unique.' });
     return res.status(500).json({ error: 'Could not create the profile. Try again.' });
   }
@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
       d.lastLogin = new Date(ev.t).toISOString(); d.loginCount = (d.loginCount || 0) + 1;
       try { await L.ghPut(L.pathOf(key), d, f.sha, ghToken, `login ${key}`); } catch (e) {}
     }
-    return res.json({ token: L.issueToken(key), user: { key, nom: d.nom }, progress: d.progress || null, best: d.best || 0, wb: d.wb || null, wbBest: d.wbBest || 0, xm: d.xm || null, xmBest: d.xmBest || 0, sc: d.sc || null, scBest: d.scBest || 0, tn: d.tn || null, tnBest: d.tnBest || 0, td: d.td || null, tdBest: d.tdBest || 0, ti: d.ti || null, tiBest: d.tiBest || 0, tg: d.tg || null, tgBest: d.tgBest || 0, tr: d.tr || null, trBest: d.trBest || 0 });
+    return res.json({ token: L.issueToken(key), user: { key, nom: d.nom }, progress: d.progress || null, best: d.best || 0, wb: d.wb || null, wbBest: d.wbBest || 0, xm: d.xm || null, xmBest: d.xmBest || 0, sc: d.sc || null, scBest: d.scBest || 0, tn: d.tn || null, tnBest: d.tnBest || 0, td: d.td || null, tdBest: d.tdBest || 0, ti: d.ti || null, tiBest: d.tiBest || 0, tg: d.tg || null, tgBest: d.tgBest || 0, tr: d.tr || null, trBest: d.trBest || 0, tl: d.tl || null, tlBest: d.tlBest || 0 });
   }
 
   // ---------------------------------------------------------------- présence (jeton requis, aucune lecture GitHub)
@@ -75,7 +75,7 @@ module.exports = async (req, res) => {
     if (action === 'load') {
       const f = await L.ghGet(L.pathOf(key), ghToken);
       if (f.error || f.missing) return res.status(500).json({ error: 'Profile not found.' });
-      return res.json({ progress: f.data.progress || null, best: f.data.best || 0, wb: f.data.wb || null, wbBest: f.data.wbBest || 0, xm: f.data.xm || null, xmBest: f.data.xmBest || 0, sc: f.data.sc || null, scBest: f.data.scBest || 0, tn: f.data.tn || null, tnBest: f.data.tnBest || 0, td: f.data.td || null, tdBest: f.data.tdBest || 0, ti: f.data.ti || null, tiBest: f.data.tiBest || 0, tg: f.data.tg || null, tgBest: f.data.tgBest || 0, tr: f.data.tr || null, trBest: f.data.trBest || 0 });
+      return res.json({ progress: f.data.progress || null, best: f.data.best || 0, wb: f.data.wb || null, wbBest: f.data.wbBest || 0, xm: f.data.xm || null, xmBest: f.data.xmBest || 0, sc: f.data.sc || null, scBest: f.data.scBest || 0, tn: f.data.tn || null, tnBest: f.data.tnBest || 0, td: f.data.td || null, tdBest: f.data.tdBest || 0, ti: f.data.ti || null, tiBest: f.data.tiBest || 0, tg: f.data.tg || null, tgBest: f.data.tgBest || 0, tr: f.data.tr || null, trBest: f.data.trBest || 0, tl: f.data.tl || null, tlBest: f.data.tlBest || 0 });
     }
     if (b.game === 'tn') {
       const tn = L.cleanTnProgress(b.progress);
@@ -194,6 +194,30 @@ module.exports = async (req, res) => {
         d.trUpdatedAt = new Date().toISOString();
         const r = await L.ghPut(L.pathOf(key), d, f.sha, ghToken, `save tr ${key}`);
         if (r.ok) return res.json({ success: true, best: d.trBest, tr: d.tr });
+      }
+      return res.status(500).json({ error: 'Save conflict. Try again.' });
+    }
+    if (b.game === 'tl') {
+      const tl = L.cleanTnProgress(b.progress);
+      if (!tl) return res.status(400).json({ error: 'Invalid progress data.' });
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const f = await L.ghGet(L.pathOf(key), ghToken);
+        if (f.error || f.missing) return res.status(500).json({ error: 'Profile not found.' });
+        const d = f.data, old = d.tl || {};
+        // fusion : on ne perd jamais un verbe déjà cassé ni un record ; le point de reprise le plus récent l'emporte
+        const words = Object.assign({}, old.words || {});
+        Object.keys(tl.words).forEach(k => { words[k] = Math.max(words[k] || 0, tl.words[k]); });
+        const newer = tl.savedAt >= (old.savedAt || 0);
+        d.tl = {
+          words, best: Math.max(old.best || 0, tl.best), runs: Math.max(old.runs || 0, tl.runs),
+          maxRound: Math.max(old.maxRound || 1, tl.maxRound), destroyed: Math.max(old.destroyed || 0, tl.destroyed),
+          qOk: Math.max(old.qOk || 0, tl.qOk), qN: Math.max(old.qN || 0, tl.qN),
+          cp: newer ? tl.cp : (old.cp || null), savedAt: Math.max(old.savedAt || 0, tl.savedAt)
+        };
+        d.tlBest = Math.max(d.tlBest || 0, tl.best);
+        d.tlUpdatedAt = new Date().toISOString();
+        const r = await L.ghPut(L.pathOf(key), d, f.sha, ghToken, `save tl ${key}`);
+        if (r.ok) return res.json({ success: true, best: d.tlBest, tl: d.tl });
       }
       return res.status(500).json({ error: 'Save conflict. Try again.' });
     }

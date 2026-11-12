@@ -87,7 +87,7 @@ module.exports = async (req, res) => {
       if (d.wb) { const s = d.wb.stats || {}; g.wb = { best: d.wbBest || 0, level: d.wb.level || 1, answered: s.answered || 0, correct: s.correct || 0, cleared: s.levelsCleared || 0, at: ts(d.wbUpdatedAt) }; }
       if (d.xm) { const s = d.xm.stats || {}; g.xm = { best: d.xmBest || 0, level: d.xm.day || 1, answered: s.answered || 0, correct: s.correct || 0, cleared: s.levelsCleared || 0, at: ts(d.xmUpdatedAt) }; }
       if (d.sc) g.sc = { best: d.scBest || 0, runs: d.sc.runs || 0, level: d.sc.maxLoop || 1, destroyed: d.sc.destroyed || 0, words: Object.keys(d.sc.words || {}).length, at: ts(d.scUpdatedAt) };
-      [['tn', 'tnUpdatedAt', 'tnBest'], ['td', 'tdUpdatedAt', 'tdBest'], ['ti', 'tiUpdatedAt', 'tiBest'], ['tg', 'tgUpdatedAt', 'tgBest'], ['tr', 'trUpdatedAt', 'trBest']].forEach(([k, u, bk]) => {
+      [['tn', 'tnUpdatedAt', 'tnBest'], ['td', 'tdUpdatedAt', 'tdBest'], ['ti', 'tiUpdatedAt', 'tiBest'], ['tg', 'tgUpdatedAt', 'tgBest'], ['tr', 'trUpdatedAt', 'trBest'], ['tl', 'tlUpdatedAt', 'tlBest']].forEach(([k, u, bk]) => {
         const x = d[k]; if (!x) return;
         g[k] = { best: d[bk] || 0, runs: x.runs || 0, level: x.maxRound || 1, destroyed: x.destroyed || 0, words: Object.keys(x.words || {}).length, answered: x.qN || 0, correct: x.qOk || 0, at: ts(d[u]) };
       });

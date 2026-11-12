@@ -2,7 +2,7 @@
 // Ne fait rien si l'élève n'est pas connecté. Aucune donnée de jeu n'est envoyée.
 (function () {
   var API = (location.protocol === 'file:' || /claude/.test(location.hostname)) ? 'https://letsplay-nine.vercel.app/api/player' : '/api/player';
-  var MAP = { hub: 'hub', scramble: 'sc', toeicnoid: 'tn', toeicdig: 'td', toeicgalaxy: 'tg', toeicrunner: 'tr', toeicgrid: 'cg', wordbridge: 'wb', noel: 'xm' };
+  var MAP = { hub: 'hub', scramble: 'sc', toeicnoid: 'tn', toeicdig: 'td', toeicgalaxy: 'tg', toeicrunner: 'tr', toeicclimb: 'tl', toeicgrid: 'cg', wordbridge: 'wb', noel: 'xm' };
   var seg = (location.pathname.split('/').filter(Boolean)[0] || '').replace(/\.html$/, '').toLowerCase();
   var game = MAP[seg] || (seg && seg !== 'index' ? 'hub' : 'ae');
   var dead = false;
