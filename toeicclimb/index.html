@@ -294,26 +294,44 @@ const SND = {
 /* ------------------------------------------------------------
    Geometrie : etageres (plateformes en pente), echelles
    ------------------------------------------------------------ */
+const STAGES = [
+  { name: 'THE READING ROOM', slope: 30, seed: 77, g0: '#0a1330', g1: '#14224a',
+    pls: [
+      { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
+      { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
+    ],
+    lad: [
+      { lo: 0, x: 196, full: true }, { lo: 0, x: 88, full: false }, { lo: 1, x: 44, full: true }, { lo: 1, x: 150, full: false },
+      { lo: 2, x: 190, full: true }, { lo: 2, x: 100, full: false }, { lo: 3, x: 98, full: true }, { lo: 3, x: 156, full: false },
+      { lo: 4, x: 176, full: true }
+    ],
+    hammers: [[1, 104], [3, 150]],
+    items: [['pencil', 0, 120, 300], ['phones', 2, 100, 500], ['sheet', 4, 120, 800]], speed: 1 },
+  { name: 'THE ARCHIVE', slope: 22, seed: 311, g0: '#1a0f33', g1: '#0f2a3d',
+    pls: [
+      { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
+      { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
+    ],
+    lad: [
+      { lo: 0, x: 60, full: true }, { lo: 0, x: 150, full: false }, { lo: 1, x: 204, full: true }, { lo: 1, x: 96, full: false },
+      { lo: 2, x: 40, full: true }, { lo: 2, x: 146, full: false }, { lo: 3, x: 128, full: true }, { lo: 3, x: 84, full: false },
+      { lo: 4, x: 160, full: true }
+    ],
+    hammers: [[2, 120], [4, 196]],
+    items: [['phones', 0, 130, 500], ['pencil', 1, 120, 300], ['sheet', 3, 60, 800]], speed: 1.12 }
+];
 const TH = 7;                          // epaisseur d'une planche
-const PLS = [
-  { yc: 216, dir: 1, x0: 0, x1: 240 },     // 0 : rouleaux vers la droite
-  { yc: 176, dir: -1, x0: 8, x1: 240 },    // 1 : vers la gauche
-  { yc: 136, dir: 1, x0: 0, x1: 232 },     // 2 : vers la droite
-  { yc: 96, dir: -1, x0: 8, x1: 240 },     // 3 : vers la gauche
-  { yc: 56, dir: 1, x0: 0, x1: 232 },      // 4 : le singe lance depuis la gauche
-  { yc: 24, dir: 0, x0: 132, x1: 232 }     // 5 : etagere du livre
-];
-function yAt(i, x) { const p = PLS[i]; return p.dir ? p.yc + p.dir * (x - 120) / 30 : p.yc; }
-const LAD = [
-  { lo: 0, x: 196, full: true }, { lo: 0, x: 88, full: false },
-  { lo: 1, x: 44, full: true }, { lo: 1, x: 150, full: false },
-  { lo: 2, x: 190, full: true }, { lo: 2, x: 100, full: false },
-  { lo: 3, x: 98, full: true }, { lo: 3, x: 156, full: false },
-  { lo: 4, x: 176, full: true }
-];
+const PLS = [], LAD = [];
+let ST = STAGES[0], SLOPE = 30;
+function yAt(i, x) { const p = PLS[i]; return p.dir ? p.yc + p.dir * (x - 120) / SLOPE : p.yc; }
 const INK_X = 222;                     // encrier en bas a droite
 const BOOK_X = 210;
 const APE_X = 30;
+function setStage(round) {
+  ST = STAGES[(round - 1) % STAGES.length]; SLOPE = ST.slope;
+  PLS.length = 0; ST.pls.forEach((q) => PLS.push(q)); LAD.length = 0; ST.lad.forEach((q) => LAD.push(q));
+  bgCv = null;
+}
 
 /* ------------------------------------------------------------
    Etat du jeu
@@ -331,13 +349,14 @@ function saveCollection() { lsSet('tlLearned', JSON.stringify(Array.from(collect
 function newPlayer() { return { x: 24, y: yAt(0, 24), vx: 0, vy: 0, mode: 'ground', plat: 0, face: 1, dir: 1, walkT: 0, apex: 0, lad: null, ladA: 0, moving: false, jumpReq: false, swing: 0 }; }
 function params() {
   const r = G.round;
-  return { spd: Math.min(78, 40 + 5 * (r - 1)), gap: Math.max(1.15, 2.7 - 0.22 * (r - 1)), desc: Math.min(0.5, 0.25 + 0.04 * (r - 1)), maxBlot: Math.min(3, 1 + Math.floor((r - 1) / 2)) };
+  return { spd: Math.min(80, (40 + 5 * (r - 1)) * ST.speed), gap: Math.max(1.15, 2.7 - 0.22 * (r - 1)), desc: Math.min(0.5, 0.25 + 0.04 * (r - 1)), maxBlot: Math.min(3, 1 + Math.floor((r - 1) / 2)) };
 }
 function resetStage() {
+  setStage(G.round);
   G.globes = []; G.blots = []; G.p = newPlayer(); G.ape = { stage: 'idle', t: 0, pound: 3 }; G.throwT = 2.2; G.blotT = 9; G.ink = 0;
   G.hammerT = 0; G.bonusT = 0; G.pops = []; G.parts = []; G.banner = null;
-  G.hammers = [{ plat: 1, x: 104, taken: false }, { plat: 3, x: 150, taken: false }];
-  G.items = [{ plat: 0, x: 120, k: 'pencil', pts: 300, taken: false }, { plat: 2, x: 100, k: 'phones', pts: 500, taken: false }, { plat: 4, x: 120, k: 'sheet', pts: 800, taken: false }];
+  G.hammers = ST.hammers.map((h) => ({ plat: h[0], x: h[1], taken: false }));
+  G.items = ST.items.map((it) => ({ plat: it[1], x: it[2], k: it[0], pts: it[3], taken: false }));
 }
 function startRound(n, pen) {
   G.round = n; G.penalty = pen || 0;
@@ -597,6 +616,7 @@ function updatePlay(dt) {
   if (p.mode === 'ground' && p.plat === 5 && p.x >= BOOK_X - 12) roundClear();
 }
 function roundClear() {
+  G.ape = { stage: 'idle', t: 0, pound: 9 };
   G.state = 'clear'; G.stateT = 0; G.hammerT = 0; SND.clear();
   const b = G.bonus; addScore(b); G.clearBonus = b;
   G.globes.forEach((g) => { burst(g.x, g.y, '#8fd0ff', 6, 40); }); G.globes = []; G.blots = [];
@@ -618,7 +638,7 @@ function update(dt) {
     }
     return;
   }
-  if (G.state === 'clear') { updateApe(dt); if (G.stateT > 3.6) startRound(G.round + 1, 0); return; }
+  if (G.state === 'clear') { updateApe(dt); if (G.stateT > 5.8) startRound(G.round + 1, 0); return; }
 }
 function gameOver(quiet) {
   G.state = 'gameover'; G.stateT = 0; if (!quiet) SND.gameover();
@@ -655,9 +675,9 @@ function ft(s, x, y, size, col, align) { f.font = size + 'px ' + FONT; f.textAli
 function makeBg() {
   const c = document.createElement('canvas'); c.width = LW * FS; c.height = LH * FS;
   const g = c.getContext('2d'); g.scale(FS, FS);
-  const gr = g.createLinearGradient(0, 0, 0, LH); gr.addColorStop(0, '#0a1330'); gr.addColorStop(1, '#14224a');
+  const gr = g.createLinearGradient(0, 0, 0, LH); gr.addColorStop(0, ST.g0); gr.addColorStop(1, ST.g1);
   g.fillStyle = gr; g.fillRect(0, 0, LW, LH);
-  const rnd = mulberry(77);
+  const rnd = mulberry(ST.seed);
   const cols = ['#3a2a55', '#2a3f6a', '#4a3322', '#2a4a45', '#553030', '#3a4a6a', '#5a4a2a'];
   for (let row = 0; row < 15; row++) {
     const y0 = row * 16 + 2;
@@ -712,12 +732,18 @@ function drawInkwell() {
 }
 function drawBook() {
   const sx = BOOK_X, sy = 24, pulse = 0.5 + 0.5 * Math.sin(G.t * 3);
-  const gr = f.createRadialGradient(sx, sy - 8, 2, sx, sy - 8, 20 + pulse * 4);
-  gr.addColorStop(0, 'rgba(255,210,58,.45)'); gr.addColorStop(1, 'rgba(255,210,58,0)'); f.fillStyle = gr; f.fillRect(sx - 26, sy - 34, 52, 52);
-  rect(sx - 7, sy - 16, 14, 16, '#a82a22'); rect(sx - 7, sy - 16, 2.5, 16, '#7d1d17'); rect(sx + 7, sy - 15, 1.6, 14, '#f5eedc');
-  rect(sx - 4, sy - 13, 9.5, 5, '#f0d27a'); ft('TOEIC', sx + 0.8, sy - 10.4, 2.9, '#7d1d17');
-  rect(sx - 4, sy - 6.5, 9.5, 0.7, '#e3b04b'); rect(sx - 4, sy - 4.5, 9.5, 0.7, '#e3b04b');
-  if (Math.sin(G.t * 5) > -0.4) { const bx = sx - 28, by = sy - 17; f.fillStyle = '#fff'; f.beginPath(); f.roundRect ? f.roundRect(bx - 12, by - 5, 24, 9, 3) : f.rect(bx - 12, by - 5, 24, 9); f.fill(); f.beginPath(); f.moveTo(bx + 8, by + 4); f.lineTo(bx + 14, by + 8); f.lineTo(bx + 12, by + 3); f.fill(); ft('HELP!', bx, by - 0.5, 4.6, '#a82a22'); }
+  const gr = f.createRadialGradient(sx, sy - 10, 2, sx, sy - 10, 24 + pulse * 4);
+  gr.addColorStop(0, 'rgba(255,210,58,.45)'); gr.addColorStop(1, 'rgba(255,210,58,0)'); f.fillStyle = gr; f.fillRect(sx - 30, sy - 40, 60, 60);
+  drawBookArt(sx, sy, 1);
+  if (G.state !== 'clear' && Math.sin(G.t * 5) > -0.4) { const bx = sx - 28, by = sy - 22; f.fillStyle = '#fff'; f.beginPath(); f.roundRect ? f.roundRect(bx - 12, by - 5, 24, 9, 3) : f.rect(bx - 12, by - 5, 24, 9); f.fill(); f.beginPath(); f.moveTo(bx + 8, by + 4); f.lineTo(bx + 13, by + 8); f.lineTo(bx + 12, by + 3); f.closePath(); f.fill(); ft('HELP!', bx, by + 0.4, 4.6, '#c0392b'); }
+}
+function drawBookArt(sx, sy, k) {
+  f.save(); f.translate(sx, sy); f.scale(k, k);
+  rect(-14, -23, 28, 23, '#a82a22'); rect(-14, -23, 3.2, 23, '#7d1d17'); rect(14, -22, 1.8, 21, '#f5eedc'); rect(-14, -23, 28, 1.6, '#c0392b');
+  rect(-9.6, -19.6, 25.2 - 1.2, 9.6, '#ffd23a'); rect(-9.6, -19.6, 24, 0.8, '#fff3b0'); rect(-9.6, -10.8, 24, 0.8, '#b8860b');
+  ft('TOEIC', 2.4, -14.6, 4.6, '#1a0d0a');
+  rect(-9.6, -7.6, 24, 1, '#e3b04b'); rect(-9.6, -5.2, 24, 1, '#e3b04b'); rect(-9.6, -2.8, 15, 1, '#e3b04b');
+  f.restore();
 }
 function drawHammerIcon(x, y, k) {
   f.save(); f.translate(x, y - 8 + Math.sin(G.t * 4 + k) * 1.2);
@@ -757,11 +783,18 @@ function drawBlot(b) {
   ell(x - 1.5, y - 5, 1.1, 1.3, '#fff'); ell(x + 1.7, y - 5, 1.1, 1.3, '#fff'); ell(x - 1.3, y - 4.8, 0.55, 0.7, '#000'); ell(x + 1.9, y - 4.8, 0.55, 0.7, '#000');
   f.strokeStyle = 'rgba(143,208,255,.45)'; f.lineWidth = 0.5; f.beginPath(); f.ellipse(x, y - 4.5, 5.4 + w, 4.9 - w * 0.5, 0, 0, 6.2832); f.stroke();
 }
-function drawApe() {
-  const a = G.ape, cx = APE_X, by = yAt(4, cx), bob = Math.sin(G.t * 3.2) * 0.6;
+function cineApe(t) {
+  const x0 = APE_X + 8, y0 = yAt(4, APE_X), xb = BOOK_X + 18, yb = 46, k = 0.8;
+  if (t < 1.0) { const u = t / 1.0; return { x: x0 + (xb - x0) * u, y: y0 + (yb - y0) * u - 40 * Math.sin(Math.PI * u), stage: 'toss', flip: false, k }; }
+  if (t < 1.6) return { x: xb, y: yb + Math.sin(t * 9) * 0.8, stage: 'grab', flip: true, k, bookGone: t > 1.25, carry: t > 1.25 };
+  const u = Math.min(1, (t - 1.6) / 1.2);
+  return { x: xb + 60 * u, y: yb - 10 * Math.sin(Math.PI * Math.min(1, u * 1.6)) - 110 * u * u, stage: 'toss', flip: true, k, bookGone: true, carry: true };
+}
+function drawApe(o) {
+  const a = o ? { stage: o.stage, t: G.t } : G.ape, cx = o ? o.x - 8 : APE_X, by = o ? o.y : yAt(4, cx), bob = Math.sin(G.t * 3.2) * 0.6;
   // pile de globes a gauche
-  for (const [gx, gy] of [[9, 0], [17, 0], [13, -8.4]]) { ell(gx, by + gy - 5, 4.4, 4.4, '#2a5aa0'); f.strokeStyle = 'rgba(255,255,255,.3)'; f.lineWidth = 0.5; f.beginPath(); f.ellipse(gx, by + gy - 5, 2, 4.4, 0, 0, 6.2832); f.stroke(); }
-  f.save(); f.translate(cx + 8, by);
+  if (!o) for (const [gx, gy] of [[9, 0], [17, 0], [13, -8.4]]) { ell(gx, by + gy - 5, 4.4, 4.4, '#2a5aa0'); f.strokeStyle = 'rgba(255,255,255,.3)'; f.lineWidth = 0.5; f.beginPath(); f.ellipse(gx, by + gy - 5, 2, 4.4, 0, 0, 6.2832); f.stroke(); }
+  f.save(); f.translate(cx + 8, by); if (o) { f.scale(o.flip ? -o.k : o.k, o.k); }
   const pound = a.stage === 'pound' ? Math.abs(Math.sin(a.t * 13)) : 0;
   const grab = a.stage === 'grab', toss = a.stage === 'toss';
   const fur = '#4b3a73', fur2 = '#392c5a', skin = '#cdb79b';
@@ -777,7 +810,7 @@ function drawApe() {
     const ext = toss ? 1 : 0;
     f.strokeStyle = fur; f.lineWidth = 5; f.lineCap = 'round'; f.beginPath(); f.moveTo(9, -22 + bob); f.lineTo(15 + ext * 6, -14 + bob - ext * 2); f.stroke();
     f.beginPath(); f.moveTo(-8, -20 + bob); f.lineTo(9 + ext * 5, -12 + bob); f.stroke();
-    if (grab) { ell(16, -13 + bob, 5, 5, '#2e86de'); f.strokeStyle = 'rgba(255,255,255,.5)'; f.lineWidth = 0.6; f.beginPath(); f.ellipse(16, -13 + bob, 2.4, 5, 0, 0, 6.2832); f.stroke(); }
+    if (grab && !o) { ell(16, -13 + bob, 5, 5, '#2e86de'); f.strokeStyle = 'rgba(255,255,255,.5)'; f.lineWidth = 0.6; f.beginPath(); f.ellipse(16, -13 + bob, 2.4, 5, 0, 0, 6.2832); f.stroke(); }
   } else {
     ell(12.5, armY + 1, 3.6, 8.5, fur);
     if (pound) { ell(-9, -17, 2.8, 2.8, skin); ell(9, -17, 2.8, 2.8, skin); }
@@ -796,6 +829,7 @@ function drawApe() {
   f.fillStyle = '#c0392b'; f.beginPath(); f.moveTo(0, -22 + bob); f.lineTo(-4.6, -24.4 + bob); f.lineTo(-4.6, -19.6 + bob); f.closePath(); f.fill();
   f.beginPath(); f.moveTo(0, -22 + bob); f.lineTo(4.6, -24.4 + bob); f.lineTo(4.6, -19.6 + bob); f.closePath(); f.fill(); ell(0, -22 + bob, 1.2, 1.2, '#7d1d17');
   f.restore();
+  if (o && o.carry) drawBookArt(o.x + (o.flip ? -15 : 15) * o.k, o.y - 10 * o.k + bob, 0.6);
 }
 function drawStudent(dead) {
   const p = G.p;
@@ -856,7 +890,10 @@ function drawField() {
   if (G.shake > 0) f.translate((Math.random() - 0.5) * 2.4, (Math.random() - 0.5) * 2.4);
   for (let i = 0; i < PLS.length; i++) drawPlank(i);
   LAD.forEach(drawLadder);
-  drawInkwell(); drawBook(); drawApe();
+  drawInkwell();
+  const cin = G.state === 'clear' && G.stateT > 0.3 ? cineApe(G.stateT - 0.3) : null;
+  if (!(cin && cin.bookGone)) drawBook();
+  if (cin) { drawApe(cin); } else drawApe();
   G.hammers.forEach((h) => { if (!h.taken) drawHammerIcon(h.x, yAt(h.plat, h.x), h.x); });
   G.items.forEach((it) => { if (!it.taken) drawItem(it); });
   G.globes.forEach(drawGlobe); G.blots.forEach(drawBlot);
@@ -872,8 +909,12 @@ function drawField() {
     f.fillStyle = 'rgba(8,14,36,.82)'; f.fillRect(50, 108, 140, 22); f.strokeStyle = '#ff8a80'; f.lineWidth = 0.8; f.strokeRect(50, 108, 140, 22);
     ft(G.why === 'time' ? "TIME'S UP!" : G.why === 'fall' ? 'WATCH THE DROP!' : G.why === 'blot' ? 'INK BLOT!' : 'FLATTENED!', LW / 2, 119.5, 6.4, '#ff8a80');
   } else if (G.state === 'clear') {
-    f.fillStyle = 'rgba(8,14,36,.88)'; f.fillRect(30, 96, 180, 52); f.strokeStyle = '#6fe09a'; f.lineWidth = 0.8; f.strokeRect(30, 96, 180, 52);
-    ft('BOOK RECOVERED!', LW / 2, 108, 7.2, '#6fe09a'); ft('BONUS ' + (G.clearBonus || 0), LW / 2, 122, 6.4, '#ffd23a'); ft('Verbs cracked this game: ' + G.learned.length, LW / 2, 136, 4.6, '#f5eedc');
+    if (G.stateT > 2.4) {
+      f.fillStyle = 'rgba(8,14,36,.9)'; f.fillRect(18, 92, 204, 62); f.strokeStyle = '#6fe09a'; f.lineWidth = 0.8; f.strokeRect(18, 92, 204, 62);
+      ft('ROUND CLEARED!', LW / 2, 103, 7.2, '#6fe09a'); ft('BONUS ' + (G.clearBonus || 0), LW / 2, 116, 6, '#ffd23a');
+      ft('THE APE ESCAPES WITH THE BOOK!', LW / 2, 128, 4.6, '#f5eedc'); ft('NEXT: ' + STAGES[G.round % STAGES.length].name, LW / 2, 139, 4.6, '#ffd23a');
+      ft('Verbs cracked this game: ' + G.learned.length, LW / 2, 148, 3.6, '#a9b3c9');
+    }
   } else if (G.state === 'paused') {
     f.fillStyle = 'rgba(8,14,36,.8)'; f.fillRect(0, 0, LW, LH); ft('PAUSED', LW / 2, 112, 12, '#ffd23a'); ft('Press P or click to resume', LW / 2, 130, 4.8, '#f5eedc');
   }
@@ -921,7 +962,7 @@ function drawTitle() {
   txt('1st hit = PRETERIT, 2nd = PAST PARTICIPLE, 3rd = FRENCH.', W / 2, y0 + 174, 9, '#ffd23a', 'center');
   txt('Pencil 300   Headphones 500   Answer sheet 800   Jump a globe: verb cracked', W / 2, y0 + 212, 9, '#6fe09a', 'center');
   txt('Ink blots chase you: smash them too (500). The bonus counts down!', W / 2, y0 + 236, 9, '#a9b3c9', 'center');
-  txt('Reach the book on the top shelf to clear the round.', W / 2, y0 + 260, 9, '#a9b3c9', 'center');
+  txt('Reach the book on the top shelf. The ape will grab it and flee to the next stage.', W / 2, y0 + 260, 9, '#a9b3c9', 'center');
   txt('MARC VASSEUR  |  POLYTECH LILLE', W / 2, 568, 9, '#6f78d8', 'center');
 }
 function draw() {
