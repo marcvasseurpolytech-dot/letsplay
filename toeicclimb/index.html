@@ -305,7 +305,7 @@ const STAGES = [
       { lo: 2, x: 190, full: true }, { lo: 2, x: 100, full: false }, { lo: 3, x: 98, full: true }, { lo: 3, x: 156, full: false },
       { lo: 4, x: 176, full: true }
     ],
-    hammers: [[1, 104], [3, 150]],
+    hammers: [[1, 232], [3, 230]], guns: [[2, 12]], planes: [[3, 24], [1, 16]],
     items: [['pencil', 0, 120, 300], ['phones', 2, 100, 500], ['sheet', 4, 120, 800]], speed: 1 },
   { name: 'THE ARCHIVE', slope: 22, seed: 311, g0: '#1a0f33', g1: '#0f2a3d', pal: { top: '#3d5f80', under: '#243a52', edge: '#8fd0ff', dot: '#9fc4e0', sup: '#16283c' }, cols: ['#2d1f55', '#1f5a6a', '#4a2a55', '#1f4a45', '#552a4a', '#2a4a7a', '#3a2a6a'], gaps: [], belts: [],
     pls: [
@@ -317,7 +317,7 @@ const STAGES = [
       { lo: 2, x: 40, full: true }, { lo: 2, x: 146, full: false }, { lo: 3, x: 128, full: true }, { lo: 3, x: 84, full: false },
       { lo: 4, x: 160, full: true }
     ],
-    hammers: [[2, 120], [4, 196]],
+    hammers: [[2, 228], [4, 214]], guns: [[1, 18]], planes: [[3, 200], [0, 200]],
     items: [['phones', 0, 130, 500], ['pencil', 1, 120, 300], ['sheet', 3, 60, 800]], speed: 1.12 },
   { name: 'THE FLOODED LIBRARY', slope: 26, seed: 905, g0: '#04201c', g1: '#0b3a33',
     pal: { top: '#56733a', under: '#34492a', edge: '#c4ea6e', dot: '#b5d97a', sup: '#22331c' },
@@ -338,7 +338,7 @@ const STAGES = [
     belts: [
       { plat: 0, x0: 130, x1: 186, v: -62 }, { plat: 2, x0: 62, x1: 108, v: -62 }, { plat: 4, x0: 104, x1: 152, v: -62 }
     ],
-    hammers: [[2, 160], [4, 140]],
+    hammers: [[2, 226], [4, 220]], guns: [[1, 226]], planes: [[3, 226], [2, 14]],
     items: [['pencil', 0, 40, 300], ['phones', 1, 190, 500], ['sheet', 3, 180, 800]], speed: 1.05 }
 ];
 const TH = 7;                          // epaisseur d'une planche
@@ -384,7 +384,7 @@ const pad = { l: 0, r: 0, u: 0, d: 0 };
 const G = {
   state: 'title', stateT: 0, t: 0, round: 1, score: 0, hi: +(lsGet('tlHi') || 0), lives: 3, nextLife: 7000,
   bonus: 5000, bonusT: 0, globes: [], blots: [], p: null, ape: { stage: 'idle', t: 0, pound: 4 }, throwT: 2, blotT: 9, ink: 0,
-  hammers: [], items: [], hammerT: 0, beatT: 0, beatI: 0, learned: [], banner: null, pops: [], parts: [], shake: 0, prevState: 'play', penalty: 0, why: '', msg: ''
+  hammers: [], guns: [], planes: [], shots: [], fly: [], gunT: 0, planeAmmo: 0, fireCd: 0, gunFlash: 0, items: [], hammerT: 0, beatT: 0, beatI: 0, learned: [], banner: null, pops: [], parts: [], shake: 0, prevState: 'play', penalty: 0, why: '', msg: ''
 };
 let collection = (() => { try { return new Set(JSON.parse(lsGet('tlLearned') || '[]')); } catch (e) { return new Set(); } })();
 function saveCollection() { lsSet('tlLearned', JSON.stringify(Array.from(collection))); }
@@ -399,6 +399,8 @@ function resetStage() {
   G.globes = []; G.blots = []; G.p = newPlayer(); G.ape = { stage: 'idle', t: 0, pound: 3 }; G.throwT = 2.2; G.blotT = 9; G.ink = 0;
   G.hammerT = 0; G.bonusT = 0; G.pops = []; G.parts = []; G.banner = null; G.ropes = makeRopes();
   G.hammers = ST.hammers.map((h) => ({ plat: h[0], x: h[1], taken: false }));
+  G.guns = ST.guns.map((h) => ({ plat: h[0], x: h[1], taken: false })); G.planes = ST.planes.map((h) => ({ plat: h[0], x: h[1], taken: false }));
+  G.gunT = 0; G.planeAmmo = 0; G.shots = []; G.fly = []; G.fireCd = 0; G.gunFlash = 0;
   G.items = ST.items.map((it) => ({ plat: it[1], x: it[2], k: it[0], pts: it[3], taken: false }));
 }
 function startRound(n, pen) {
@@ -473,7 +475,7 @@ function tryLadder(dir) {
 }
 function die(why) {
   if (G.state !== 'play') return;
-  G.state = 'dead'; G.stateT = 0; G.why = why; G.shake = 0.25; SND.die(); G.hammerT = 0;
+  G.state = 'dead'; G.stateT = 0; G.why = why; G.shake = 0.25; SND.die(); G.hammerT = 0; G.gunT = 0;
 }
 function stepPlayer(dt) {
   const p = G.p, I = inputs(), hv = G.hammerT > 0;
@@ -627,6 +629,32 @@ function hammerZone() {
   const p = G.p, d = p.face;
   return { x0: d > 0 ? p.x - 1 : p.x - 21, x1: d > 0 ? p.x + 21 : p.x + 1 };
 }
+function fireGun() {
+  const p = G.p;
+  if (G.state !== 'play' || !p || G.gunT <= 0 || G.fireCd > 0 || p.mode === 'climb' || p.mode === 'rope') return;
+  G.shots.push({ plat: p.plat, x: p.x + p.face * 8, dir: p.face }); G.fireCd = 0.22; G.gunFlash = 0.08; SND.toss();
+}
+function throwPlane() {
+  const p = G.p;
+  if (G.state !== 'play' || !p || G.planeAmmo <= 0 || p.mode === 'climb' || p.mode === 'rope') return;
+  G.planeAmmo--; G.fly.push({ plat: p.plat, x: p.x + p.face * 6, dir: p.face, t: 0 }); SND.toss();
+}
+function updateShots(dt) {
+  for (const s of G.shots) {
+    s.x += s.dir * 170 * dt; const pl = PLS[s.plat];
+    if (s.x < pl.x0 - 4 || s.x > pl.x1 + 4) { s.dead = true; continue; }
+    for (const g of G.globes) { if (g.dead || g.hitCd > 0 || g.mode === 'fall' || g.mode === 'lad' || g.plat !== s.plat) continue; if (Math.abs(g.x - s.x) < 6) { hitGlobe(g); s.dead = true; break; } }
+    if (s.dead) continue;
+    for (const b of G.blots) { if (b.dead || b.mode !== 'walk' || b.plat !== s.plat) continue; if (Math.abs(b.x - s.x) < 6) { b.dead = true; addScore(500); SND.smash(); burst(b.x, b.y - 4, '#4a2a90', 14, 60); pop(b.x, b.y - 14, '+500', '#ffd23a'); s.dead = true; break; } }
+  }
+  G.shots = G.shots.filter((s) => !s.dead); G.blots = G.blots.filter((b) => !b.dead);
+  for (const a of G.fly) {
+    a.t += dt; a.x += a.dir * 96 * dt; const pl = PLS[a.plat];
+    if (a.x < pl.x0 - 6 || a.x > pl.x1 + 6) { a.dead = true; continue; }
+    for (const g of G.globes) { if (g.dead || g.mode === 'fall' || g.mode === 'lad' || g.plat !== a.plat) continue; if (Math.abs(g.x - a.x) < 9) { g.dead = true; a.dead = true; addScore(300); crackVerb(g); SND.smash(); burst(g.x, g.y, '#8fd0ff', 14, 60); pop(g.x, g.y - 14, '+300', '#6fe09a'); break; } }
+  }
+  G.fly = G.fly.filter((a) => !a.dead);
+}
 function updatePlay(dt) {
   const p = G.p;
   G.bonusT += dt; if (G.bonusT >= 3) { G.bonusT -= 3; G.bonus = Math.max(0, G.bonus - 100); }
@@ -636,7 +664,10 @@ function updatePlay(dt) {
     G.hammerT -= dt; G.beatT -= dt; if (G.beatT <= 0) { SND.beat(G.beatI++); G.beatT = 0.16; }
     if (G.hammerT <= 0) { G.hammerT = 0; pop(p.x, p.y - 22, 'HAMMER GONE', '#a9b3c9'); }
   }
+  if (G.gunT > 0) { G.gunT -= dt; if (G.gunT <= 0) { G.gunT = 0; pop(p.x, p.y - 22, 'PISTOL GONE', '#a9b3c9'); } }
+  G.fireCd -= dt; if (G.gunFlash > 0) G.gunFlash -= dt;
   stepPlayer(dt); if (G.state !== 'play') return;
+  updateShots(dt);
   updateApe(dt); updateGlobes(dt); updateBlots(dt);
   const hv = G.hammerT > 0, Z = hammerZone();
   // marteau : coups sur les globes et les taches d'encre
@@ -668,6 +699,10 @@ function updatePlay(dt) {
   // marteaux et objets
   if (p.mode === 'ground') {
     for (const h of G.hammers) if (!h.taken && h.plat === p.plat && Math.abs(h.x - p.x) < 6) { h.taken = true; G.hammerT = 10; G.beatT = 0; SND.hammer(); pop(p.x, p.y - 22, 'HAMMER! 10 s', '#ffd23a'); }
+  }
+  if (p.mode === 'ground') {
+    for (const h of G.guns) if (!h.taken && h.plat === p.plat && Math.abs(h.x - p.x) < 6) { h.taken = true; G.gunT = 10; SND.hammer(); pop(p.x, p.y - 22, 'PISTOL! 10 s', '#8fd0ff'); }
+    for (const h of G.planes) if (!h.taken && h.plat === p.plat && Math.abs(h.x - p.x) < 6) { h.taken = true; G.planeAmmo = Math.min(3, G.planeAmmo + 1); SND.item(); pop(p.x, p.y - 22, 'PAPER PLANE!', '#f5eedc'); }
   }
   for (const it of G.items) {
     if (it.taken) continue;
@@ -849,6 +884,28 @@ function drawBookArt(sx, sy, k) {
   rect(-9.6, -7.6, 24, 1, '#e3b04b'); rect(-9.6, -5.2, 24, 1, '#e3b04b'); rect(-9.6, -2.8, 15, 1, '#e3b04b');
   f.restore();
 }
+function drawGunIcon(x, y, k) {
+  f.save(); f.translate(x, y - 8 + Math.sin(G.t * 4 + k) * 1.2);
+  rect(-5, -2, 9, 3, '#3a3a4a'); rect(-5, -2, 9, 0.9, '#6a6a80'); rect(-3.6, 0.8, 3, 4.2, '#2a2a38'); rect(3.6, -1.4, 1.8, 1.2, '#8fd0ff');
+  f.restore();
+}
+function drawGunHeld() {
+  const p = G.p; f.save(); f.translate(p.x + p.face * 4, p.y - 9); f.scale(p.face, 1);
+  rect(0, -1.2, 7, 2.6, '#3a3a4a'); rect(0, -1.2, 7, 0.8, '#6a6a80'); rect(0.6, 1, 2.6, 3.2, '#2a2a38'); rect(5.6, -1.8, 1.6, 1, '#8fd0ff');
+  if (G.gunFlash > 0) { ell(9.6, 0, 2.6, 1.8, '#ffe27a'); ell(9.6, 0, 1.2, 0.9, '#fff'); }
+  f.restore();
+}
+function drawPlane(x, y, dir, k) {
+  f.save(); f.translate(x, y); f.scale(dir * (k || 1), k || 1);
+  f.fillStyle = '#f5eedc'; f.beginPath(); f.moveTo(-7, -2); f.lineTo(8, 0); f.lineTo(-7, 3); f.closePath(); f.fill();
+  f.fillStyle = '#c9d3e8'; f.beginPath(); f.moveTo(-7, -2); f.lineTo(8, 0); f.lineTo(-2, 1); f.closePath(); f.fill();
+  f.strokeStyle = '#8a96b8'; f.lineWidth = 0.5; f.beginPath(); f.moveTo(-7, 0.6); f.lineTo(8, 0); f.stroke();
+  f.restore();
+}
+function drawShots() {
+  for (const s of G.shots) { const y = yAt(s.plat, s.x) - 9; f.fillStyle = 'rgba(255,226,122,.35)'; f.fillRect(s.dir > 0 ? s.x - 7 : s.x, y - 0.5, 7, 1); ell(s.x, y, 1.5, 1.5, '#ffe27a'); ell(s.x, y, 0.7, 0.7, '#fff'); }
+  for (const a of G.fly) { const y = yAt(a.plat, a.x) - 10 + Math.sin(a.t * 9) * 1.2; drawPlane(a.x, y, a.dir, 1); }
+}
 function drawHammerIcon(x, y, k) {
   f.save(); f.translate(x, y - 8 + Math.sin(G.t * 4 + k) * 1.2);
   f.strokeStyle = '#d9b86a'; f.lineWidth = 1.6; f.beginPath(); f.moveTo(-4, 5); f.lineTo(3, -4); f.stroke();
@@ -999,9 +1056,12 @@ function drawField() {
   if (!(cin && cin.bookGone)) drawBook();
   if (cin) { drawApe(cin); } else drawApe();
   G.hammers.forEach((h) => { if (!h.taken) drawHammerIcon(h.x, yAt(h.plat, h.x), h.x); });
+  G.guns.forEach((h) => { if (!h.taken) drawGunIcon(h.x, yAt(h.plat, h.x), h.x); });
+  G.planes.forEach((h) => { if (!h.taken) drawPlane(h.x, yAt(h.plat, h.x) - 9 + Math.sin(G.t * 3 + h.x) * 1.2, 1, 0.5); });
   G.items.forEach((it) => { if (!it.taken) drawItem(it); });
   G.globes.forEach(drawGlobe); G.blots.forEach(drawBlot);
   if (G.p) drawStudent(G.state === 'dead');
+  drawShots(); if (G.p && G.gunT > 0 && G.state === 'play' && G.p.mode !== 'climb') drawGunHeld();
   drawFloat(); drawBanner();
   f.restore();
   // messages sur le terrain
@@ -1046,8 +1106,12 @@ function drawPanel() {
   if (G.hammerT > 0) {
     txt('HAMMER', x0 + 12, 414, 8, '#ffd23a'); ctx.fillStyle = '#1a1a3a'; ctx.fillRect(x0 + 12, 430, w - 24, 10); ctx.fillStyle = G.hammerT < 3 ? '#ff4050' : '#38e87a'; ctx.fillRect(x0 + 12, 430, (w - 24) * G.hammerT / 10, 10);
   }
-  const help = ['ARROWS ZQSD WASD', 'move + climb', 'CLICK = jump', 'HAMMER: 3 hits', 'or JUMP OVER'];
-  help.forEach((s, i) => txt(s, x0 + w / 2, 468 + i * 18, 7, i % 2 ? '#a9b3c9' : '#f5eedc', 'center'));
+  if (G.gunT > 0) {
+    txt('PISTOL', x0 + 12, 446, 8, '#8fd0ff'); ctx.fillStyle = '#1a1a3a'; ctx.fillRect(x0 + 12, 458, w - 24, 8); ctx.fillStyle = G.gunT < 3 ? '#ff4050' : '#8fd0ff'; ctx.fillRect(x0 + 12, 458, (w - 24) * G.gunT / 10, 8);
+  }
+  if (G.planeAmmo > 0) txt('PLANES x' + G.planeAmmo, x0 + 12, 474, 8, '#f5eedc');
+  const help = ['ARROWS ZQSD: move', 'SPACE: jump', 'CLICK: jump / FIRE', 'RIGHT CLICK / E: plane', 'HAMMER: 3 hits'];
+  help.forEach((s, i) => txt(s, x0 + w / 2, 498 + i * 14, 6.6, i % 2 ? '#a9b3c9' : '#f5eedc', 'center'));
   txt(PR.user ? PR.user.nom.slice(0, 16) : 'GUEST', x0 + w / 2, 568, 7, '#6f78d8', 'center');
 }
 function drawTitle() {
@@ -1088,13 +1152,20 @@ function action() {
   if (G.state === 'paused') { G.state = G.prevState || 'play'; return; }
   if (G.state === 'play' && G.p) G.p.jumpReq = true;
 }
-cv.addEventListener('pointerdown', (e) => { if (e.button === 0 || e.pointerType !== 'mouse') { action(); e.preventDefault(); } });
+cv.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse' && e.button === 2) { audio(); throwPlane(); e.preventDefault(); return; }
+  if (e.button === 0 || e.pointerType !== 'mouse') {
+    if (e.pointerType === 'mouse' && G.state === 'play' && G.gunT > 0) { audio(); fireGun(); } else action();
+    e.preventDefault();
+  }
+});
 cv.addEventListener('contextmenu', (e) => e.preventDefault());
 window.addEventListener('keydown', (e) => {
   if (e.target && /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(e.target.tagName)) return;
   keys[e.key] = true;
   if (e.key === ' ' || e.key === 'Enter') { if (!e.repeat) action(); e.preventDefault(); }
   if (e.key.indexOf('Arrow') === 0) e.preventDefault();
+  if ((e.key === 'e' || e.key === 'E' || e.key === 'f' || e.key === 'F') && !e.repeat) throwPlane();
   if (e.key === 'p' || e.key === 'P') togglePause();
   if (e.key === 'h' || e.key === 'H') { HD = !HD; lsSet('tlHD', HD ? '1' : '0'); applyQuality(); }
   if (e.key === 'm' || e.key === 'M') { muted = !muted; lsSet('tlMuted', muted ? '1' : '0'); }
@@ -1240,7 +1311,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in the other arcade games.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Arrows, ZQSD or WASD: walk, up / down to climb a ladder. Left click or Space: jump. P: pause. M: sound. H: HD / retro.<br>Every globe carries an irregular verb. Grab a hammer (10 seconds) and hit a globe three times: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the globe breaks). Jumping over a globe cracks its verb at once (all three forms). Hammer or no hammer, your goal is the book on the top shelf. You lose a life if you touch a globe or an ink blot, fall to a lower shelf, or run out of bonus points.<br>When you lose your last life, your round is saved. To continue, answer 3 grammar questions: each wrong answer costs 1000 bonus points in your first round back.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Arrows, ZQSD or WASD: walk, up / down to climb a ladder. Left click or Space: jump. Right click or E: throw a paper plane. P: pause. M: sound. H: HD / retro.<br>Every globe carries an irregular verb. Grab a hammer (10 seconds) and hit a globe three times: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the globe breaks). Jumping over a globe cracks its verb at once (all three forms). A pistol (10 seconds, left click to fire, Space to jump) hits like a hammer blow from a distance. A paper plane thrown at a globe cracks its verb at once. Hammers, pistols and planes lie off your route: take them only if you want them. Your goal is the book on the top shelf. You lose a life if you touch a globe or an ink blot, fall to a lower shelf, or run out of bonus points.<br>When you lose your last life, your round is saved. To continue, answer 3 grammar questions: each wrong answer costs 1000 bonus points in your first round back.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
@@ -1353,7 +1424,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('20px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tl = { ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
+window.__tl = { fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
 })();
 
 </script>
