@@ -578,7 +578,7 @@ function updatePlay(dt) {
     if (Math.abs(dx) < 8 && p.y > g.y - 4 && p.y - 14 < g.y + 5) { die('globe'); return; }
     if (p.mode === 'air' && !g.jumped) {
       const s = sgn(dx);
-      if (g.side && s && s !== g.side && p.y < g.y - 4 && Math.abs(dx) < 10) { g.jumped = true; addScore(100); pop(p.x, p.y - 16, '+100', '#6fe09a'); SND.over(); }
+      if (g.side && s && s !== g.side && p.y < g.y - 4 && Math.abs(dx) < 10) { g.jumped = true; g.dead = true; addScore(300); crackVerb(g); SND.smash(); burst(g.x, g.y, '#8fd0ff', 14, 60); pop(p.x, p.y - 16, '+300', '#6fe09a'); }
       if (s) g.side = s;
     }
   }
@@ -901,7 +901,7 @@ function drawPanel() {
   if (G.hammerT > 0) {
     txt('HAMMER', x0 + 12, 414, 8, '#ffd23a'); ctx.fillStyle = '#1a1a3a'; ctx.fillRect(x0 + 12, 430, w - 24, 10); ctx.fillStyle = G.hammerT < 3 ? '#ff4050' : '#38e87a'; ctx.fillRect(x0 + 12, 430, (w - 24) * G.hammerT / 10, 10);
   }
-  const help = ['ARROWS ZQSD WASD', 'move + climb', 'CLICK = jump', 'HAMMER: 3 hits', '= 1 verb cracked'];
+  const help = ['ARROWS ZQSD WASD', 'move + climb', 'CLICK = jump', 'HAMMER: 3 hits', 'or JUMP OVER'];
   help.forEach((s, i) => txt(s, x0 + w / 2, 468 + i * 18, 7, i % 2 ? '#a9b3c9' : '#f5eedc', 'center'));
   txt(PR.user ? PR.user.nom.slice(0, 16) : 'GUEST', x0 + w / 2, 568, 7, '#6f78d8', 'center');
 }
@@ -917,9 +917,9 @@ function drawTitle() {
   L('MOVE', 'Arrows / ZQSD / WASD', y0); L('LADDER', 'Up / down next to a ladder', y0 + 28); L('JUMP', 'Left click or Space (jump)', y0 + 56);
   L('HAMMER', 'Grab a hammer: 10 seconds', y0 + 84);
   txt('Each globe carries an irregular verb.', W / 2, y0 + 130, 10, '#f5eedc', 'center');
-  txt('With the hammer: 1st hit = PRETERIT, 2nd hit = PAST PARTICIPLE,', W / 2, y0 + 154, 9, '#ffd23a', 'center');
-  txt('3rd hit = FRENCH, and the globe breaks.', W / 2, y0 + 174, 9, '#ffd23a', 'center');
-  txt('Pencil 300   Headphones 500   Answer sheet 800   Jump a globe 100', W / 2, y0 + 212, 9, '#6fe09a', 'center');
+  txt('Jump over a globe: all 3 forms validated at once! Or use the hammer:', W / 2, y0 + 154, 9, '#ffd23a', 'center');
+  txt('1st hit = PRETERIT, 2nd = PAST PARTICIPLE, 3rd = FRENCH.', W / 2, y0 + 174, 9, '#ffd23a', 'center');
+  txt('Pencil 300   Headphones 500   Answer sheet 800   Jump a globe: verb cracked', W / 2, y0 + 212, 9, '#6fe09a', 'center');
   txt('Ink blots chase you: smash them too (500). The bonus counts down!', W / 2, y0 + 236, 9, '#a9b3c9', 'center');
   txt('Reach the book on the top shelf to clear the round.', W / 2, y0 + 260, 9, '#a9b3c9', 'center');
   txt('MARC VASSEUR  |  POLYTECH LILLE', W / 2, 568, 9, '#6f78d8', 'center');
@@ -1095,7 +1095,7 @@ function renderAuth() {
       '<p class="muted">It is the same profile as in the other arcade games.</p>';
   }
   h += '<div class="row"><button class="btn sm ghost" id="aRules">&#9650; SEE THE RULES</button></div>';
-  h += '<details><summary>Directions</summary><p class="muted">Arrows, ZQSD or WASD: walk, up / down to climb a ladder. Left click or Space: jump. P: pause. M: sound. H: HD / retro.<br>Every globe carries an irregular verb. Grab a hammer (10 seconds) and hit a globe three times: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the globe breaks). Hammer or no hammer, your goal is the book on the top shelf. You lose a life if you touch a globe or an ink blot, fall to a lower shelf, or run out of bonus points.<br>When you lose your last life, your round is saved. To continue, answer 3 grammar questions: each wrong answer costs 1000 bonus points in your first round back.</p></details>';
+  h += '<details><summary>Directions</summary><p class="muted">Arrows, ZQSD or WASD: walk, up / down to climb a ladder. Left click or Space: jump. P: pause. M: sound. H: HD / retro.<br>Every globe carries an irregular verb. Grab a hammer (10 seconds) and hit a globe three times: 1st hit = preterit, 2nd hit = past participle, 3rd hit = French (the globe breaks). Jumping over a globe cracks its verb at once (all three forms). Hammer or no hammer, your goal is the book on the top shelf. You lose a life if you touch a globe or an ink blot, fall to a lower shelf, or run out of bonus points.<br>When you lose your last life, your round is saved. To continue, answer 3 grammar questions: each wrong answer costs 1000 bonus points in your first round back.</p></details>';
   box.innerHTML = h;
   { const fn = $('#fNom'); if (fn) { fn.value = PR.draft; fn.addEventListener('input', () => { PR.draft = fn.value; }); } }
   box.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { PR.mode = t.getAttribute('data-t'); PR.msg = ''; renderAuth(); }));
