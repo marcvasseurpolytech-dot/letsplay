@@ -280,6 +280,7 @@ const SND = {
   smash() { tone(784, 1047, 0.08, { type: 'pulse', duty: 0.25, vol: 0.5 }); tone(1047, 1319, 0.1, { type: 'pulse', duty: 0.25, vol: 0.4, delay: 0.07 }); noise(0.12, { f0: 4000, f1: 700, vol: 0.3 }); },
   item() { arp([523, 659, 784, 1047], 0.05); },
   hammer() { arp([392, 523, 659, 784, 659, 784], 0.06); },
+  ach() { arp([523, 659, 784, 1047, 784, 1047, 1319], 0.07); },
   beat(i) { const n = [196, 262, 196, 330][i & 3]; tone(n, n, 0.09, { type: 'pulse', duty: 0.125, vol: 0.2 }); },
   stomp() { noise(0.25, { f0: 600, f1: 80, vol: 0.7 }); tone(90, 40, 0.2, { type: 'sawtooth', vol: 0.4 }); },
   toss() { tone(300, 180, 0.12, { type: 'pulse', duty: 0.5, vol: 0.3 }); },
@@ -486,7 +487,7 @@ function updateTiles(dt) {
   }
 }
 function bflyY(b) { return yAt(b.plat, b.x) - 15 + 11 * Math.sin(G.t * 5 + b.ph); }
-function killBfly(b) { b.dead = true; addScore(300); SND.smash(); burst(b.x, bflyY(b), '#ff9ad0', 12, 50); pop(b.x, bflyY(b) - 8, '+300', '#ffd23a'); }
+function killBfly(b) { achEvent('bfly'); b.dead = true; addScore(300); SND.smash(); burst(b.x, bflyY(b), '#ff9ad0', 12, 50); pop(b.x, bflyY(b) - 8, '+300', '#ffd23a'); }
 function updateButterflies(dt) {
   const p = G.p;
   for (const b of G.bfly) {
@@ -504,7 +505,7 @@ function updateSprings(dt) {
   for (const q of G.springs) {
     if (q.comp > 0) q.comp -= dt;
     if (p.mode === 'ground' && p.plat === q.plat && Math.abs(p.x - q.x) < 5 && !(p.sprCd > 0)) {
-      p.mode = 'air'; p.vy = -235; p.vx = ((I_R() ? 1 : 0) - (I_L() ? 1 : 0)) * 36; p.apex = p.y; p.fromPlat = -1; p.fromT = 0; p.noFall = true; p.sprCd = 0.35; q.comp = 0.25; SND.jump(); burst(q.x, yAt(q.plat, q.x), '#ff6ac1', 8, 40);
+      p.mode = 'air'; p.vy = -235; p.vx = ((I_R() ? 1 : 0) - (I_L() ? 1 : 0)) * 36; p.apex = p.y; p.fromPlat = -1; p.fromT = 0; p.noFall = true; p.sprCd = 0.35; q.comp = 0.25; achEvent('spring'); SND.jump(); burst(q.x, yAt(q.plat, q.x), '#ff6ac1', 8, 40);
     }
   }
   if (p.sprCd > 0) p.sprCd -= dt;
@@ -513,7 +514,7 @@ function updateSprings(dt) {
       if (fr.taken) continue;
       if (p.mode !== 'climb' && p.mode !== 'lift' && Math.abs(fr.x - p.x) < 8 && Math.abs(fr.y - (p.y - 8)) < 10) {
         fr.taken = true; addScore(200); SND.item(); pop(fr.x, fr.y - 8, '+200', '#ffd23a');
-        if (G.fruits.every((q) => q.taken)) { addScore(2000); G.lives = Math.min(6, G.lives + 1); SND.life(); pop(120, 110, ST.fruitKind === 'flower' ? 'ALL FLOWERS! 1UP' : 'ALL FRUITS! 1UP', '#6fe09a'); }
+        if (G.fruits.every((q) => q.taken)) { achEvent(ST.fruitKind === 'flower' ? 'flowers' : 'fruits'); achEvent('oneup'); addScore(2000); G.lives = Math.min(6, G.lives + 1); SND.life(); pop(120, 110, ST.fruitKind === 'flower' ? 'ALL FLOWERS! 1UP' : 'ALL FRUITS! 1UP', '#6fe09a'); }
       }
     }
   }
@@ -524,6 +525,7 @@ function startApeFall() {
   G.apeFall = { t: 0, boom: false }; G.unlocked = true; G.throwT = 9999; pop(120, 100, 'THE APE FALLS!', '#ffd23a'); SND.clear();
 }
 function fallInWater(i, gp) {
+  achEvent('water');
   const p = G.p; G.gapSnap = G.t; burst(p.x, yAt(i, p.x), '#6fd0c0', 16, 55); SND.smash();
   G.bonus = Math.max(500, G.bonus - 300);
   let ni = i - 1, nx;
@@ -575,7 +577,7 @@ function resetStage() {
   G.items = ST.items.map((it) => ({ plat: it[1], x: it[2], k: it[0], pts: it[3], taken: false }));
 }
 function startRound(n, pen) {
-  G.round = n; G.penalty = pen || 0;
+  G.round = n; G.penalty = pen || 0; G.roundDeaths = 0;
   G.bonus0 = Math.max(3000, 5000 - 400 * (n - 1)); G.bonus = Math.max(1000, G.bonus0 - G.penalty);
   resetStage(); G.state = 'ready'; G.stateT = 0; SND.start();
 }
@@ -591,8 +593,8 @@ function burst(x, y, col, n, spd) {
   for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = (spd || 40) * (0.3 + Math.random()); G.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0, life: 0.5 + Math.random() * 0.4, col }); }
 }
 function addScore(n) {
-  G.score += n;
-  if (G.score >= G.nextLife) { G.nextLife += 7000; G.lives = Math.min(6, G.lives + 1); SND.life(); pop(120, 120, '1UP!', '#6fe09a'); }
+  G.score += n; achEvent('score');
+  if (G.score >= G.nextLife) { G.nextLife += 7000; G.lives = Math.min(6, G.lives + 1); SND.life(); achEvent('oneup'); pop(120, 120, '1UP!', '#6fe09a'); }
 }
 
 /* ------------------------------------------------------------
@@ -646,7 +648,7 @@ function tryLadder(dir) {
 }
 function die(why) {
   if (G.state !== 'play') return;
-  G.state = 'dead'; G.stateT = 0; G.why = why; G.shake = 0.25; SND.die(); G.hammerT = 0; G.gunT = 0;
+  G.state = 'dead'; G.stateT = 0; G.why = why; G.shake = 0.25; SND.die(); G.hammerT = 0; G.gunT = 0; G.roundDeaths = (G.roundDeaths || 0) + 1; achEvent('die');
 }
 function stepPlayer(dt) {
   const p = G.p, I = inputs(), hv = G.hammerT > 0;
@@ -676,7 +678,7 @@ function stepPlayer(dt) {
     p.x += p.vx * dt; p.vy += 480 * dt; p.y += p.vy * dt; p.apex = Math.min(p.apex, p.y); p.moving = false;
     if (p.ropeCd > 0) p.ropeCd -= dt;
     else if (G.ropes && G.ropes.length) {
-      for (const r of G.ropes) { const tp = ropeTip(r); if (Math.abs(p.x - tp.x) < 17 && Math.abs((p.y - 14) - tp.y) < 18) { p.mode = 'rope'; p.rope = r; p.ropeT = 0; SND.item(); break; } }
+      for (const r of G.ropes) { const tp = ropeTip(r); if (Math.abs(p.x - tp.x) < 17 && Math.abs((p.y - 14) - tp.y) < 18) { p.mode = 'rope'; p.rope = r; p.ropeT = 0; SND.item(); achEvent('rope'); break; } }
       if (p.mode === 'rope') { p.jumpReq = false; return; }
     }
     if (p.vy >= 0) {
@@ -816,15 +818,15 @@ function throwPlane() {
   const tg = G.globes.filter((g) => !g.dead).sort((a, b) => Math.hypot(a.x - hx, a.y - hy) - Math.hypot(b.x - hx, b.y - hy)).slice(0, G.planeAmmo);
   if (!tg.length) return;
   tg.forEach((g, k) => { G.fly.push({ x: hx, y: hy, ang: p.face > 0 ? -0.6 : Math.PI + 0.6, tgt: g, t: -k * 0.07, sp: 60 }); });
-  G.planeAmmo -= tg.length; SND.toss();
+  G.planeAmmo -= tg.length; SND.toss(); if (tg.length >= 5) achEvent('squad');
 }
 function updateShots(dt) {
   for (const s of G.shots) {
     s.x += s.dir * 170 * dt; const pl = PLS[s.plat];
     if (s.x < pl.x0 - 4 || s.x > pl.x1 + 4) { s.dead = true; continue; }
-    for (const g of G.globes) { if (g.dead || g.hitCd > 0 || g.mode === 'fall' || g.mode === 'lad' || g.plat !== s.plat) continue; if (Math.abs(g.x - s.x) < 6) { hitGlobe(g); s.dead = true; break; } }
+    for (const g of G.globes) { if (g.dead || g.hitCd > 0 || g.mode === 'fall' || g.mode === 'lad' || g.plat !== s.plat) continue; if (Math.abs(g.x - s.x) < 6) { hitGlobe(g); achEvent('gun'); s.dead = true; break; } }
     if (s.dead) continue;
-    for (const b of G.blots) { if (b.dead || b.mode !== 'walk' || b.plat !== s.plat) continue; if (Math.abs(b.x - s.x) < 6) { b.dead = true; addScore(500); SND.smash(); burst(b.x, b.y - 4, '#4a2a90', 14, 60); pop(b.x, b.y - 14, '+500', '#ffd23a'); s.dead = true; break; } }
+    for (const b of G.blots) { if (b.dead || b.mode !== 'walk' || b.plat !== s.plat) continue; if (Math.abs(b.x - s.x) < 6) { b.dead = true; addScore(500); SND.smash(); burst(b.x, b.y - 4, '#4a2a90', 14, 60); pop(b.x, b.y - 14, '+500', '#ffd23a'); achEvent('blot'); s.dead = true; break; } }
   }
   G.shots = G.shots.filter((s) => !s.dead); G.blots = G.blots.filter((b) => !b.dead);
   for (const a of G.fly) {
@@ -865,11 +867,11 @@ function updatePlay(dt) {
   if (hv) {
     for (const g of G.globes) {
       if (g.dead || g.hitCd > 0 || g.mode === 'fall') continue;
-      if (g.x >= Z.x0 - 3 && g.x <= Z.x1 + 3 && Math.abs(g.y - (p.y - 7)) < 12) hitGlobe(g);
+      if (g.x >= Z.x0 - 3 && g.x <= Z.x1 + 3 && Math.abs(g.y - (p.y - 7)) < 12) { hitGlobe(g); achEvent('hammer'); }
     }
     for (const b of G.blots) {
       if (b.dead) continue;
-      if (b.x >= Z.x0 - 2 && b.x <= Z.x1 + 2 && Math.abs((b.y - 4) - (p.y - 7)) < 12) { b.dead = true; addScore(500); SND.smash(); burst(b.x, b.y - 4, '#4a2a90', 14, 60); pop(b.x, b.y - 14, '+500', '#ffd23a'); }
+      if (b.x >= Z.x0 - 2 && b.x <= Z.x1 + 2 && Math.abs((b.y - 4) - (p.y - 7)) < 12) { b.dead = true; addScore(500); SND.smash(); burst(b.x, b.y - 4, '#4a2a90', 14, 60); pop(b.x, b.y - 14, '+500', '#ffd23a'); achEvent('blot'); }
     }
     G.blots = G.blots.filter((b) => !b.dead);
   }
@@ -904,13 +906,14 @@ function updatePlay(dt) {
 }
 function roundClear() {
   G.ape = { stage: 'idle', t: 0, pound: 9 };
-  G.state = 'clear'; G.stateT = 0; G.hammerT = 0; SND.clear();
+  G.state = 'clear'; G.stateT = 0; G.hammerT = 0; SND.clear(); achEvent('clear', G.round);
   const b = G.bonus; addScore(b); G.clearBonus = b;
   G.globes.forEach((g) => { burst(g.x, g.y, '#8fd0ff', 6, 40); }); G.globes = []; G.blots = [];
   PR.maxRound = Math.max(PR.maxRound, G.round + 1);
   PR.cp = { round: G.round + 1, score: G.score }; if (PR.user) scheduleSave();
 }
 function update(dt) {
+  achTick(dt);
   G.t += dt; G.stateT += dt; if (G.shake > 0) G.shake -= dt; if (G.ink > 0) G.ink -= dt;
   for (const q of G.pops) q.t += dt; G.pops = G.pops.filter((q) => q.t < 1.1);
   for (const q of G.parts) { q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 160 * dt; } G.parts = G.parts.filter((q) => q.t < q.life);
@@ -927,8 +930,127 @@ function update(dt) {
   }
   if (G.state === 'clear') { updateApe(dt); if (G.stateT > 5.8) { G.state = 'mini'; const nr = G.round + 1; openMini(() => startRound(nr, 0)); } return; }
   if (G.state === 'mini') { updateApe(dt); return; }
+  if (G.state === 'ach') return;
 }
 
+
+// ---------- succes (achievements) : style Steam, sauvegarde locale par compte ----------
+const ACHS = [
+  { id: 'first_crack', n: 'FIRST CRACK', d: 'Crack your first irregular verb.' },
+  { id: 'verbs25', n: 'WORD COLLECTOR', d: 'Crack 25 verbs.', s: 'verbs', t: 25 },
+  { id: 'verbs100', n: 'VERB MASTER', d: 'Crack 100 verbs.', s: 'verbs', t: 100 },
+  { id: 'r1', n: 'BOOKWORM', d: 'Clear The Reading Room.' },
+  { id: 'r2', n: 'ARCHIVIST', d: 'Clear The Archive.' },
+  { id: 'r3', n: 'ISLAND HOPPER', d: 'Clear The Flooded Library.' },
+  { id: 'r4', n: 'TILE WALKER', d: 'Clear The Verb Tiles.' },
+  { id: 'r5', n: 'GOING UP', d: 'Clear The Lifts.' },
+  { id: 'r6', n: 'JUMPING JACK', d: 'Clear The Jumping Garden.' },
+  { id: 'r7', n: 'GREEN FINGERS', d: 'Clear The Flower Garden.' },
+  { id: 'lap', n: 'SECOND LAP', d: 'Clear round 8. The ape is back!' },
+  { id: 'hammer', n: 'HAMMER TIME', d: 'Smash a globe with the hammer.' },
+  { id: 'gun', n: 'SHARPSHOOTER', d: 'Hit 10 globes with the pistol.', s: 'gun', t: 10 },
+  { id: 'squad', n: 'AIR FORCE', d: 'Launch 5 paper planes at once.' },
+  { id: 'blot', n: 'INK BUSTER', d: 'Smash an ink blot.' },
+  { id: 'bfly', n: 'BUTTERFLY NET', d: 'Swat a butterfly.' },
+  { id: 'spring', n: 'BOING!', d: 'Bounce on a spring.' },
+  { id: 'fruits', n: 'FRUIT SALAD', d: 'Eat all 8 fruits in a round.' },
+  { id: 'flowers', n: 'BOUQUET', d: 'Pick all 8 flowers in a round.' },
+  { id: 'water', n: 'SWIMMING LESSON', d: 'Fall into the water.' },
+  { id: 'rope', n: 'ROPE ACROBAT', d: 'Grab a swinging rope.' },
+  { id: 'flawless', n: 'FLAWLESS', d: 'Clear a round without losing a life.' },
+  { id: 'items', n: 'SOUVENIR HUNTER', d: 'Get all 3 items in one round.' },
+  { id: 'speed', n: 'SPEED CLIMBER', d: 'Clear a round with 3500+ bonus left.' },
+  { id: 's10k', n: 'TEN THOUSAND', d: 'Score 10,000 points.' },
+  { id: 's50k', n: 'HALL OF FAME', d: 'Score 50,000 points.' },
+  { id: 'mini', n: 'PERFECT FORMS', d: 'Get 6/6 in a bonus game.' },
+  { id: 'mini3', n: 'GRAMMAR GURU', d: 'Get 3 perfect bonus games.', s: 'mini3', t: 3 },
+  { id: 'oneup', n: 'EXTRA LIFE', d: 'Earn an extra life.' },
+  { id: 'die10', n: 'TRY, TRY AGAIN', d: 'Lose 10 lives in total.', s: 'die', t: 10 },
+  { id: 'all', n: 'COMPLETIONIST', d: 'Unlock every other achievement.' }
+];
+const ACH = { key: null, u: {}, s: {}, last: 0, q: [], toast: null };
+function achStore() {
+  const k = 'tlAch:' + (PR.user ? PR.user.key : 'guest');
+  if (ACH.key !== k) { ACH.key = k; ACH.u = {}; ACH.s = {}; try { const o = JSON.parse(lsGet(k) || 'null'); if (o) { ACH.u = o.u || {}; ACH.s = o.s || {}; } } catch (e) {} }
+  return ACH;
+}
+function achSave() { lsSet(ACH.key, JSON.stringify({ u: ACH.u, s: ACH.s })); }
+function achCount() { achStore(); return ACHS.filter((a) => ACH.u[a.id]).length; }
+function achUnlock(id) {
+  achStore(); if (ACH.u[id]) return;
+  ACH.u[id] = Date.now(); achSave(); ACH.q.push(ACHS.find((a) => a.id === id)); SND.ach();
+  if (ACHS.filter((a) => a.id !== 'all').every((a) => ACH.u[a.id])) achUnlock('all');
+}
+function achStat(k, n) { achStore(); ACH.s[k] = (ACH.s[k] || 0) + (n === undefined ? 1 : n); achSave(); return ACH.s[k]; }
+function achEvent(name, v) {
+  achStore();
+  switch (name) {
+    case 'verbs': { const n = achStat('verbs', v); if (n >= 1) achUnlock('first_crack'); if (n >= 25) achUnlock('verbs25'); if (n >= 100) achUnlock('verbs100'); break; }
+    case 'gun': if (achStat('gun') >= 10) achUnlock('gun'); break;
+    case 'mini': if (v === 6) { achUnlock('mini'); if (achStat('mini3') >= 3) achUnlock('mini3'); } break;
+    case 'die': if (achStat('die') >= 10) achUnlock('die10'); break;
+    case 'score': if (G.score >= 10000) achUnlock('s10k'); if (G.score >= 50000) achUnlock('s50k'); break;
+    case 'clear': {
+      achUnlock('r' + (((v - 1) % 7) + 1)); if (v >= 8) achUnlock('lap');
+      if (!G.roundDeaths) achUnlock('flawless'); if (G.bonus >= 3500) achUnlock('speed');
+      if (G.items.length >= 3 && G.items.every((it) => it.taken)) achUnlock('items'); break;
+    }
+    default: achUnlock(name);
+  }
+}
+function achTick(dt) {
+  if (G.learned) { const n = G.learned.length; if (n > ACH.last) achEvent('verbs', n - ACH.last); ACH.last = n; }
+  if (!ACH.toast && ACH.q.length) ACH.toast = { a: ACH.q.shift(), t: 0 };
+  if (ACH.toast) { ACH.toast.t += dt; if (ACH.toast.t > 4.6) ACH.toast = null; }
+}
+function achOpen() {
+  if (G.state === 'ach' || !['play', 'ready', 'paused', 'dead', 'clear', 'over'].includes(G.state)) return;
+  G.prevAch = G.state; G.state = 'ach';
+}
+function achClose() { if (G.state === 'ach') G.state = G.prevAch || 'paused'; }
+window.addEventListener('keydown', (e) => {
+  if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.key === 'a' || e.key === 'A') { if (G.state === 'ach') achClose(); else achOpen(); }
+  else if (e.key === 'Escape') achClose();
+});
+function drawTrophy(x, y, sz, on) {
+  const c = on ? '#ffd23a' : '#4a5a9a', d = on ? '#b8870a' : '#2a3470', k = sz / 20;
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+  ctx.fillStyle = c; ctx.fillRect(4, 2, 12, 8); ctx.fillRect(6, 10, 8, 3); ctx.fillRect(9, 13, 2, 3); ctx.fillRect(5, 16, 10, 3);
+  ctx.fillStyle = d; ctx.fillRect(4, 8, 12, 2); ctx.fillRect(5, 17, 10, 2);
+  ctx.strokeStyle = c; ctx.lineWidth = 1.6; ctx.strokeRect(0.8, 3, 3.4, 4.5); ctx.strokeRect(15.8, 3, 3.4, 4.5);
+  if (on) { ctx.fillStyle = '#fff3a0'; ctx.fillRect(6, 3, 2, 5); }
+  ctx.restore();
+}
+function drawToast() {
+  const T = ACH.toast; if (!T) return;
+  const w = 346, h = 54, t = T.t, k = t < 0.35 ? t / 0.35 : t > 4.25 ? Math.max(0, (4.6 - t) / 0.35) : 1, e = 1 - Math.pow(1 - k, 3);
+  const x = W - 8 - w * e - (1 - e) * 0, y = H - 70;
+  ctx.save(); ctx.globalAlpha = Math.min(1, k * 1.4);
+  ctx.fillStyle = '#0a1230'; ctx.fillRect(x, y, w, h); ctx.strokeStyle = '#ffd23a'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+  ctx.strokeStyle = '#6f78d8'; ctx.lineWidth = 1; ctx.strokeRect(x + 4, y + 4, w - 8, h - 8);
+  drawTrophy(x + 12, y + 12, 30, true);
+  txt('ACHIEVEMENT UNLOCKED', x + 54, y + 10, 7, '#6fe09a'); txt(T.a.n, x + 54, y + 23, 10, '#ffd23a'); txt(T.a.d, x + 54, y + 38, 6.6, '#a9b3c9');
+  ctx.restore();
+}
+function drawAch() {
+  achStore();
+  ctx.fillStyle = 'rgba(5,8,15,.985)'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#ffd23a'; ctx.lineWidth = 3; ctx.strokeRect(10, 10, W - 20, H - 20); ctx.strokeStyle = '#6f78d8'; ctx.lineWidth = 1; ctx.strokeRect(16, 16, W - 32, H - 32);
+  txt('ACHIEVEMENTS', 30, 26, 18, '#ffd23a', 'left', true);
+  const n = achCount(), tot = ACHS.length; txt(n + ' / ' + tot, W - 30, 30, 12, '#f5eedc', 'right');
+  ctx.fillStyle = '#1a1a3a'; ctx.fillRect(30, 54, W - 60, 7); ctx.fillStyle = '#38e87a'; ctx.fillRect(30, 54, (W - 60) * n / tot, 7);
+  const rows = Math.ceil(tot / 2), rh = Math.min(33, (H - 100) / rows);
+  ACHS.forEach((a, i) => {
+    const col = i < rows ? 0 : 1, r = i < rows ? i : i - rows, x = 30 + col * 378, y = 72 + r * rh, on = !!ACH.u[a.id];
+    ctx.fillStyle = on ? 'rgba(46,60,120,.55)' : 'rgba(14,20,50,.8)'; ctx.fillRect(x, y, 366, rh - 4); ctx.strokeStyle = on ? '#c9a227' : '#2a3470'; ctx.lineWidth = 1; ctx.strokeRect(x, y, 366, rh - 4);
+    drawTrophy(x + 6, y + (rh - 4 - 20) / 2, 20, on);
+    txt(a.n, x + 34, y + 5, 8, on ? '#ffd23a' : '#6f78d8'); txt(a.d, x + 34, y + 17, 6.2, on ? '#f5eedc' : '#4a5a9a');
+    if (a.s && !on) txt(Math.min(ACH.s[a.s] || 0, a.t) + '/' + a.t, x + 358, y + 6, 7, '#8fd0ff', 'right');
+    else if (on) txt('OK', x + 358, y + 6, 7, '#6fe09a', 'right');
+  });
+  txt('A / ESC / CLICK: CLOSE', W / 2, H - 24, 7, '#6f78d8', 'center');
+}
 // ---------- mini-jeu entre deux rounds : glisser les globes dans les bonnes cases (dessine sur le canvas, meme style que le jeu) ----------
 let MG = null;
 function mgPick() {
@@ -990,7 +1112,7 @@ function mgUp(e) {
 function mgCheck() {
   if (!MG || MG.checked) return; let ok = 0;
   MG.verbs.forEach((v, i) => { const a = mgPlaced(i, 0), b = mgPlaced(i, 1); if (a && a.txt === v[1]) ok++; if (b && b.txt === v[2]) ok++; });
-  MG.checked = true; MG.score = ok; MG.gain = ok * 100 + (ok === 6 ? 1000 : 0); addScore(MG.gain);
+  MG.checked = true; achEvent('mini', ok); MG.score = ok; MG.gain = ok * 100 + (ok === 6 ? 1000 : 0); addScore(MG.gain);
   if (ok === 6) SND.life(); else SND.item();
 }
 cv.addEventListener('pointermove', mgMove); window.addEventListener('pointerup', mgUp);
@@ -1509,7 +1631,8 @@ function drawPanel() {
   }
   if (G.planeAmmo > 0) txt('PLANES x' + G.planeAmmo, x0 + 12, 474, 8, '#f5eedc');
   const help = ['ARROWS ZQSD: move', 'SPACE: jump', 'CLICK: jump / FIRE', 'RIGHT CLICK / E: planes', 'HAMMER: 3 hits'];
-  help.forEach((s, i) => txt(s, x0 + w / 2, 498 + i * 14, 6.6, i % 2 ? '#a9b3c9' : '#f5eedc', 'center'));
+  help.forEach((s, i) => txt(s, x0 + w / 2, 492 + i * 12, 6.6, i % 2 ? '#a9b3c9' : '#f5eedc', 'center'));
+  txt('A: TROPHIES ' + achCount() + '/' + ACHS.length, x0 + w / 2, 548, 6.6, '#ffd23a', 'center');
   txt(PR.user ? PR.user.nom.slice(0, 16) : 'GUEST', x0 + w / 2, 568, 7, '#6f78d8', 'center');
 }
 function drawTitle() {
@@ -1540,6 +1663,8 @@ function draw() {
   ctx.imageSmoothingEnabled = HD; ctx.drawImage(fcv, FX, FY, LW * FZ, LH * FZ);
   ctx.strokeStyle = '#c9a227'; ctx.lineWidth = 2; ctx.strokeRect(FX - 1, FY - 1, LW * FZ + 2, LH * FZ + 2);
   drawPanel();
+  if (G.state === 'ach') drawAch();
+  drawToast();
 }
 
 /* ------------------------------------------------------------
@@ -1551,6 +1676,7 @@ function action() {
   if (G.state === 'play' && G.p) G.p.jumpReq = true;
 }
 cv.addEventListener('pointerdown', (e) => {
+  if (G.state === 'ach') { achClose(); e.preventDefault(); return; }
   if (G.state === 'mini') { if (e.button === 0 || e.pointerType !== 'mouse') mgDown(e); return; }
   if (e.pointerType === 'mouse' && e.button === 2) { audio(); throwPlane(); e.preventDefault(); return; }
   if (e.button === 0 || e.pointerType !== 'mouse') {
@@ -1823,7 +1949,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('20px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tl = { openMini, mgCheck, mgSlotRect, mgPos, get MG() { return MG; }, updateButterflies, updateSprings, updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
+window.__tl = { achEvent, ACH, ACHS, achOpen, achClose, achCount, openMini, mgCheck, mgSlotRect, mgPos, get MG() { return MG; }, updateButterflies, updateSprings, updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
 })();
 
 </script>
