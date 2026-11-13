@@ -56,6 +56,21 @@
   .ov .dots { text-align: center; font-size: 20px; letter-spacing: 6px; color: #ffd23a; margin: 0 0 6px; }
   .ov .qs { font-size: 17px; line-height: 1.55; margin: 12px 0 14px; color: #fff; text-align: center; }
   .ov .gap { display: inline-block; min-width: 70px; border-bottom: 2px solid #ffd23a; color: #ffd23a; text-align: center; }
+  .ov .mg { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; align-items: center; margin: 6px 0; }
+  .ov .mg .h { font-size: 10px; color: #a9b3c9; text-align: center; letter-spacing: 1px; }
+  .ov .mg .inf { font-weight: 700; font-size: 16px; color: #ffd23a; }
+  .ov .mg .inf small { display: block; font-size: 10px; color: #a9b3c9; font-weight: 400; }
+  .ov .slot { min-height: 40px; border: 2px dashed rgba(245, 238, 220, .4); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+  .ov .slot.hot { border-color: #ffd23a; background: rgba(255, 210, 58, .12); }
+  .ov .slot.ok { border: 2px solid #6fe09a; background: rgba(46, 139, 79, .35); }
+  .ov .slot.no { border: 2px solid #ff8a80; background: rgba(168, 54, 46, .35); }
+  .ov .pool { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 48px; margin: 14px 0 8px; padding: 8px; border-radius: 8px; background: rgba(0, 0, 0, .25); }
+  .ov .chip { font: 700 15px "JetBrains Mono", monospace; color: #f5eedc; background: #16294f; border: 1px solid #c9a227; border-radius: 8px; padding: 9px 12px; cursor: grab; touch-action: none; user-select: none; }
+  .ov .chip.sel { background: #c9a227; color: #0d1b3a; }
+  .ov .chip.drag { position: fixed; z-index: 50; pointer-events: none; opacity: .92; box-shadow: 0 6px 16px rgba(0, 0, 0, .5); }
+  .ov .mgb { display: block; margin: 10px auto 0; font: 700 14px "JetBrains Mono", monospace; color: #0d1b3a; background: #c9a227; border: 0; border-radius: 8px; padding: 10px 22px; cursor: pointer; }
+  .ov .mgb:disabled { opacity: .35; cursor: default; }
+  .ov .mgr { text-align: center; font-size: 14px; margin: 8px 0 0; min-height: 20px; }
   .ov .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .ov .opt { font: 700 15px "JetBrains Mono", monospace; color: #f5eedc; background: #16294f; border: 1px solid rgba(245, 238, 220, .3); border-radius: 8px; padding: 12px 8px; cursor: pointer; }
   .ov .opt:hover:not(:disabled) { border-color: #c9a227; }
@@ -80,6 +95,7 @@
 <div id="pad"><div class="grp"><button id="pl">&#9664;</button><button id="pr">&#9654;</button></div><div class="grp"><button id="pu">&#9650;</button><button id="pd">&#9660;</button><button id="pj">JUMP</button></div></div>
 <div id="auth" class="ov"><div class="panel" id="authBox"></div></div>
 <div id="quiz" class="ov"><div class="panel" id="quizBox"></div></div>
+<div id="mini" class="ov"><div class="panel" id="miniBox"></div></div>
 <div id="over" class="ov"><div class="panel" id="overBox"></div></div>
 <script src="../wordbridge/bank.js"></script>
 <script>
@@ -579,7 +595,7 @@ function startRound(n, pen) {
   G.bonus0 = Math.max(3000, 5000 - 400 * (n - 1)); G.bonus = Math.max(1000, G.bonus0 - G.penalty);
   resetStage(); G.state = 'ready'; G.stateT = 0; SND.start();
 }
-function closeOverlays() { ['over', 'quiz', 'auth'].forEach((id) => document.getElementById(id).classList.remove('on')); }
+function closeOverlays() { ['over', 'quiz', 'auth', 'mini'].forEach((id) => document.getElementById(id).classList.remove('on')); }
 function newGame(cp, wrong) {
   G.score = cp ? cp.score : 0; G.lives = 3; G.nextLife = (Math.floor(G.score / 7000) + 1) * 7000; G.learned = [];
   QZ = null; closeOverlays();
@@ -925,7 +941,95 @@ function update(dt) {
     }
     return;
   }
-  if (G.state === 'clear') { updateApe(dt); if (G.stateT > 5.8) startRound(G.round + 1, 0); return; }
+  if (G.state === 'clear') { updateApe(dt); if (G.stateT > 5.8) { G.state = 'mini'; const nr = G.round + 1; openMini(() => startRound(nr, 0)); } return; }
+}
+
+// ---------- mini-jeu entre deux rounds : glisser les bonnes formes dans les bonnes cases ----------
+let MG = null;
+function mgPick() {
+  const simple = (v) => v && v[0] !== 'be' && !/[\/ ]/.test(v[1]) && !/[\/ ]/.test(v[2]) && v[1].length <= 9 && v[2].length <= 9;
+  const seen = new Set(), out = [];
+  const take = (arr, wantDiff) => { for (const v of arr) { if (out.length >= 3) break; if (!simple(v) || seen.has(v[0])) continue; if (wantDiff && v[1] === v[2]) continue; seen.add(v[0]); out.push(v); } };
+  take(shuf(G.learned.slice(-12)), true); take(shuf(VERBS), true);
+  if (out.length < 3) take(shuf(VERBS), false);
+  const sameV = shuf(VERBS.filter((v) => simple(v) && v[1] === v[2] && !seen.has(v[0])))[0];
+  if (sameV && Math.random() < 0.5) { out[2] = sameV; }
+  return out.slice(0, 3);
+}
+function openMini(onDone) {
+  const verbs = mgPick(); const chips = [];
+  verbs.forEach((v, i) => { chips.push({ id: 'c' + i + 'p', txt: v[1] }); chips.push({ id: 'c' + i + 'q', txt: v[2] }); });
+  MG = { verbs, chips: shuf(chips), slot: {}, checked: false, onDone, sel: null, drag: null };
+  document.getElementById('mini').classList.add('on'); renderMini();
+}
+function renderMini() {
+  const box = document.getElementById('miniBox'), placed = new Set(Object.values(MG.slot));
+  const chipH = (c) => '<div class="chip' + (MG.sel === c.id ? ' sel' : '') + '" data-c="' + c.id + '">' + esc(c.txt) + '</div>';
+  let h = '<div style="text-align:center;color:#ffd23a;font-size:15px;font-weight:700;letter-spacing:1px">BONUS GAME</div><div class="muted" style="text-align:center;margin:4px 0 10px">Drag each form into the right box: preterit and past participle.</div>';
+  h += '<div class="mg"><span></span><span class="h">PRETERIT</span><span class="h">PAST PARTICIPLE</span></div>';
+  MG.verbs.forEach((v, i) => {
+    h += '<div class="mg"><div class="inf">' + esc(v[0]) + '<small>' + esc(v[3]) + '</small></div>';
+    ['p', 'q'].forEach((k) => {
+      const sid = 's' + i + k, cid = MG.slot[sid], c = cid && MG.chips.find((x) => x.id === cid), good = k === 'p' ? v[1] : v[2];
+      let cl = 'slot'; if (MG.checked) cl += c && c.txt === good ? ' ok' : ' no';
+      h += '<div class="' + cl + '" data-s="' + sid + '">' + (c ? chipH(c) : '') + '</div>';
+    });
+    h += '</div>';
+  });
+  h += '<div class="pool" data-s="pool">' + MG.chips.filter((c) => !placed.has(c.id)).map(chipH).join('') + '</div>';
+  if (MG.checked) {
+    const wrong = MG.verbs.filter((v, i) => { const a = MG.chips.find((x) => x.id === MG.slot['s' + i + 'p']), b = MG.chips.find((x) => x.id === MG.slot['s' + i + 'q']); return !(a && a.txt === v[1] && b && b.txt === v[2]); });
+    h += '<div class="mgr">' + (MG.score === 6 ? '<span style="color:#6fe09a">PERFECT! +' + MG.gain + '</span>' : '<span style="color:#ffd23a">' + MG.score + '/6 right, +' + MG.gain + '</span>') + '</div>';
+    if (wrong.length) h += '<div class="muted" style="text-align:center;margin-top:6px">' + wrong.map((v) => esc(v[0] + ' - ' + v[1] + ' - ' + v[2])).join('<br>') + '</div>';
+    h += '<button class="mgb" id="mgGo">NEXT ROUND</button>';
+  } else h += '<button class="mgb" id="mgCheck"' + (Object.keys(MG.slot).length < 6 ? ' disabled' : '') + '>CHECK</button>';
+  box.innerHTML = h;
+  box.querySelectorAll('.chip').forEach((el) => el.addEventListener('pointerdown', mgDown));
+  box.querySelectorAll('.slot, .pool').forEach((el) => el.addEventListener('click', () => mgTap(el.getAttribute('data-s'))));
+  const ck = box.querySelector('#mgCheck'); if (ck) ck.addEventListener('click', mgCheck);
+  const go = box.querySelector('#mgGo'); if (go) go.addEventListener('click', () => { const fn = MG.onDone; MG = null; document.getElementById('mini').classList.remove('on'); fn(); });
+}
+function mgPlace(cid, target) {
+  for (const k of Object.keys(MG.slot)) if (MG.slot[k] === cid) delete MG.slot[k];
+  if (target && target !== 'pool') { delete MG.slot[target]; MG.slot[target] = cid; }
+}
+function mgPut(cid, target) {
+  if (target && target !== 'pool' && MG.slot[target] && MG.slot[target] !== cid) { const old = MG.slot[target]; const from = Object.keys(MG.slot).find((k) => MG.slot[k] === cid); mgPlace(cid, target); if (from) MG.slot[from] = old; }
+  else mgPlace(cid, target);
+}
+function mgTap(target) {
+  if (!MG || MG.checked || !MG.sel) return; mgPut(MG.sel, target); MG.sel = null; SND.item(); renderMini();
+}
+function mgDown(e) {
+  if (!MG || MG.checked) return; e.preventDefault(); e.stopPropagation(); audio();
+  const el = e.currentTarget, cid = el.getAttribute('data-c'), r = el.getBoundingClientRect();
+  const g = el.cloneNode(true); g.classList.add('drag'); g.style.width = r.width + 'px'; g.style.left = r.left + 'px'; g.style.top = r.top + 'px'; document.body.appendChild(g);
+  MG.drag = { cid, g, dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, moved: false }; el.style.opacity = '.3';
+  window.addEventListener('pointermove', mgMove); window.addEventListener('pointerup', mgUp, { once: true });
+}
+function mgTarget(x, y, d) {
+  d = d || MG.drag; d.g.style.display = 'none'; const el = document.elementFromPoint(x, y); d.g.style.display = '';
+  const t = el && el.closest ? el.closest('[data-s]') : null; return t ? t.getAttribute('data-s') : null;
+}
+function mgMove(e) {
+  const d = MG && MG.drag; if (!d) return;
+  if (Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0) > 4) d.moved = true;
+  d.g.style.left = (e.clientX - d.dx) + 'px'; d.g.style.top = (e.clientY - d.dy) + 'px';
+  document.querySelectorAll('#miniBox .slot').forEach((s) => s.classList.remove('hot')); const t = mgTarget(e.clientX, e.clientY, d);
+  if (t && t !== 'pool') { const s = document.querySelector('#miniBox .slot[data-s="' + t + '"]'); if (s) s.classList.add('hot'); }
+}
+function mgUp(e) {
+  window.removeEventListener('pointermove', mgMove); const d = MG && MG.drag; if (!d) return; MG.drag = null;
+  const t = mgTarget(e.clientX, e.clientY, d); d.g.remove();
+  if (!d.moved) { MG.sel = MG.sel === d.cid ? null : d.cid; renderMini(); return; }
+  if (t) { mgPut(d.cid, t); SND.item(); } MG.sel = null; renderMini();
+}
+function mgCheck() {
+  if (!MG || MG.checked) return; let ok = 0;
+  MG.verbs.forEach((v, i) => { const a = MG.chips.find((x) => x.id === MG.slot['s' + i + 'p']), b = MG.chips.find((x) => x.id === MG.slot['s' + i + 'q']); if (a && a.txt === v[1]) ok++; if (b && b.txt === v[2]) ok++; });
+  MG.checked = true; MG.score = ok; MG.gain = ok * 100 + (ok === 6 ? 1000 : 0); addScore(MG.gain);
+  if (ok === 6) SND.life(); else SND.item();
+  renderMini();
 }
 function gameOver(quiet) {
   G.state = 'gameover'; G.stateT = 0; if (!quiet) SND.gameover();
@@ -1699,7 +1803,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('20px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tl = { updateButterflies, updateSprings, updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
+window.__tl = { openMini, mgCheck, get MG() { return MG; }, updateButterflies, updateSprings, updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
 })();
 
 </script>
