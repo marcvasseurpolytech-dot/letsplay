@@ -56,51 +56,6 @@
   .ov .dots { text-align: center; font-size: 20px; letter-spacing: 6px; color: #ffd23a; margin: 0 0 6px; }
   .ov .qs { font-size: 17px; line-height: 1.55; margin: 12px 0 14px; color: #fff; text-align: center; }
   .ov .gap { display: inline-block; min-width: 70px; border-bottom: 2px solid #ffd23a; color: #ffd23a; text-align: center; }
-  .ov .mg { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; align-items: center; margin: 6px 0; }
-  .ov .mg .h { font-size: 10px; color: #a9b3c9; text-align: center; letter-spacing: 1px; }
-  .ov .mg .inf { font-weight: 700; font-size: 16px; color: #ffd23a; }
-  .ov .mg .inf small { display: block; font-size: 10px; color: #a9b3c9; font-weight: 400; }
-  .ov .slot { min-height: 40px; border: 2px dashed rgba(245, 238, 220, .4); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-  .ov .slot.hot { border-color: #ffd23a; background: rgba(255, 210, 58, .12); }
-  .ov .slot.ok { border: 2px solid #6fe09a; background: rgba(46, 139, 79, .35); }
-  .ov .slot.no { border: 2px solid #ff8a80; background: rgba(168, 54, 46, .35); }
-  .ov .pool { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 48px; margin: 14px 0 8px; padding: 8px; border-radius: 8px; background: rgba(0, 0, 0, .25); }
-  .ov .chip { font: 700 15px "JetBrains Mono", monospace; color: #f5eedc; background: #16294f; border: 1px solid #c9a227; border-radius: 8px; padding: 9px 12px; cursor: grab; touch-action: none; user-select: none; }
-  .ov .chip.sel { background: #c9a227; color: #0d1b3a; }
-  .ov .chip.drag { position: fixed; z-index: 50; pointer-events: none; opacity: .92; box-shadow: 0 6px 16px rgba(0, 0, 0, .5); }
-  .ov .mgb { display: block; margin: 10px auto 0; font: 700 14px "JetBrains Mono", monospace; color: #0d1b3a; background: #c9a227; border: 0; border-radius: 8px; padding: 10px 22px; cursor: pointer; }
-  .ov .mgb:disabled { opacity: .35; cursor: default; }
-  .ov .mgr { text-align: center; font-size: 14px; margin: 8px 0 0; min-height: 20px; }
-  /* ---- bonus game : meme style arcade que le jeu ---- */
-  #mini { background: repeating-linear-gradient(90deg, rgba(60, 30, 20, .92) 0 14px, rgba(30, 18, 40, .92) 14px 22px, rgba(20, 40, 60, .92) 22px 34px, rgba(70, 40, 20, .92) 34px 40px), #000; image-rendering: pixelated; }
-  #mini::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .22) 0 2px, transparent 2px 4px); pointer-events: none; }
-  #mini .panel { font-family: "Press Start 2P", "Courier New", monospace; width: min(620px, 94vw); border: 4px solid #ffd23a; border-radius: 0; background: #0a1230; box-shadow: 0 0 0 4px #0a1230, 0 0 0 8px #c9a227, 8px 8px 0 8px rgba(0, 0, 0, .55); padding: 18px 16px 16px; position: relative; z-index: 2; }
-  #mini .ttl { text-align: center; color: #ffd23a; font-size: 18px; letter-spacing: 2px; text-shadow: 3px 3px 0 #7a2a0a; margin: 2px 0 6px; animation: mgb 1s steps(2) infinite; }
-  @keyframes mgb { 50% { color: #fff3a0; } }
-  #mini .sub { text-align: center; color: #8fd0ff; font-size: 8px; line-height: 1.9; margin: 0 0 14px; }
-  #mini .rnd { text-align: center; color: #6f78d8; font-size: 8px; margin: 0 0 8px; }
-  #mini .mg .h { font-family: "Press Start 2P", monospace; font-size: 8px; color: #6fe09a; letter-spacing: 0; }
-  #mini .mg .inf { font-size: 12px; color: #ffd23a; text-shadow: 2px 2px 0 #000; }
-  #mini .mg .inf small { font-size: 7px; color: #8fd0ff; margin-top: 5px; font-family: "Press Start 2P", monospace; }
-  #mini .slot { border: 3px dashed #4a5a9a; border-radius: 0; min-height: 46px; background: #050a1e; box-shadow: inset 3px 3px 0 #000; }
-  #mini .slot.hot { border: 3px solid #ffd23a; background: #231a06; }
-  #mini .slot.ok { border: 3px solid #6fe09a; background: #0a3a1e; }
-  #mini .slot.no { border: 3px solid #ff4050; background: #3a0a14; }
-  #mini .pool { border-radius: 0; border: 3px solid #4a5a9a; background: #050a1e; box-shadow: inset 3px 3px 0 #000; min-height: 54px; }
-  #mini .chip { font: 11px "Press Start 2P", monospace; border-radius: 0; color: #0a1230; background: #f5eedc; border: 0; padding: 10px 12px; box-shadow: inset -3px -3px 0 #b8a98a, inset 3px 3px 0 #fff, 3px 3px 0 #000; cursor: grab; }
-  #mini .chip:hover { background: #fff3a0; }
-  #mini .chip.sel { background: #ffd23a; box-shadow: inset -3px -3px 0 #b8870a, inset 3px 3px 0 #fff3a0, 3px 3px 0 #000; transform: translateY(-2px); }
-  #mini .chip.drag { box-shadow: inset -3px -3px 0 #b8a98a, inset 3px 3px 0 #fff, 6px 6px 0 rgba(0, 0, 0, .6); transform: rotate(-3deg) scale(1.06); }
-  #mini .slot .chip { box-shadow: inset -3px -3px 0 #b8a98a, inset 3px 3px 0 #fff; }
-  #mini .slot.ok .chip { background: #b8ffd0; box-shadow: inset -3px -3px 0 #3aa86a, inset 3px 3px 0 #e8fff0; }
-  #mini .slot.no .chip { background: #ffc0c0; box-shadow: inset -3px -3px 0 #c03040, inset 3px 3px 0 #ffe8e8; }
-  #mini .mgb { font: 11px "Press Start 2P", monospace; border-radius: 0; color: #0a1230; background: #ffd23a; padding: 12px 20px; margin-top: 14px; box-shadow: inset -4px -4px 0 #b8870a, inset 4px 4px 0 #fff3a0, 4px 4px 0 #000; }
-  #mini .mgb:hover:not(:disabled) { background: #fff3a0; }
-  #mini .mgb:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: inset -4px -4px 0 #b8870a, inset 4px 4px 0 #fff3a0; }
-  #mini .mgb:disabled { background: #4a5a9a; box-shadow: inset -4px -4px 0 #2a3470, inset 4px 4px 0 #6a7ac0; opacity: 1; color: #1a2250; }
-  #mini .mgr { font-size: 12px; margin-top: 12px; text-shadow: 2px 2px 0 #000; }
-  #mini .mgfix { text-align: center; font-size: 8px; line-height: 2; color: #ff8a80; margin-top: 8px; }
-  #mini .mgfix b { color: #ffd23a; font-weight: 400; }
   .ov .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .ov .opt { font: 700 15px "JetBrains Mono", monospace; color: #f5eedc; background: #16294f; border: 1px solid rgba(245, 238, 220, .3); border-radius: 8px; padding: 12px 8px; cursor: pointer; }
   .ov .opt:hover:not(:disabled) { border-color: #c9a227; }
@@ -125,7 +80,6 @@
 <div id="pad"><div class="grp"><button id="pl">&#9664;</button><button id="pr">&#9654;</button></div><div class="grp"><button id="pu">&#9650;</button><button id="pd">&#9660;</button><button id="pj">JUMP</button></div></div>
 <div id="auth" class="ov"><div class="panel" id="authBox"></div></div>
 <div id="quiz" class="ov"><div class="panel" id="quizBox"></div></div>
-<div id="mini" class="ov"><div class="panel" id="miniBox"></div></div>
 <div id="over" class="ov"><div class="panel" id="overBox"></div></div>
 <script src="../wordbridge/bank.js"></script>
 <script>
@@ -625,7 +579,7 @@ function startRound(n, pen) {
   G.bonus0 = Math.max(3000, 5000 - 400 * (n - 1)); G.bonus = Math.max(1000, G.bonus0 - G.penalty);
   resetStage(); G.state = 'ready'; G.stateT = 0; SND.start();
 }
-function closeOverlays() { ['over', 'quiz', 'auth', 'mini'].forEach((id) => document.getElementById(id).classList.remove('on')); }
+function closeOverlays() { ['over', 'quiz', 'auth'].forEach((id) => document.getElementById(id).classList.remove('on')); }
 function newGame(cp, wrong) {
   G.score = cp ? cp.score : 0; G.lives = 3; G.nextLife = (Math.floor(G.score / 7000) + 1) * 7000; G.learned = [];
   QZ = null; closeOverlays();
@@ -972,94 +926,129 @@ function update(dt) {
     return;
   }
   if (G.state === 'clear') { updateApe(dt); if (G.stateT > 5.8) { G.state = 'mini'; const nr = G.round + 1; openMini(() => startRound(nr, 0)); } return; }
+  if (G.state === 'mini') { updateApe(dt); return; }
 }
 
-// ---------- mini-jeu entre deux rounds : glisser les bonnes formes dans les bonnes cases ----------
+// ---------- mini-jeu entre deux rounds : glisser les globes dans les bonnes cases (dessine sur le canvas, meme style que le jeu) ----------
 let MG = null;
 function mgPick() {
-  const simple = (v) => v && v[0] !== 'be' && !/[\/ ]/.test(v[1]) && !/[\/ ]/.test(v[2]) && v[1].length <= 9 && v[2].length <= 9;
+  const simple = (v) => v && v[0] !== 'be' && !/[\/ ]/.test(v[1]) && !/[\/ ]/.test(v[2]) && v[1].length <= 8 && v[2].length <= 8;
   const seen = new Set(), out = [];
   const take = (arr, wantDiff) => { for (const v of arr) { if (out.length >= 3) break; if (!simple(v) || seen.has(v[0])) continue; if (wantDiff && v[1] === v[2]) continue; seen.add(v[0]); out.push(v); } };
   take(shuf(G.learned.slice(-12)), true); take(shuf(VERBS), true);
   if (out.length < 3) take(shuf(VERBS), false);
   const sameV = shuf(VERBS.filter((v) => simple(v) && v[1] === v[2] && !seen.has(v[0])))[0];
-  if (sameV && Math.random() < 0.5) { out[2] = sameV; }
+  if (sameV && Math.random() < 0.5) out[2] = sameV;
   return out.slice(0, 3);
 }
+const MGX = [96, 160], MGW = 56, MGH = 15;
+function mgSlotRect(i, k) { return { x: MGX[k], y: 100 + i * 22, w: MGW, h: MGH }; }
+const MGBTN = { x: 84, y: 209, w: 72, h: 15 };
 function openMini(onDone) {
-  const verbs = mgPick(); const chips = [];
-  verbs.forEach((v, i) => { chips.push({ id: 'c' + i + 'p', txt: v[1] }); chips.push({ id: 'c' + i + 'q', txt: v[2] }); });
-  MG = { verbs, chips: shuf(chips), slot: {}, checked: false, onDone, sel: null, drag: null };
-  document.getElementById('mini').classList.add('on'); renderMini();
+  setStage(1); G.apeFall = null; G.ape = { stage: 'idle', t: 0, pound: 3 }; G.pops = []; G.banner = null;
+  const verbs = mgPick(), chips = [];
+  verbs.forEach((v, i) => { chips.push({ txt: v[1], i, k: 'p' }); chips.push({ txt: v[2], i, k: 'q' }); });
+  shuf(chips).forEach((c, n) => { c.id = n; c.hx = 22 + n * 39.2; c.hy = 191; c.slot = null; });
+  MG = { verbs, chips: chips.sort((a, b) => a.id - b.id), checked: false, onDone, sel: null, drag: null, score: 0, gain: 0 };
+  cv.style.cursor = 'default';
 }
-function renderMini() {
-  const box = document.getElementById('miniBox'), placed = new Set(Object.values(MG.slot));
-  const chipH = (c) => '<div class="chip' + (MG.sel === c.id ? ' sel' : '') + '" data-c="' + c.id + '">' + esc(c.txt) + '</div>';
-  let h = '<div class="ttl">BONUS GAME</div><div class="sub">DRAG EACH FORM INTO THE RIGHT BOX<br>PRETERIT + PAST PARTICIPLE</div>';
-  h += '<div class="rnd">ROUND ' + (G.round || 1) + ' CLEAR!</div><div class="mg"><span></span><span class="h">PRETERIT</span><span class="h">PARTICIPLE</span></div>';
-  MG.verbs.forEach((v, i) => {
-    h += '<div class="mg"><div class="inf">' + esc(v[0]) + '<small>' + esc(v[3]) + '</small></div>';
-    ['p', 'q'].forEach((k) => {
-      const sid = 's' + i + k, cid = MG.slot[sid], c = cid && MG.chips.find((x) => x.id === cid), good = k === 'p' ? v[1] : v[2];
-      let cl = 'slot'; if (MG.checked) cl += c && c.txt === good ? ' ok' : ' no';
-      h += '<div class="' + cl + '" data-s="' + sid + '">' + (c ? chipH(c) : '') + '</div>';
-    });
-    h += '</div>';
-  });
-  h += '<div class="pool" data-s="pool">' + MG.chips.filter((c) => !placed.has(c.id)).map(chipH).join('') + '</div>';
-  if (MG.checked) {
-    const wrong = MG.verbs.filter((v, i) => { const a = MG.chips.find((x) => x.id === MG.slot['s' + i + 'p']), b = MG.chips.find((x) => x.id === MG.slot['s' + i + 'q']); return !(a && a.txt === v[1] && b && b.txt === v[2]); });
-    h += '<div class="mgr">' + (MG.score === 6 ? '<span style="color:#6fe09a">PERFECT! +' + MG.gain + '</span>' : '<span style="color:#ffd23a">' + MG.score + '/6 RIGHT +' + MG.gain + '</span>') + '</div>';
-    if (wrong.length) h += '<div class="mgfix">' + wrong.map((v) => '<b>' + esc(v[0].toUpperCase()) + '</b> ' + esc(v[1]) + ' ' + esc(v[2])).join('<br>') + '</div>';
-    h += '<button class="mgb" id="mgGo">NEXT ROUND</button>';
-  } else h += '<button class="mgb" id="mgCheck"' + (Object.keys(MG.slot).length < 6 ? ' disabled' : '') + '>CHECK</button>';
-  box.innerHTML = h;
-  box.querySelectorAll('.chip').forEach((el) => el.addEventListener('pointerdown', mgDown));
-  box.querySelectorAll('.slot, .pool').forEach((el) => el.addEventListener('click', () => mgTap(el.getAttribute('data-s'))));
-  const ck = box.querySelector('#mgCheck'); if (ck) ck.addEventListener('click', mgCheck);
-  const go = box.querySelector('#mgGo'); if (go) go.addEventListener('click', () => { const fn = MG.onDone; MG = null; document.getElementById('mini').classList.remove('on'); fn(); });
+function mgPlaced(i, k) { return MG.chips.find((c) => c.slot && c.slot[0] === i && c.slot[1] === k); }
+function mgPos(e) { const r = cv.getBoundingClientRect(); return [((e.clientX - r.left) * (W / r.width) - FX) / FZ, ((e.clientY - r.top) * (H / r.height) - FY) / FZ]; }
+function mgInRect(x, y, r) { return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; }
+function mgSlotAt(x, y) { for (let i = 0; i < 3; i++) for (let k = 0; k < 2; k++) if (mgInRect(x, y, mgSlotRect(i, k))) return [i, k]; return null; }
+function mgChipAt(x, y) {
+  for (const c of MG.chips) if (c.slot) { const r = mgSlotRect(c.slot[0], c.slot[1]); if (mgInRect(x, y, r)) return c; }
+  for (const c of MG.chips) if (!c.slot && Math.abs(x - c.hx) < 18 && y > c.hy - 17 && y < c.hy + 8) return c;
+  return null;
 }
-function mgPlace(cid, target) {
-  for (const k of Object.keys(MG.slot)) if (MG.slot[k] === cid) delete MG.slot[k];
-  if (target && target !== 'pool') { delete MG.slot[target]; MG.slot[target] = cid; }
+function mgDrop(c, tgt) {
+  if (tgt) { const o = mgPlaced(tgt[0], tgt[1]); if (o && o !== c) { o.slot = c.slot; } c.slot = tgt; } else c.slot = null;
 }
-function mgPut(cid, target) {
-  if (target && target !== 'pool' && MG.slot[target] && MG.slot[target] !== cid) { const old = MG.slot[target]; const from = Object.keys(MG.slot).find((k) => MG.slot[k] === cid); mgPlace(cid, target); if (from) MG.slot[from] = old; }
-  else mgPlace(cid, target);
-}
-function mgTap(target) {
-  if (!MG || MG.checked || !MG.sel) return; mgPut(MG.sel, target); MG.sel = null; SND.item(); renderMini();
+function mgDone() { const fn = MG.onDone; MG = null; cv.style.cursor = ''; fn(); }
+function mgBtn() {
+  if (MG.checked) { mgDone(); return; }
+  if (MG.chips.every((c) => c.slot)) mgCheck();
 }
 function mgDown(e) {
-  if (!MG || MG.checked) return; e.preventDefault(); e.stopPropagation(); audio();
-  const el = e.currentTarget, cid = el.getAttribute('data-c'), r = el.getBoundingClientRect();
-  const g = el.cloneNode(true); g.classList.add('drag'); g.style.width = r.width + 'px'; g.style.left = r.left + 'px'; g.style.top = r.top + 'px'; document.body.appendChild(g);
-  MG.drag = { cid, g, dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, moved: false }; el.style.opacity = '.3';
-  window.addEventListener('pointermove', mgMove); window.addEventListener('pointerup', mgUp, { once: true });
-}
-function mgTarget(x, y, d) {
-  d = d || MG.drag; d.g.style.display = 'none'; const el = document.elementFromPoint(x, y); d.g.style.display = '';
-  const t = el && el.closest ? el.closest('[data-s]') : null; return t ? t.getAttribute('data-s') : null;
+  if (!MG) return; audio(); e.preventDefault(); const [x, y] = mgPos(e);
+  if (mgInRect(x, y, MGBTN)) { mgBtn(); return; }
+  if (MG.checked) return;
+  const c = mgChipAt(x, y);
+  if (c) { MG.drag = { c, x, y, x0: x, y0: y, moved: false }; return; }
+  if (MG.sel) { const t = mgSlotAt(x, y); if (t) { mgDrop(MG.sel, t); SND.item(); MG.sel = null; } else if (y > 176 && y < 204) { MG.sel.slot = null; MG.sel = null; } }
 }
 function mgMove(e) {
-  const d = MG && MG.drag; if (!d) return;
-  if (Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0) > 4) d.moved = true;
-  d.g.style.left = (e.clientX - d.dx) + 'px'; d.g.style.top = (e.clientY - d.dy) + 'px';
-  document.querySelectorAll('#miniBox .slot').forEach((s) => s.classList.remove('hot')); const t = mgTarget(e.clientX, e.clientY, d);
-  if (t && t !== 'pool') { const s = document.querySelector('#miniBox .slot[data-s="' + t + '"]'); if (s) s.classList.add('hot'); }
+  if (!MG) return; const [x, y] = mgPos(e);
+  if (MG.drag) { const d = MG.drag; d.x = x; d.y = y; if (Math.abs(x - d.x0) + Math.abs(y - d.y0) > 2) d.moved = true; return; }
+  cv.style.cursor = mgInRect(x, y, MGBTN) || (!MG.checked && mgChipAt(x, y)) ? 'pointer' : 'default';
 }
 function mgUp(e) {
-  window.removeEventListener('pointermove', mgMove); const d = MG && MG.drag; if (!d) return; MG.drag = null;
-  const t = mgTarget(e.clientX, e.clientY, d); d.g.remove();
-  if (!d.moved) { MG.sel = MG.sel === d.cid ? null : d.cid; renderMini(); return; }
-  if (t) { mgPut(d.cid, t); SND.item(); } MG.sel = null; renderMini();
+  if (!MG || !MG.drag) return; const d = MG.drag; MG.drag = null; const [x, y] = mgPos(e);
+  if (!d.moved) { MG.sel = MG.sel === d.c ? null : d.c; return; }
+  mgDrop(d.c, mgSlotAt(x, y)); MG.sel = null; SND.item();
 }
 function mgCheck() {
   if (!MG || MG.checked) return; let ok = 0;
-  MG.verbs.forEach((v, i) => { const a = MG.chips.find((x) => x.id === MG.slot['s' + i + 'p']), b = MG.chips.find((x) => x.id === MG.slot['s' + i + 'q']); if (a && a.txt === v[1]) ok++; if (b && b.txt === v[2]) ok++; });
+  MG.verbs.forEach((v, i) => { const a = mgPlaced(i, 0), b = mgPlaced(i, 1); if (a && a.txt === v[1]) ok++; if (b && b.txt === v[2]) ok++; });
   MG.checked = true; MG.score = ok; MG.gain = ok * 100 + (ok === 6 ? 1000 : 0); addScore(MG.gain);
   if (ok === 6) SND.life(); else SND.item();
-  renderMini();
+}
+cv.addEventListener('pointermove', mgMove); window.addEventListener('pointerup', mgUp);
+window.addEventListener('keydown', (e) => { if (MG && (e.key === 'Enter')) { e.preventDefault(); mgBtn(); } });
+function mgPlate(x, y, w, h, line, fill) { rect(x, y, w, h, fill || 'rgba(8,14,36,.92)'); f.strokeStyle = line || '#c9a227'; f.lineWidth = 0.6; f.strokeRect(x, y, w, h); }
+function mgGlobe(x, y, col, rot) {
+  const r = 5; ell(x, y, r, r, col);
+  f.save(); f.beginPath(); f.arc(x, y, r, 0, 6.2832); f.clip();
+  f.strokeStyle = 'rgba(255,255,255,.55)'; f.lineWidth = 0.7;
+  for (let k = 0; k < 3; k++) { const a = Math.abs(Math.cos(rot + k * 1.0472)); f.beginPath(); f.ellipse(x, y, r * a, r, 0, 0, 6.2832); f.stroke(); }
+  f.beginPath(); f.moveTo(x - r, y); f.lineTo(x + r, y); f.stroke();
+  const sh = f.createRadialGradient(x - 1.6, y - 1.8, 0.4, x, y, r); sh.addColorStop(0, 'rgba(255,255,255,.5)'); sh.addColorStop(0.5, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(0,0,0,.35)');
+  f.fillStyle = sh; f.fillRect(x - r, y - r, 2 * r, 2 * r); f.restore();
+}
+function mgLab(c) { return c.txt.length > 7 ? 4.2 : 5; }
+function mgDrawChipPool(c, x, y, sel) {
+  const col = '#2e86de', sz = mgLab(c); f.font = sz + 'px ' + FONT; const wd = f.measureText(c.txt).width + 4;
+  mgGlobe(x, y, col, G.t * 1.5 + c.id);
+  if (sel) { f.strokeStyle = '#ffd23a'; f.lineWidth = 0.9; f.beginPath(); f.arc(x, y, 7.2, 0, 6.2832); f.stroke(); }
+  mgPlate(x - wd / 2, y - 16, wd, 8, sel ? '#ffd23a' : '#e3b04b'); ft(c.txt, x, y - 11.6, sz, sel ? '#ffd23a' : '#f5eedc');
+}
+function drawMiniField() {
+  if (!bgCv) bgCv = makeBg();
+  f.setTransform(FS, 0, 0, FS, 0, 0); f.globalAlpha = 1; f.lineCap = 'butt';
+  f.drawImage(bgCv, 0, 0, LW, LH);
+  for (let i = 0; i < PLS.length; i++) drawPlank(i);
+  LAD.forEach(drawLadder); drawInkwell(); drawBook(); drawApe();
+  G.hammers = []; drawHammerIcon(50, yAt(0, 50), 1); drawHammerIcon(36, yAt(1, 36), 2);
+  drawBlot({ x: 22, y: yAt(0, 22), t: G.t });
+  if (!MG) return;
+  mgPlate(6, 62, 228, 142, '#c9a227', 'rgba(8,14,36,.68)');
+  ft('BONUS GAME', 120, 72, 7, '#ffd23a'); ft('DRAG THE GLOBES INTO THE RIGHT BOXES', 120, 81, 3.5, '#8fd0ff');
+  ft('PRETERIT', MGX[0] + MGW / 2, 92, 3.8, '#6fe09a'); ft('PARTICIPLE', MGX[1] + MGW / 2, 92, 3.8, '#6fe09a');
+  MG.verbs.forEach((v, i) => {
+    const y = 100 + i * 22; ft(v[0], 12, y + 4, 5.4, '#ffd23a', 'left'); ft(v[3], 12, y + 12, 3.2, '#8fd0ff', 'left');
+    [0, 1].forEach((k) => {
+      const r = mgSlotRect(i, k), c = mgPlaced(i, k), good = k === 0 ? v[1] : v[2];
+      let line = '#4a5a9a', fill = '#050a1e';
+      if (MG.checked) { const ok = c && c.txt === good; line = ok ? '#6fe09a' : '#ff4050'; fill = ok ? '#0a3a1e' : '#3a0a14'; }
+      else if (MG.drag && mgInRect(MG.drag.x, MG.drag.y, r)) { line = '#ffd23a'; fill = '#231a06'; }
+      mgPlate(r.x, r.y, r.w, r.h, line, fill);
+      if (c && !(MG.drag && MG.drag.c === c && MG.drag.moved)) {
+        const col = MG.checked ? (c.txt === good ? '#3aa86a' : '#e0653a') : '#2e86de';
+        mgGlobe(r.x + 8, r.y + 7.5, col, G.t + c.id); if (MG.sel === c) { f.strokeStyle = '#ffd23a'; f.lineWidth = 0.9; f.beginPath(); f.arc(r.x + 8, r.y + 7.5, 7, 0, 6.2832); f.stroke(); }
+        ft(c.txt, r.x + 15 + (r.w - 15) / 2, r.y + 8, mgLab(c), '#f5eedc');
+      }
+    });
+  });
+  if (!MG.checked) { for (const c of MG.chips) if (!c.slot && !(MG.drag && MG.drag.c === c && MG.drag.moved)) mgDrawChipPool(c, c.hx, c.hy, MG.sel === c); }
+  else {
+    ft(MG.score === 6 ? 'PERFECT! +' + MG.gain : MG.score + '/6 RIGHT  +' + MG.gain, 120, 172, 6, MG.score === 6 ? '#6fe09a' : '#ffd23a');
+    const wrong = MG.verbs.filter((v, i) => { const a = mgPlaced(i, 0), b = mgPlaced(i, 1); return !(a && a.txt === v[1] && b && b.txt === v[2]); });
+    wrong.forEach((v, n) => { ft(v[0].toUpperCase() + '  ' + v[1] + '  ' + v[2], 120, 183 + n * 8, 4.4, '#ff9a8a'); });
+  }
+  const all = MG.chips.every((c) => c.slot), on = MG.checked || all;
+  mgPlate(MGBTN.x, MGBTN.y, MGBTN.w, MGBTN.h, on ? '#ffd23a' : '#4a5a9a', on ? '#3a2e08' : '#0a1230');
+  ft(MG.checked ? 'NEXT ROUND' : 'CHECK', MGBTN.x + MGBTN.w / 2, MGBTN.y + 8, 5.4, on ? '#ffd23a' : '#4a5a9a');
+  if (MG.drag && MG.drag.moved) mgDrawChipPool(MG.drag.c, MG.drag.x, MG.drag.y + 6, true);
 }
 function gameOver(quiet) {
   G.state = 'gameover'; G.stateT = 0; if (!quiet) SND.gameover();
@@ -1547,7 +1536,7 @@ function draw() {
   ctx.imageSmoothingEnabled = HD; ctx.imageSmoothingQuality = 'high';
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
   if (G.state === 'title') { drawTitle(); return; }
-  drawField();
+  if (G.state === 'mini') drawMiniField(); else drawField();
   ctx.imageSmoothingEnabled = HD; ctx.drawImage(fcv, FX, FY, LW * FZ, LH * FZ);
   ctx.strokeStyle = '#c9a227'; ctx.lineWidth = 2; ctx.strokeRect(FX - 1, FY - 1, LW * FZ + 2, LH * FZ + 2);
   drawPanel();
@@ -1562,6 +1551,7 @@ function action() {
   if (G.state === 'play' && G.p) G.p.jumpReq = true;
 }
 cv.addEventListener('pointerdown', (e) => {
+  if (G.state === 'mini') { if (e.button === 0 || e.pointerType !== 'mouse') mgDown(e); return; }
   if (e.pointerType === 'mouse' && e.button === 2) { audio(); throwPlane(); e.preventDefault(); return; }
   if (e.button === 0 || e.pointerType !== 'mouse') {
     if (e.pointerType === 'mouse' && G.state === 'play' && G.gunT > 0) { audio(); fireGun(); } else action();
@@ -1833,7 +1823,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('20px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tl = { openMini, mgCheck, get MG() { return MG; }, updateButterflies, updateSprings, updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
+window.__tl = { openMini, mgCheck, mgSlotRect, mgPos, get MG() { return MG; }, updateButterflies, updateSprings, updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
 })();
 
 </script>
