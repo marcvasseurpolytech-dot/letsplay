@@ -382,7 +382,24 @@ const STAGES = [
     springs: [[0, 60], [1, 190], [2, 50], [3, 180]],
     fruits: [[0, 60, -42], [1, 190, -42], [2, 50, -42], [3, 180, -42], [1, 140, -12], [2, 160, -12], [3, 110, -12], [4, 130, -12]],
     hammers: [[1, 230], [3, 232]], guns: [[2, 14]], planes: [[3, 20], [1, 16]],
-    items: [['pencil', 0, 130, 300], ['phones', 2, 150, 500], ['sheet', 4, 120, 800]], speed: 1 }
+    items: [['pencil', 0, 130, 300], ['phones', 2, 150, 500], ['sheet', 4, 120, 800]], speed: 1 },
+  { name: 'THE FLOWER GARDEN', slope: 26, seed: 7717, g0: '#1d3a1d', g1: '#3a2a5a', hint: 'SWAT THE BUTTERFLIES, PICK 8 FLOWERS = 1UP', garden: true, fruitKind: 'flower',
+    pal: { top: '#6a9a3a', under: '#4a3a22', edge: '#c8f09a', dot: '#9ac860', sup: '#3a2a16' },
+    cols: ['#2a6a3a', '#7a2a5a', '#3a5a9a', '#9a6a2a', '#5a2a7a', '#2a7a7a', '#8a3a3a'], gaps: [], belts: [], lifts: [],
+    pls: [
+      { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
+      { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
+    ],
+    lad: [
+      { lo: 0, x: 60, full: true }, { lo: 0, x: 200, full: false }, { lo: 1, x: 190, full: true }, { lo: 1, x: 80, full: false },
+      { lo: 2, x: 50, full: true }, { lo: 2, x: 160, full: false }, { lo: 3, x: 180, full: true }, { lo: 3, x: 100, full: false },
+      { lo: 4, x: 176, full: true }
+    ],
+    springs: [],
+    fruits: [[0, 130, -6], [0, 220, -6], [1, 30, -6], [1, 120, -6], [2, 100, -6], [2, 210, -6], [3, 60, -6], [4, 90, -6]],
+    butterflies: [[0, 20, 235, 34, 0], [1, 14, 236, 30, 1.5], [2, 10, 226, 38, 3], [3, 14, 236, 32, 4.5], [4, 10, 226, 36, 2.2]],
+    hammers: [[1, 234], [3, 236]], guns: [[2, 14]], planes: [[3, 20], [1, 16]],
+    items: [['pencil', 0, 100, 300], ['phones', 2, 150, 500], ['sheet', 4, 120, 800]], speed: 1 }
 ];
 const TH = 7;                          // epaisseur d'une planche
 const PLS = [], LAD = [];
@@ -468,6 +485,20 @@ function updateTiles(dt) {
     }
   }
 }
+function bflyY(b) { return yAt(b.plat, b.x) - 15 + 11 * Math.sin(G.t * 5 + b.ph); }
+function killBfly(b) { b.dead = true; addScore(300); SND.smash(); burst(b.x, bflyY(b), '#ff9ad0', 12, 50); pop(b.x, bflyY(b) - 8, '+300', '#ffd23a'); }
+function updateButterflies(dt) {
+  const p = G.p;
+  for (const b of G.bfly) {
+    if (b.dead) continue;
+    b.x += b.dir * b.sp * dt; if (b.x > b.x1) { b.x = b.x1; b.dir = -1; } if (b.x < b.x0) { b.x = b.x0; b.dir = 1; }
+    const by = bflyY(b);
+    for (const s of G.shots) { if (!s.dead && s.plat === b.plat && Math.abs(s.x - b.x) < 7) { s.dead = true; killBfly(b); break; } }
+    if (b.dead) continue;
+    if (G.hammerT > 0) { const Z = hammerZone(); if (b.x >= Z.x0 - 3 && b.x <= Z.x1 + 3 && Math.abs(by - (p.y - 7)) < 13) { killBfly(b); continue; } }
+    if (p.mode !== 'climb' && p.mode !== 'lift' && Math.abs(b.x - p.x) < 6 && by > p.y - 15 && by < p.y + 2) { die('butterfly'); return; }
+  }
+}
 function updateSprings(dt) {
   const p = G.p;
   for (const q of G.springs) {
@@ -482,7 +513,7 @@ function updateSprings(dt) {
       if (fr.taken) continue;
       if (p.mode !== 'climb' && p.mode !== 'lift' && Math.abs(fr.x - p.x) < 8 && Math.abs(fr.y - (p.y - 8)) < 10) {
         fr.taken = true; addScore(200); SND.item(); pop(fr.x, fr.y - 8, '+200', '#ffd23a');
-        if (G.fruits.every((q) => q.taken)) { addScore(2000); G.lives = Math.min(6, G.lives + 1); SND.life(); pop(120, 110, 'ALL FRUITS! 1UP', '#6fe09a'); }
+        if (G.fruits.every((q) => q.taken)) { addScore(2000); G.lives = Math.min(6, G.lives + 1); SND.life(); pop(120, 110, ST.fruitKind === 'flower' ? 'ALL FLOWERS! 1UP' : 'ALL FRUITS! 1UP', '#6fe09a'); }
       }
     }
   }
@@ -519,7 +550,7 @@ const pad = { l: 0, r: 0, u: 0, d: 0 };
 const G = {
   state: 'title', stateT: 0, t: 0, round: 1, score: 0, hi: +(lsGet('tlHi') || 0), lives: 3, nextLife: 7000,
   bonus: 5000, bonusT: 0, globes: [], blots: [], p: null, ape: { stage: 'idle', t: 0, pound: 4 }, throwT: 2, blotT: 9, ink: 0,
-  hammers: [], tiles: [], lifts: [], springs: [], fruits: [], springs: [], fruits: [], apeFall: null, unlocked: false, guns: [], planes: [], shots: [], fly: [], gunT: 0, planeAmmo: 0, fireCd: 0, gunFlash: 0, items: [], hammerT: 0, beatT: 0, beatI: 0, learned: [], banner: null, pops: [], parts: [], shake: 0, prevState: 'play', penalty: 0, why: '', msg: ''
+  hammers: [], tiles: [], lifts: [], springs: [], fruits: [], bfly: [], deco: [], apeFall: null, unlocked: false, guns: [], planes: [], shots: [], fly: [], gunT: 0, planeAmmo: 0, fireCd: 0, gunFlash: 0, items: [], hammerT: 0, beatT: 0, beatI: 0, learned: [], banner: null, pops: [], parts: [], shake: 0, prevState: 'play', penalty: 0, why: '', msg: ''
 };
 let collection = (() => { try { return new Set(JSON.parse(lsGet('tlLearned') || '[]')); } catch (e) { return new Set(); } })();
 function saveCollection() { lsSet('tlLearned', JSON.stringify(Array.from(collection))); }
@@ -537,6 +568,8 @@ function resetStage() {
   G.guns = ST.guns.map((h) => ({ plat: h[0], x: h[1], taken: false })); G.planes = ST.planes.map((h) => ({ plat: h[0], x: h[1], taken: false }));
   G.gunT = 0; G.planeAmmo = 0; G.shots = []; G.fly = []; G.fireCd = 0; G.gunFlash = 0;
   G.springs = ST.springs.map((q) => ({ plat: q[0], x: q[1], comp: 0 })); G.fruits = ST.fruits.map((q) => ({ x: q[1], y: yAt(q[0], q[1]) + q[2], taken: false }));
+  G.bfly = (ST.butterflies || []).map((q, i) => ({ plat: q[0], x0: q[1], x1: q[2], sp: q[3], x: q[1] + (q[2] - q[1]) * ((i * 0.37 + 0.5) % 1), dir: i % 2 ? -1 : 1, ph: q[4], dead: false, col: i }));
+  G.deco = []; if (ST.garden) { let r = ST.seed; const rnd = () => { r = (r * 1103515245 + 12345) & 0x7fffffff; return r / 0x7fffffff; }; PLS.forEach((pl, i) => { for (let x = pl.x0 + 6; x < pl.x1 - 4; x += 9 + Math.floor(rnd() * 9)) G.deco.push({ plat: i, x, k: Math.floor(rnd() * 4), h: 3 + rnd() * 4, c: Math.floor(rnd() * 5) }); }); }
   G.tiles = ST.rivets ? makeTiles() : []; G.apeFall = null; G.unlocked = false;
   G.lifts = ST.lifts.map((l) => ({ lo: l.lo, x: l.x, y: yAt(l.lo, l.x), st: 'wait', q: null, t: 0, pL: false, pR: false, pD: false }));
   G.items = ST.items.map((it) => ({ plat: it[1], x: it[2], k: it[0], pts: it[3], taken: false }));
@@ -825,7 +858,7 @@ function updatePlay(dt) {
   stepPlayer(dt); if (G.state !== 'play') return;
   updateLifts(dt); updateTiles(dt); updateSprings(dt); if (G.state !== 'play') return;
   if (G.apeFall) { const t0 = G.apeFall.t; G.apeFall.t += dt; if (t0 < 0.6 && G.apeFall.t >= 0.6) { burst(APE_X + 8, yAt(4, APE_X), '#8a6a3a', 26, 80); G.shake = 0.6; SND.stomp(); } }
-  updateShots(dt);
+  updateShots(dt); updateButterflies(dt); if (G.state !== 'play') return;
   updateApe(dt); updateGlobes(dt); updateBlots(dt);
   const hv = G.hammerT > 0, Z = hammerZone();
   // marteau : coups sur les globes et les taches d'encre
@@ -958,7 +991,27 @@ function drawPlank(i) {
   for (const g of gs) drawGap(g);
   for (const b of ST.belts) if (b.plat === i) drawBelt(b);
 }
+function drawButterflies() {
+  const cols = [['#ff7ab8', '#ffd0ea'], ['#ffb03a', '#ffe6a0'], ['#6ab0ff', '#d0e8ff'], ['#b07aff', '#e6d0ff'], ['#6fe09a', '#d0ffe0']];
+  for (const b of G.bfly) {
+    if (b.dead) continue;
+    const y = bflyY(b), fl = Math.abs(Math.sin(G.t * 14 + b.ph)), c = cols[b.col % cols.length], w = 2 + 4 * fl;
+    ell(b.x - w * 0.6, y - 1, w, 4, c[0]); ell(b.x + w * 0.6, y - 1, w, 4, c[0]); ell(b.x - w * 0.5, y + 2.4, w * 0.7, 2.4, c[1]); ell(b.x + w * 0.5, y + 2.4, w * 0.7, 2.4, c[1]);
+    rect(b.x - 0.5, y - 3.5, 1, 7, '#2a1a3a');
+  }
+}
+function drawDeco() {
+  const fc = ['#ff7ab8', '#ffd23a', '#ffffff', '#b07aff', '#ff8a4a'];
+  for (const d of G.deco) {
+    const y = yAt(d.plat, d.x), sw = Math.sin(G.t * 1.6 + d.x) * 0.8;
+    f.strokeStyle = '#2f8a3a'; f.lineWidth = 0.9; f.beginPath(); f.moveTo(d.x, y); f.lineTo(d.x + sw, y - d.h); f.stroke();
+    if (d.k === 0) { ell(d.x + sw, y - d.h - 1, 2.2, 2.2, fc[d.c]); ell(d.x + sw, y - d.h - 1, 0.8, 0.8, '#7a4a1a'); }
+    else if (d.k === 1) { ell(d.x + sw - 1.6, y - d.h * 0.6, 2, 1, '#3aa84a'); ell(d.x + sw + 1.6, y - d.h * 0.8, 2, 1, '#3aa84a'); }
+    else if (d.k === 2) { ell(d.x + sw, y - d.h, 1.7, 2.4, fc[d.c]); }
+  }
+}
 function drawSprings() {
+  if (ST.garden) drawDeco();
   for (const q of G.springs) {
     const y = yAt(q.plat, q.x), c = q.comp > 0 ? 0.45 : 1, h = 8 * c;
     f.strokeStyle = '#ffd23a'; f.lineWidth = 1.2; f.beginPath(); f.moveTo(q.x - 4, y); for (let k = 0; k < 4; k++) { f.lineTo(q.x + 4, y - h * (k + 0.5) / 4); f.lineTo(q.x - 4, y - h * (k + 1) / 4); } f.stroke();
@@ -967,11 +1020,17 @@ function drawSprings() {
   for (const fr of G.fruits) {
     if (fr.taken) continue;
     const yy = fr.y + Math.sin(G.t * 3 + fr.x) * 1.2, k = Math.floor(fr.x / 10) % 3;
+    if (ST.fruitKind === 'flower') {
+      const pc = ['#ff4aa0', '#ffd23a', '#ff8a4a', '#b07aff'][Math.floor(fr.x / 10) % 4];
+      f.strokeStyle = '#2f8a3a'; f.lineWidth = 1; f.beginPath(); f.moveTo(fr.x, yy + 4); f.lineTo(fr.x, yy + 0.5); f.stroke();
+      for (let a = 0; a < 5; a++) ell(fr.x + Math.cos(a * 1.2566) * 2.6, yy - 1 + Math.sin(a * 1.2566) * 2.6, 1.9, 1.9, pc);
+      ell(fr.x, yy - 1, 1.5, 1.5, '#fff3a0'); continue;
+    }
     if (k === 0) { ell(fr.x, yy, 3.8, 3.8, '#e0343c'); ell(fr.x - 1.2, yy - 1.2, 1, 1, '#ff9aa0'); f.strokeStyle = '#3a8a3a'; f.lineWidth = 0.8; f.beginPath(); f.moveTo(fr.x, yy - 3.6); f.lineTo(fr.x + 2, yy - 6); f.stroke(); }
     else if (k === 1) { ell(fr.x, yy, 4.6, 3.2, '#ffe23a'); ell(fr.x - 1.2, yy - 1, 1.2, 0.8, '#fff6a0'); }
     else { ell(fr.x - 2, yy + 1, 2.6, 2.6, '#c0185a'); ell(fr.x + 2, yy + 1, 2.6, 2.6, '#c0185a'); f.strokeStyle = '#3a8a3a'; f.lineWidth = 0.7; f.beginPath(); f.moveTo(fr.x - 2, yy - 1.6); f.lineTo(fr.x, yy - 5); f.lineTo(fr.x + 2, yy - 1.6); f.stroke(); }
   }
-  if (G.fruits.length) { const got = G.fruits.filter((q) => q.taken).length; ft('FRUITS ' + got + '/' + G.fruits.length, 62, 6, 4.4, got === G.fruits.length ? '#6fe09a' : '#ffd23a'); }
+  if (G.fruits.length) { const got = G.fruits.filter((q) => q.taken).length; ft((ST.fruitKind === 'flower' ? 'FLOWERS ' : 'FRUITS ') + got + '/' + G.fruits.length, 62, 6, 4.4, got === G.fruits.length ? '#6fe09a' : '#ffd23a'); }
 }
 function drawTiles() {
   for (const t of G.tiles) {
@@ -1270,7 +1329,7 @@ function drawField() {
   if (!(cin && cin.bookGone)) drawBook();
   if (cin) { drawApe(cin); } else if (G.apeFall) drawFallingApe(); else drawApe();
   G.hammers.forEach((h) => { if (!h.taken) drawHammerIcon(h.x, yAt(h.plat, h.x), h.x); });
-  drawTiles(); drawSprings();
+  drawTiles(); drawSprings(); drawButterflies();
   G.guns.forEach((h) => { if (!h.taken) drawGunIcon(h.x, yAt(h.plat, h.x), h.x); });
   G.planes.forEach((h) => { if (!h.taken) drawPlane(h.x, yAt(h.plat, h.x) - 9 + Math.sin(G.t * 3 + h.x) * 1.2, 1, 0.5); });
   G.items.forEach((it) => { if (!it.taken) drawItem(it); });
@@ -1287,7 +1346,7 @@ function drawField() {
     if (G.penalty) ft('Quiz penalty: bonus -' + G.penalty, LW / 2, 140, 3.6, '#ff8a80');
   } else if (G.state === 'dead' && G.stateT > 0.8) {
     f.fillStyle = 'rgba(8,14,36,.82)'; f.fillRect(50, 108, 140, 22); f.strokeStyle = '#ff8a80'; f.lineWidth = 0.8; f.strokeRect(50, 108, 140, 22);
-    ft(G.why === 'time' ? "TIME'S UP!" : G.why === 'fall' ? 'WATCH THE DROP!' : G.why === 'water' ? 'THE CROCS GOT YOU!' : G.why === 'blot' ? 'INK BLOT!' : 'FLATTENED!', LW / 2, 119.5, 6.4, '#ff8a80');
+    ft(G.why === 'time' ? "TIME'S UP!" : G.why === 'fall' ? 'WATCH THE DROP!' : G.why === 'water' ? 'THE CROCS GOT YOU!' : G.why === 'blot' ? 'INK BLOT!' : G.why === 'butterfly' ? 'BUTTERFLY ATTACK!' : 'FLATTENED!', LW / 2, 119.5, 6.4, '#ff8a80');
   } else if (G.state === 'clear') {
     if (G.stateT > 2.4) {
       f.fillStyle = 'rgba(8,14,36,.9)'; f.fillRect(18, 92, 204, 62); f.strokeStyle = '#6fe09a'; f.lineWidth = 0.8; f.strokeRect(18, 92, 204, 62);
@@ -1640,7 +1699,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('20px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tl = { updateSprings, updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
+window.__tl = { updateButterflies, updateSprings, updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
 })();
 
 </script>
