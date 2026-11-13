@@ -295,7 +295,7 @@ const SND = {
    Geometrie : etageres (plateformes en pente), echelles
    ------------------------------------------------------------ */
 const STAGES = [
-  { name: 'THE READING ROOM', slope: 30, seed: 77, g0: '#0a1330', g1: '#14224a', pal: { top: '#7a4b22', under: '#5c3615', edge: '#e3b04b', dot: '#d8b26a', sup: '#4a2a10' }, cols: ['#3a2a55', '#2a3f6a', '#4a3322', '#2a4a45', '#553030', '#3a4a6a', '#5a4a2a'], gaps: [], belts: [], lifts: [],
+  { name: 'THE READING ROOM', slope: 30, seed: 77, g0: '#0a1330', g1: '#14224a', pal: { top: '#7a4b22', under: '#5c3615', edge: '#e3b04b', dot: '#d8b26a', sup: '#4a2a10' }, cols: ['#3a2a55', '#2a3f6a', '#4a3322', '#2a4a45', '#553030', '#3a4a6a', '#5a4a2a'], gaps: [], belts: [], lifts: [], springs: [], fruits: [],
     pls: [
       { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
       { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
@@ -307,7 +307,7 @@ const STAGES = [
     ],
     hammers: [[1, 232], [3, 230]], guns: [[2, 12]], planes: [[3, 24], [1, 16]],
     items: [['pencil', 0, 120, 300], ['phones', 2, 100, 500], ['sheet', 4, 120, 800]], speed: 1 },
-  { name: 'THE ARCHIVE', slope: 22, seed: 311, g0: '#1a0f33', g1: '#0f2a3d', pal: { top: '#3d5f80', under: '#243a52', edge: '#8fd0ff', dot: '#9fc4e0', sup: '#16283c' }, cols: ['#2d1f55', '#1f5a6a', '#4a2a55', '#1f4a45', '#552a4a', '#2a4a7a', '#3a2a6a'], gaps: [], belts: [], lifts: [],
+  { name: 'THE ARCHIVE', slope: 22, seed: 311, g0: '#1a0f33', g1: '#0f2a3d', pal: { top: '#3d5f80', under: '#243a52', edge: '#8fd0ff', dot: '#9fc4e0', sup: '#16283c' }, cols: ['#2d1f55', '#1f5a6a', '#4a2a55', '#1f4a45', '#552a4a', '#2a4a7a', '#3a2a6a'], gaps: [], belts: [], lifts: [], springs: [], fruits: [],
     pls: [
       { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
       { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
@@ -331,7 +331,7 @@ const STAGES = [
       { lo: 2, x: 190, full: true }, { lo: 2, x: 80, full: false }, { lo: 3, x: 90, full: true }, { lo: 3, x: 190, full: false },
       { lo: 4, x: 176, full: true }
     ],
-    lifts: [],
+    lifts: [], springs: [], fruits: [],
     gaps: [
       { plat: 0, x0: 90, x1: 112, rope: false }, { plat: 1, x0: 96, x1: 138, rope: true },
       { plat: 2, x0: 118, x1: 140, rope: false }, { plat: 3, x0: 100, x1: 142, rope: true }
@@ -344,7 +344,7 @@ const STAGES = [
   { name: 'THE VERB TILES', slope: 28, seed: 1207, g0: '#2a0a14', g1: '#3a1424', hint: 'WALK ON PARTICIPLES, JUMP PRETERITS', rivets: true,
     clearMsg: 'THE APE FELL! BOOK RECOVERED!',
     pal: { top: '#8a6a3a', under: '#5a3f1e', edge: '#ffd23a', dot: '#e8c878', sup: '#3a2410' },
-    cols: ['#5a1f2a', '#6a3a1f', '#4a1f4a', '#7a5a22', '#3a2a55', '#5a2a2a', '#2a3f6a'], gaps: [], belts: [], lifts: [],
+    cols: ['#5a1f2a', '#6a3a1f', '#4a1f4a', '#7a5a22', '#3a2a55', '#5a2a2a', '#2a3f6a'], gaps: [], belts: [], lifts: [], springs: [], fruits: [],
     pls: [
       { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
       { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
@@ -364,9 +364,25 @@ const STAGES = [
       { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
     ],
     lad: [],
-    lifts: [{ lo: 0, x: 170 }, { lo: 1, x: 60 }, { lo: 2, x: 180 }, { lo: 3, x: 70 }, { lo: 4, x: 170 }],
+    lifts: [{ lo: 0, x: 170 }, { lo: 1, x: 60 }, { lo: 2, x: 180 }, { lo: 3, x: 70 }, { lo: 4, x: 170 }], springs: [], fruits: [],
     hammers: [[1, 230], [3, 230]], guns: [[2, 14]], planes: [[3, 20], [4, 226]],
-    items: [['pencil', 0, 100, 300], ['phones', 2, 120, 500], ['sheet', 3, 120, 800]], speed: 1 }
+    items: [['pencil', 0, 100, 300], ['phones', 2, 120, 500], ['sheet', 3, 120, 800]], speed: 1 },
+  { name: 'THE JUMPING GARDEN', slope: 28, seed: 6131, g0: '#2b0f45', g1: '#0c3a52', hint: 'BOUNCE ON SPRINGS, EAT 8 FRUITS = 1UP',
+    pal: { top: '#35b08c', under: '#1f7058', edge: '#ffd1f0', dot: '#c8f0e0', sup: '#154a3c' },
+    cols: ['#7a2a6a', '#2a6a8a', '#8a4a2a', '#2a7a5a', '#8a2a4a', '#4a3a9a', '#9a7a2a'], gaps: [], belts: [], lifts: [],
+    pls: [
+      { yc: 216, dir: 1, x0: 0, x1: 240 }, { yc: 176, dir: -1, x0: 8, x1: 240 }, { yc: 136, dir: 1, x0: 0, x1: 232 },
+      { yc: 96, dir: -1, x0: 8, x1: 240 }, { yc: 56, dir: 1, x0: 0, x1: 232 }, { yc: 24, dir: 0, x0: 132, x1: 232 }
+    ],
+    lad: [
+      { lo: 0, x: 200, full: true }, { lo: 0, x: 120, full: false }, { lo: 1, x: 100, full: true }, { lo: 1, x: 150, full: false },
+      { lo: 2, x: 110, full: true }, { lo: 2, x: 200, full: false }, { lo: 3, x: 120, full: true }, { lo: 3, x: 60, full: false },
+      { lo: 4, x: 176, full: true }
+    ],
+    springs: [[0, 60], [1, 190], [2, 50], [3, 180]],
+    fruits: [[0, 60, -42], [1, 190, -42], [2, 50, -42], [3, 180, -42], [1, 140, -12], [2, 160, -12], [3, 110, -12], [4, 130, -12]],
+    hammers: [[1, 230], [3, 232]], guns: [[2, 14]], planes: [[3, 20], [1, 16]],
+    items: [['pencil', 0, 130, 300], ['phones', 2, 150, 500], ['sheet', 4, 120, 800]], speed: 1 }
 ];
 const TH = 7;                          // epaisseur d'une planche
 const PLS = [], LAD = [];
@@ -452,6 +468,27 @@ function updateTiles(dt) {
     }
   }
 }
+function updateSprings(dt) {
+  const p = G.p;
+  for (const q of G.springs) {
+    if (q.comp > 0) q.comp -= dt;
+    if (p.mode === 'ground' && p.plat === q.plat && Math.abs(p.x - q.x) < 5 && !(p.sprCd > 0)) {
+      p.mode = 'air'; p.vy = -235; p.vx = ((I_R() ? 1 : 0) - (I_L() ? 1 : 0)) * 36; p.apex = p.y; p.fromPlat = -1; p.fromT = 0; p.noFall = true; p.sprCd = 0.35; q.comp = 0.25; SND.jump(); burst(q.x, yAt(q.plat, q.x), '#ff6ac1', 8, 40);
+    }
+  }
+  if (p.sprCd > 0) p.sprCd -= dt;
+  if (G.fruits.length) {
+    for (const fr of G.fruits) {
+      if (fr.taken) continue;
+      if (p.mode !== 'climb' && p.mode !== 'lift' && Math.abs(fr.x - p.x) < 8 && Math.abs(fr.y - (p.y - 8)) < 10) {
+        fr.taken = true; addScore(200); SND.item(); pop(fr.x, fr.y - 8, '+200', '#ffd23a');
+        if (G.fruits.every((q) => q.taken)) { addScore(2000); G.lives = Math.min(6, G.lives + 1); SND.life(); pop(120, 110, 'ALL FRUITS! 1UP', '#6fe09a'); }
+      }
+    }
+  }
+}
+function I_L() { const I = inputs(); return I.L; }
+function I_R() { const I = inputs(); return I.R; }
 function startApeFall() {
   G.apeFall = { t: 0, boom: false }; G.unlocked = true; G.throwT = 9999; pop(120, 100, 'THE APE FALLS!', '#ffd23a'); SND.clear();
 }
@@ -482,7 +519,7 @@ const pad = { l: 0, r: 0, u: 0, d: 0 };
 const G = {
   state: 'title', stateT: 0, t: 0, round: 1, score: 0, hi: +(lsGet('tlHi') || 0), lives: 3, nextLife: 7000,
   bonus: 5000, bonusT: 0, globes: [], blots: [], p: null, ape: { stage: 'idle', t: 0, pound: 4 }, throwT: 2, blotT: 9, ink: 0,
-  hammers: [], tiles: [], lifts: [], apeFall: null, unlocked: false, guns: [], planes: [], shots: [], fly: [], gunT: 0, planeAmmo: 0, fireCd: 0, gunFlash: 0, items: [], hammerT: 0, beatT: 0, beatI: 0, learned: [], banner: null, pops: [], parts: [], shake: 0, prevState: 'play', penalty: 0, why: '', msg: ''
+  hammers: [], tiles: [], lifts: [], springs: [], fruits: [], springs: [], fruits: [], apeFall: null, unlocked: false, guns: [], planes: [], shots: [], fly: [], gunT: 0, planeAmmo: 0, fireCd: 0, gunFlash: 0, items: [], hammerT: 0, beatT: 0, beatI: 0, learned: [], banner: null, pops: [], parts: [], shake: 0, prevState: 'play', penalty: 0, why: '', msg: ''
 };
 let collection = (() => { try { return new Set(JSON.parse(lsGet('tlLearned') || '[]')); } catch (e) { return new Set(); } })();
 function saveCollection() { lsSet('tlLearned', JSON.stringify(Array.from(collection))); }
@@ -499,6 +536,7 @@ function resetStage() {
   G.hammers = ST.hammers.map((h) => ({ plat: h[0], x: h[1], taken: false }));
   G.guns = ST.guns.map((h) => ({ plat: h[0], x: h[1], taken: false })); G.planes = ST.planes.map((h) => ({ plat: h[0], x: h[1], taken: false }));
   G.gunT = 0; G.planeAmmo = 0; G.shots = []; G.fly = []; G.fireCd = 0; G.gunFlash = 0;
+  G.springs = ST.springs.map((q) => ({ plat: q[0], x: q[1], comp: 0 })); G.fruits = ST.fruits.map((q) => ({ x: q[1], y: yAt(q[0], q[1]) + q[2], taken: false }));
   G.tiles = ST.rivets ? makeTiles() : []; G.apeFall = null; G.unlocked = false;
   G.lifts = ST.lifts.map((l) => ({ lo: l.lo, x: l.x, y: yAt(l.lo, l.x), st: 'wait', q: null, t: 0, pL: false, pR: false, pD: false }));
   G.items = ST.items.map((it) => ({ plat: it[1], x: it[2], k: it[0], pts: it[3], taken: false }));
@@ -619,7 +657,8 @@ function stepPlayer(dt) {
         if (py <= s + 1.5 && p.y >= s) {
           p.y = s; p.mode = 'ground'; p.plat = i; p.vx = 0; p.vy = 0;
           const fall = p.y - p.apex; SND.land();
-          if (fall > 30) { die('fall'); return; }
+          if (fall > 30 && !p.noFall) { die('fall'); return; }
+          p.noFall = false;
           break;
         }
       }
@@ -784,7 +823,7 @@ function updatePlay(dt) {
   if (G.gunT > 0) { G.gunT -= dt; if (G.gunT <= 0) { G.gunT = 0; pop(p.x, p.y - 22, 'PISTOL GONE', '#a9b3c9'); } }
   G.fireCd -= dt; if (G.gunFlash > 0) G.gunFlash -= dt;
   stepPlayer(dt); if (G.state !== 'play') return;
-  updateLifts(dt); updateTiles(dt); if (G.state !== 'play') return;
+  updateLifts(dt); updateTiles(dt); updateSprings(dt); if (G.state !== 'play') return;
   if (G.apeFall) { const t0 = G.apeFall.t; G.apeFall.t += dt; if (t0 < 0.6 && G.apeFall.t >= 0.6) { burst(APE_X + 8, yAt(4, APE_X), '#8a6a3a', 26, 80); G.shake = 0.6; SND.stomp(); } }
   updateShots(dt);
   updateApe(dt); updateGlobes(dt); updateBlots(dt);
@@ -918,6 +957,21 @@ function drawPlank(i) {
   if (xa < p.x1) drawSeg(i, xa, p.x1);
   for (const g of gs) drawGap(g);
   for (const b of ST.belts) if (b.plat === i) drawBelt(b);
+}
+function drawSprings() {
+  for (const q of G.springs) {
+    const y = yAt(q.plat, q.x), c = q.comp > 0 ? 0.45 : 1, h = 8 * c;
+    f.strokeStyle = '#ffd23a'; f.lineWidth = 1.2; f.beginPath(); f.moveTo(q.x - 4, y); for (let k = 0; k < 4; k++) { f.lineTo(q.x + 4, y - h * (k + 0.5) / 4); f.lineTo(q.x - 4, y - h * (k + 1) / 4); } f.stroke();
+    rect(q.x - 7, y - h - 2, 14, 2.4, '#ff6ac1'); rect(q.x - 7, y - h - 2, 14, 0.8, '#ffb0e0'); rect(q.x - 5, y - 1, 10, 1.4, '#7a2a6a');
+  }
+  for (const fr of G.fruits) {
+    if (fr.taken) continue;
+    const yy = fr.y + Math.sin(G.t * 3 + fr.x) * 1.2, k = Math.floor(fr.x / 10) % 3;
+    if (k === 0) { ell(fr.x, yy, 3.8, 3.8, '#e0343c'); ell(fr.x - 1.2, yy - 1.2, 1, 1, '#ff9aa0'); f.strokeStyle = '#3a8a3a'; f.lineWidth = 0.8; f.beginPath(); f.moveTo(fr.x, yy - 3.6); f.lineTo(fr.x + 2, yy - 6); f.stroke(); }
+    else if (k === 1) { ell(fr.x, yy, 4.6, 3.2, '#ffe23a'); ell(fr.x - 1.2, yy - 1, 1.2, 0.8, '#fff6a0'); }
+    else { ell(fr.x - 2, yy + 1, 2.6, 2.6, '#c0185a'); ell(fr.x + 2, yy + 1, 2.6, 2.6, '#c0185a'); f.strokeStyle = '#3a8a3a'; f.lineWidth = 0.7; f.beginPath(); f.moveTo(fr.x - 2, yy - 1.6); f.lineTo(fr.x, yy - 5); f.lineTo(fr.x + 2, yy - 1.6); f.stroke(); }
+  }
+  if (G.fruits.length) { const got = G.fruits.filter((q) => q.taken).length; ft('FRUITS ' + got + '/' + G.fruits.length, 62, 6, 4.4, got === G.fruits.length ? '#6fe09a' : '#ffd23a'); }
 }
 function drawTiles() {
   for (const t of G.tiles) {
@@ -1216,7 +1270,7 @@ function drawField() {
   if (!(cin && cin.bookGone)) drawBook();
   if (cin) { drawApe(cin); } else if (G.apeFall) drawFallingApe(); else drawApe();
   G.hammers.forEach((h) => { if (!h.taken) drawHammerIcon(h.x, yAt(h.plat, h.x), h.x); });
-  drawTiles();
+  drawTiles(); drawSprings();
   G.guns.forEach((h) => { if (!h.taken) drawGunIcon(h.x, yAt(h.plat, h.x), h.x); });
   G.planes.forEach((h) => { if (!h.taken) drawPlane(h.x, yAt(h.plat, h.x) - 9 + Math.sin(G.t * 3 + h.x) * 1.2, 1, 0.5); });
   G.items.forEach((it) => { if (!it.taken) drawItem(it); });
@@ -1586,7 +1640,7 @@ function boot() { requestAnimationFrame((t) => { last = t; frame(t); }); }
 let booted = false; const go = () => { if (!booted) { booted = true; boot(); } };
 if (document.fonts && document.fonts.load) { Promise.all([document.fonts.load('8px "Press Start 2P"'), document.fonts.load('20px "Press Start 2P"')]).then(go, go); setTimeout(go, 1500); } else go();
 
-window.__tl = { updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
+window.__tl = { updateSprings, updateTiles, updateLifts, tryLift, makeTiles, fireGun, throwPlane, ST: () => ST, inGap, beltAt, PR, G, PLS, LAD, VERBS, yAt, update, draw, newGame, startRound, hitGlobe, spawnGlobe, stepPlayer, keys, pad, openQuiz, answerQuestion, qState: () => QZ, die, setHD: (v) => { HD = v; applyQuality(); }, collection };
 })();
 
 </script>
