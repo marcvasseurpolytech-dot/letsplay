@@ -71,6 +71,36 @@
   .ov .mgb { display: block; margin: 10px auto 0; font: 700 14px "JetBrains Mono", monospace; color: #0d1b3a; background: #c9a227; border: 0; border-radius: 8px; padding: 10px 22px; cursor: pointer; }
   .ov .mgb:disabled { opacity: .35; cursor: default; }
   .ov .mgr { text-align: center; font-size: 14px; margin: 8px 0 0; min-height: 20px; }
+  /* ---- bonus game : meme style arcade que le jeu ---- */
+  #mini { background: repeating-linear-gradient(90deg, rgba(60, 30, 20, .92) 0 14px, rgba(30, 18, 40, .92) 14px 22px, rgba(20, 40, 60, .92) 22px 34px, rgba(70, 40, 20, .92) 34px 40px), #000; image-rendering: pixelated; }
+  #mini::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .22) 0 2px, transparent 2px 4px); pointer-events: none; }
+  #mini .panel { font-family: "Press Start 2P", "Courier New", monospace; width: min(620px, 94vw); border: 4px solid #ffd23a; border-radius: 0; background: #0a1230; box-shadow: 0 0 0 4px #0a1230, 0 0 0 8px #c9a227, 8px 8px 0 8px rgba(0, 0, 0, .55); padding: 18px 16px 16px; position: relative; z-index: 2; }
+  #mini .ttl { text-align: center; color: #ffd23a; font-size: 18px; letter-spacing: 2px; text-shadow: 3px 3px 0 #7a2a0a; margin: 2px 0 6px; animation: mgb 1s steps(2) infinite; }
+  @keyframes mgb { 50% { color: #fff3a0; } }
+  #mini .sub { text-align: center; color: #8fd0ff; font-size: 8px; line-height: 1.9; margin: 0 0 14px; }
+  #mini .rnd { text-align: center; color: #6f78d8; font-size: 8px; margin: 0 0 8px; }
+  #mini .mg .h { font-family: "Press Start 2P", monospace; font-size: 8px; color: #6fe09a; letter-spacing: 0; }
+  #mini .mg .inf { font-size: 12px; color: #ffd23a; text-shadow: 2px 2px 0 #000; }
+  #mini .mg .inf small { font-size: 7px; color: #8fd0ff; margin-top: 5px; font-family: "Press Start 2P", monospace; }
+  #mini .slot { border: 3px dashed #4a5a9a; border-radius: 0; min-height: 46px; background: #050a1e; box-shadow: inset 3px 3px 0 #000; }
+  #mini .slot.hot { border: 3px solid #ffd23a; background: #231a06; }
+  #mini .slot.ok { border: 3px solid #6fe09a; background: #0a3a1e; }
+  #mini .slot.no { border: 3px solid #ff4050; background: #3a0a14; }
+  #mini .pool { border-radius: 0; border: 3px solid #4a5a9a; background: #050a1e; box-shadow: inset 3px 3px 0 #000; min-height: 54px; }
+  #mini .chip { font: 11px "Press Start 2P", monospace; border-radius: 0; color: #0a1230; background: #f5eedc; border: 0; padding: 10px 12px; box-shadow: inset -3px -3px 0 #b8a98a, inset 3px 3px 0 #fff, 3px 3px 0 #000; cursor: grab; }
+  #mini .chip:hover { background: #fff3a0; }
+  #mini .chip.sel { background: #ffd23a; box-shadow: inset -3px -3px 0 #b8870a, inset 3px 3px 0 #fff3a0, 3px 3px 0 #000; transform: translateY(-2px); }
+  #mini .chip.drag { box-shadow: inset -3px -3px 0 #b8a98a, inset 3px 3px 0 #fff, 6px 6px 0 rgba(0, 0, 0, .6); transform: rotate(-3deg) scale(1.06); }
+  #mini .slot .chip { box-shadow: inset -3px -3px 0 #b8a98a, inset 3px 3px 0 #fff; }
+  #mini .slot.ok .chip { background: #b8ffd0; box-shadow: inset -3px -3px 0 #3aa86a, inset 3px 3px 0 #e8fff0; }
+  #mini .slot.no .chip { background: #ffc0c0; box-shadow: inset -3px -3px 0 #c03040, inset 3px 3px 0 #ffe8e8; }
+  #mini .mgb { font: 11px "Press Start 2P", monospace; border-radius: 0; color: #0a1230; background: #ffd23a; padding: 12px 20px; margin-top: 14px; box-shadow: inset -4px -4px 0 #b8870a, inset 4px 4px 0 #fff3a0, 4px 4px 0 #000; }
+  #mini .mgb:hover:not(:disabled) { background: #fff3a0; }
+  #mini .mgb:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: inset -4px -4px 0 #b8870a, inset 4px 4px 0 #fff3a0; }
+  #mini .mgb:disabled { background: #4a5a9a; box-shadow: inset -4px -4px 0 #2a3470, inset 4px 4px 0 #6a7ac0; opacity: 1; color: #1a2250; }
+  #mini .mgr { font-size: 12px; margin-top: 12px; text-shadow: 2px 2px 0 #000; }
+  #mini .mgfix { text-align: center; font-size: 8px; line-height: 2; color: #ff8a80; margin-top: 8px; }
+  #mini .mgfix b { color: #ffd23a; font-weight: 400; }
   .ov .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .ov .opt { font: 700 15px "JetBrains Mono", monospace; color: #f5eedc; background: #16294f; border: 1px solid rgba(245, 238, 220, .3); border-radius: 8px; padding: 12px 8px; cursor: pointer; }
   .ov .opt:hover:not(:disabled) { border-color: #c9a227; }
@@ -965,8 +995,8 @@ function openMini(onDone) {
 function renderMini() {
   const box = document.getElementById('miniBox'), placed = new Set(Object.values(MG.slot));
   const chipH = (c) => '<div class="chip' + (MG.sel === c.id ? ' sel' : '') + '" data-c="' + c.id + '">' + esc(c.txt) + '</div>';
-  let h = '<div style="text-align:center;color:#ffd23a;font-size:15px;font-weight:700;letter-spacing:1px">BONUS GAME</div><div class="muted" style="text-align:center;margin:4px 0 10px">Drag each form into the right box: preterit and past participle.</div>';
-  h += '<div class="mg"><span></span><span class="h">PRETERIT</span><span class="h">PAST PARTICIPLE</span></div>';
+  let h = '<div class="ttl">BONUS GAME</div><div class="sub">DRAG EACH FORM INTO THE RIGHT BOX<br>PRETERIT + PAST PARTICIPLE</div>';
+  h += '<div class="rnd">ROUND ' + (G.round || 1) + ' CLEAR!</div><div class="mg"><span></span><span class="h">PRETERIT</span><span class="h">PARTICIPLE</span></div>';
   MG.verbs.forEach((v, i) => {
     h += '<div class="mg"><div class="inf">' + esc(v[0]) + '<small>' + esc(v[3]) + '</small></div>';
     ['p', 'q'].forEach((k) => {
@@ -979,8 +1009,8 @@ function renderMini() {
   h += '<div class="pool" data-s="pool">' + MG.chips.filter((c) => !placed.has(c.id)).map(chipH).join('') + '</div>';
   if (MG.checked) {
     const wrong = MG.verbs.filter((v, i) => { const a = MG.chips.find((x) => x.id === MG.slot['s' + i + 'p']), b = MG.chips.find((x) => x.id === MG.slot['s' + i + 'q']); return !(a && a.txt === v[1] && b && b.txt === v[2]); });
-    h += '<div class="mgr">' + (MG.score === 6 ? '<span style="color:#6fe09a">PERFECT! +' + MG.gain + '</span>' : '<span style="color:#ffd23a">' + MG.score + '/6 right, +' + MG.gain + '</span>') + '</div>';
-    if (wrong.length) h += '<div class="muted" style="text-align:center;margin-top:6px">' + wrong.map((v) => esc(v[0] + ' - ' + v[1] + ' - ' + v[2])).join('<br>') + '</div>';
+    h += '<div class="mgr">' + (MG.score === 6 ? '<span style="color:#6fe09a">PERFECT! +' + MG.gain + '</span>' : '<span style="color:#ffd23a">' + MG.score + '/6 RIGHT +' + MG.gain + '</span>') + '</div>';
+    if (wrong.length) h += '<div class="mgfix">' + wrong.map((v) => '<b>' + esc(v[0].toUpperCase()) + '</b> ' + esc(v[1]) + ' ' + esc(v[2])).join('<br>') + '</div>';
     h += '<button class="mgb" id="mgGo">NEXT ROUND</button>';
   } else h += '<button class="mgb" id="mgCheck"' + (Object.keys(MG.slot).length < 6 ? ' disabled' : '') + '>CHECK</button>';
   box.innerHTML = h;
